@@ -1,6 +1,6 @@
 function plot_remove_whitespace(ax, DH, L, L0, H0, d)
-% plot_whitespace(ax, DH, L, L0, H0, d)
-% Remove the whitespace from subplots
+% plot_remove_whitespace(ax, DH, L, L0, H0, d)
+% Remove whitespace from vertical subplots
 % ax : figure axes object
 % DH : Vertical space between subplots (default=0.05)
 % L  : Distance between the right and left inner edges of the figure (default=0.85)
