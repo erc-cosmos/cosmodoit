@@ -114,7 +114,7 @@ def processFiles(refFilename,perfFilename):
     """ One stopper to process from start to finish
     """
     alignment = runAlignment(refFilename,perfFilename,cleanup=True)
-    basePerf = os.path.basename(perfFilename)
+    basePerf, = os.path.splitext(os.path.basename(perfFilename))
 
     ### Ask User for the base beat and anacrusis offset
     #TODO: Determine automatically
