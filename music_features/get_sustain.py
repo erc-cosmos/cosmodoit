@@ -5,16 +5,16 @@ import mido
 import os
 import sys
 
-def getPedal(perfFilename):
+def get_sustain(perfFilename):
     midi = mido.MidiFile(perfFilename)
     midiBasename = os.path.splitext(os.path.basename(perfFilename))[0]
 
     event_list = parseMidiEvents(midi, midiBasename)
     # Filter to keep only pedal events
-    pedalValues = [{'Time':event['Time'],'Sustain':event['Value']} for event in event_list 
+    sustainValues = [{'Time':event['Time'],'Sustain':event['Value']} for event in event_list 
         if event['Type']=='control_change' and event['Control']==64]
 
-    return pedalValues
+    return sustainValues
 
 def parseMidiEvents(midi, midiBasename, verbose=False):
     # Default value for tempo; might be set by a value for set_tempo later
@@ -98,6 +98,6 @@ if __name__ == "__main__":
     #refFilename = args.ref
     perfFilename = args.perf
     
-    sustain = getPedal(perfFilename)
+    sustain = get_sustain(perfFilename)
     #processFiles(refFilename,perfFilename)
     print(sustain)

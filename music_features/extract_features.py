@@ -124,7 +124,7 @@ def processFiles(refFilename,perfFilename):
     
     beats = beatExtraction(alignment,quarterLength,anacrusisOffset,basePerf+"_beats.csv",False)
     
-    sustain = getPedal(perfFilename)
+    sustain = get_sustain(perfFilename)
     pedalFilename = basePerf+"_sustain.csv"
     writeFile(pedalFilename, sustain)
     return beats,sustain
