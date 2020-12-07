@@ -9,21 +9,11 @@ import itertools as itt
 import os
 import subprocess
 import argparse
-import mido
 import sys
 from get_sustain import *
+from get_alignment import *
 
 #TODO: Split into separate files
-
-def readAlignmentFile(filename):
-    #### Read file
-    with open(filename) as csvFile:
-        csvReader = csv.reader(csvFile, delimiter='\t')
-        # Extract relevant columns
-        return [{'tatum':int(row[8]), 'time':float(row[1])}
-                for row in csvReader
-                if len(row)>3 and row[8]!='-1' # Not a metaline and not a mismatch
-                ]
 
 def writeFile(filename,data):
     with open(filename, mode='w') as csvFile:
@@ -81,39 +71,11 @@ def beatExtraction(tatums, quarterLength, anacrusisOffset, outfileName=None, plo
 
     return beats
 
-def runAlignment(refFilename, perfFilename, 
-        midi2midiExecLocation="./MIDIToMIDIAlign.sh",
-        #score2midiExecLocation="music_features/ScoreToMIDIAlign.sh",
-        cleanup=True, recompute=False):
-    # Crop .mid extension as the script doesn't want them
-    refFilename,refType = os.path.splitext(refFilename)
-    perfFilename = os.path.splitext(perfFilename)[0] 
-
-    if refType != ".mid": #TODO: accept .midi file extension for midi files
-        # NYI
-        # Generate a midi from the score or run the score-to-midi (once fixed)
-        raise NotImplementedError
-
-    # Run the alignment (only if needed or requested)
-    outFile = os.path.basename(perfFilename)+"_match.txt"
-    if recompute or not os.path.isfile(outFile):
-        output = subprocess.run([midi2midiExecLocation,refFilename,perfFilename])
-    alignment = readAlignmentFile(outFile)
-    
-    if cleanup:
-        interRefExtensions = ['_fmt3x.txt','_hmm.txt','_spr.txt']
-        interPerfExtensions = ['_spr.txt', '_match.txt']
-        refBase = os.path.basename(refFilename)
-        perfBase = os.path.basename(perfFilename)
-        [os.remove(refBase+ext) for ext in interRefExtensions]
-        [os.remove(perfBase+ext) for ext in interPerfExtensions]
-    return alignment
-
 
 def processFiles(refFilename,perfFilename):
     """ One stopper to process from start to finish
     """
-    alignment = runAlignment(refFilename,perfFilename,cleanup=True)
+    alignment = get_alignment(refFilename,perfFilename,cleanup=True)
     basePerf, = os.path.splitext(os.path.basename(perfFilename))
 
     ### Ask User for the base beat and anacrusis offset
