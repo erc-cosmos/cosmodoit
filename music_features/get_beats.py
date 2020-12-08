@@ -16,7 +16,7 @@ def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting = Fa
 
     # Ask user for the base beat and anacrusis offset if not provided already
     #TODO: Determine automatically
-    quarterLength,anacrusisOffset = prompt_beatInfo(quarterLength,anacrusisOffset)
+    quarterLength,anacrusisOffset = prompt_beatInfo(alignment,quarterLength,anacrusisOffset)
 
 
     #### Find beats' onsets
