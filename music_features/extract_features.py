@@ -14,8 +14,6 @@ from get_sustain import *
 from get_alignment import *
 from get_beats import *
 
-#TODO: Split into separate files
-
 def writeFile(filename,data):
     with open(filename, mode='w') as csvFile:
         fields = data[0].keys()
