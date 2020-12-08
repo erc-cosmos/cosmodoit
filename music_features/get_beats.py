@@ -8,14 +8,20 @@ import itertools as itt
 from get_alignment import *
 
 
-def get_beats(alignment, quarterLength, anacrusisOffset, outfileName=None, plotting = False):
-    #### Find beats' onsets
-    maxTatum = alignment[-1]['tatum']
+def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting = False):
+    """ Extracts beats timing from an alignment of the notes
+    quarterLength is the number of midi ticks during a beat in the reference
+    anacrusisOffset is the offset of the first whole beat (not necessarily the first beat of the first bar) 
+    """
 
     # Ask user for the base beat and anacrusis offset if not provided already
     #TODO: Determine automatically
     quarterLength,anacrusisOffset = prompt_beatInfo(quarterLength,anacrusisOffset)
 
+
+    #### Find beats' onsets
+    maxTatum = alignment[-1]['tatum']
+    
     ticks,indices = np.unique(np.array([tatum['tatum'] for tatum in alignment]),return_index=True) #TODO: determine better which note to use when notes share a tatum
     times = np.array([tatum['time'] for tatum in alignment])[indices]
     interpolTarget = np.arange(anacrusisOffset,maxTatum,quarterLength)
@@ -39,6 +45,9 @@ def get_beats(alignment, quarterLength, anacrusisOffset, outfileName=None, plott
     return beats
 
 def plot_beatRatios(ticks, quarterLength, times, spline):
+    """ Plots the ratio of actual note duration to expected
+    Expected note duration is based on neighbouring tempo
+    """
     ratios = []
     for (tick,time,tick_next,time_next) in zip(ticks,times, ticks[1:], times[1:]):
         #TODO: Separate by line
@@ -53,6 +62,8 @@ def plot_beatRatios(ticks, quarterLength, times, spline):
     plt.show(block=True)
 
 def plot_beats(beats, interpolation, ticks, quarterLength, times):
+    """ Plots score time against real time and tempo against score time
+    """
     #plt.plot(np.array([beat['count'] for beat in beats])[1:],60/np.diff(interpolation),label="IOI")
     plt.plot([beat['count'] for beat in beats],interpolation)
     plt.scatter(ticks/quarterLength,times)
@@ -61,12 +72,15 @@ def plot_beats(beats, interpolation, ticks, quarterLength, times):
     plt.show(block=True)
 
 
-def prompt_beatInfo(alignment,quarterLength=None,anacrusisOffset=None):
-    if quarterLength is None or anacrusisOffset is None:
+def prompt_beatInfo(alignment,quarterLength=None,anacrusisOffset=None, force=False):
+    """ Prompts for missing information in beat detection
+    Does nothing if all it is already known, unless force is True
+    """
+    if force or quarterLength is None or anacrusisOffset is None:
         print(alignment[:10]) # Show first 10 lines to give context
-        if quarterLength is None:
+        if force or quarterLength is None:
             quarterLength = int(input("Please enter the beat length (in ticks):"))
-        if anacrusisOffset is None:
+        if force or anacrusisOffset is None:
             anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
     return quarterLength, anacrusisOffset
 
