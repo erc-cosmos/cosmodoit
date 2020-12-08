@@ -13,6 +13,7 @@ import sys
 from get_sustain import *
 from get_alignment import *
 from get_beats import *
+from get_onsetVelocity import *
 
 def writeFile(filename,data):
     """ Writes a list of dictionaries with identical keys to disk
@@ -36,10 +37,14 @@ def processFiles(refFilename,perfFilename,quarterLength=None,anacrusisOffset=Non
     
     sustain = get_sustain(perfFilename)
     pedalFilename = basePerf+"_sustain.csv"
-    writeFile(pedalFilename, sustain)
+    writeFile(pedalFilename, sustain)    
+    
+    velocities = get_onsetVelocity(perfFilename)
+    velocityFilename = basePerf+"_velocity.csv"
+    writeFile(velocityFilename, velocities)
     
     #TODO: add other features
-    return beats,sustain
+    return beats,sustain,velocities
 
 
 if __name__ == "__main__":
