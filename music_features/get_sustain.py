@@ -7,7 +7,10 @@ import sys
 from get_midiEvents import *
 
 def get_sustain(perfFilename):
-    midiBasename = os.path.splitext(os.path.basename(perfFilename))[0]
+    """ Extracts sustain pedal information from a midi file
+    """
+    #TODO: add flag for binary output
+    midiBasename,_ = os.path.splitext(os.path.basename(perfFilename))
 
     event_list = get_midiEvents(perfFilename)
     # Filter to keep only pedal events
@@ -17,6 +20,8 @@ def get_sustain(perfFilename):
     return sustainValues
 
 def is_sustainEvent(event):
+    """ Determines whether the passed event is a sustain pedal event
+    """
     return event['Type'] == 'control_change' and event['Control']==64
 
 if __name__ == "__main__":
@@ -24,8 +29,5 @@ if __name__ == "__main__":
     parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     args = parser.parse_args()
     
-    os.chdir(os.path.dirname(sys.argv[0]))
-    perfFilename = args.perf
-    
-    sustain = get_sustain(perfFilename)
+    sustain = get_sustain(args.perf)
     print(sustain)
