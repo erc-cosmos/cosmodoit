@@ -10,10 +10,7 @@ from get_alignment import *
 
 def get_beats(alignment, quarterLength, anacrusisOffset, outfileName=None, plotting = False):
     #### Find beats' onsets
-    beats = []
     maxTatum = alignment[-1]['tatum']
-    tatumIter = iter(alignment)
-    nextTatum = next(tatumIter)
 
     ticks,indices = np.unique(np.array([tatum['tatum'] for tatum in alignment]),return_index=True) #TODO: determine better which note to use when notes share a tatum
     times = np.array([tatum['time'] for tatum in alignment])[indices]
@@ -27,14 +24,17 @@ def get_beats(alignment, quarterLength, anacrusisOffset, outfileName=None, plott
             }
             for count,(tick,time) in enumerate(zip(interpolTarget,interpolation))]
 
+    scoreTime = ticks/quarterLength
+    
     if plotting:
-        #plt.plot(np.array([beat['count'] for beat in beats])[1:],60/np.diff(interpolation),label="IOI")
-        plt.plot([beat['count'] for beat in beats],interpolation)
-        plt.scatter(ticks/quarterLength,times)
-        plt.show(block=True)
-        plt.plot(60/np.diff([beat['time'] for beat in beats]))
-        plt.show(block=True)
+        plot_beats(beats, interpolation, ticks, quarterLength, times)
 
+    if plotting:
+        plot_beatRatios(ticks, quarterLength, times, spline)
+
+    return beats
+
+def plot_beatRatios(ticks, quarterLength, times, spline):
     ratios = []
     for (tick,time,tick_next,time_next) in zip(ticks,times, ticks[1:], times[1:]):
         #TODO: Separate by line
@@ -43,18 +43,18 @@ def get_beats(alignment, quarterLength, anacrusisOffset, outfileName=None, plott
         expectedDuration = spline(tick_next)-spline(tick)
         actualDuration = time_next-time
         ratios.append(actualDuration/expectedDuration)
+    plt.plot(ticks[:-1]/quarterLength,ratios)
+    plt.plot(ticks[:-1]/quarterLength,np.diff(ticks)/quarterLength)
+    plt.hlines(1,xmin=ticks[0],xmax=ticks[-1]/quarterLength)
+    plt.show(block=True)
 
-    if plotting:
-        plt.plot(ticks[:-1]/quarterLength,ratios)
-        plt.plot(ticks[:-1]/quarterLength,np.diff(ticks)/quarterLength)
-        plt.hlines(1,xmin=ticks[0],xmax=ticks[-1]/quarterLength)
-        plt.show()
-
-    ### Save output if requested    
-    if outfileName is not None:
-        writeFile(outfileName,beats)
-
-    return beats
+def plot_beats(beats, interpolation, ticks, quarterLength, times):
+    #plt.plot(np.array([beat['count'] for beat in beats])[1:],60/np.diff(interpolation),label="IOI")
+    plt.plot([beat['count'] for beat in beats],interpolation)
+    plt.scatter(ticks/quarterLength,times)
+    plt.show(block=True)
+    plt.plot(60/np.diff([beat['time'] for beat in beats]))
+    plt.show(block=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -67,11 +67,11 @@ if __name__ == "__main__":
     refFilename = args.ref
     perfFilename = args.perf
 
-    alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename)
+    alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename,cleanup=False)
 
     print(alignment[:10]) # Show first 10 lines to give context
     quarterLength = int(input("Please enter the beat length (in ticks):"))
     anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
 
-    beats = get_beats(alignment,quarterLength,anacrusisOffset)
+    beats = get_beats(alignment,quarterLength,anacrusisOffset, plotting=True)
     print(beats)

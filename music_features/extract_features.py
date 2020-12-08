@@ -28,7 +28,7 @@ def processFiles(refFilename,perfFilename):
     """ One stopper to process from start to finish
     """
     alignment = get_alignment(refFilename,perfFilename,cleanup=True)
-    basePerf, = os.path.splitext(os.path.basename(perfFilename))
+    basePerf,_ = os.path.splitext(os.path.basename(perfFilename))
 
     ### Ask User for the base beat and anacrusis offset
     #TODO: Determine automatically
@@ -36,7 +36,9 @@ def processFiles(refFilename,perfFilename):
     quarterLength = int(input("Please enter the beat length (in ticks):"))
     anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
     
-    beats = get_beats(alignment,quarterLength,anacrusisOffset,basePerf+"_beats.csv",False)
+    beats = get_beats(alignment,quarterLength,anacrusisOffset,plotting=False)
+    beatsFilename = basePerf+"_beats.csv"
+    writeFile(beatsFilename, beats)
     
     sustain = get_sustain(perfFilename)
     pedalFilename = basePerf+"_sustain.csv"
