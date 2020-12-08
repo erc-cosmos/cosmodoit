@@ -12,6 +12,10 @@ def get_beats(alignment, quarterLength, anacrusisOffset, outfileName=None, plott
     #### Find beats' onsets
     maxTatum = alignment[-1]['tatum']
 
+    # Ask user for the base beat and anacrusis offset if not provided already
+    #TODO: Determine automatically
+    quarterLength,anacrusisOffset = prompt_beatInfo(quarterLength,anacrusisOffset)
+
     ticks,indices = np.unique(np.array([tatum['tatum'] for tatum in alignment]),return_index=True) #TODO: determine better which note to use when notes share a tatum
     times = np.array([tatum['time'] for tatum in alignment])[indices]
     interpolTarget = np.arange(anacrusisOffset,maxTatum,quarterLength)
@@ -56,22 +60,28 @@ def plot_beats(beats, interpolation, ticks, quarterLength, times):
     plt.plot(60/np.diff([beat['time'] for beat in beats]))
     plt.show(block=True)
 
+
+def prompt_beatInfo(alignment,quarterLength=None,anacrusisOffset=None):
+    if quarterLength is None or anacrusisOffset is None:
+        print(alignment[:10]) # Show first 10 lines to give context
+        if quarterLength is None:
+            quarterLength = int(input("Please enter the beat length (in ticks):"))
+        if anacrusisOffset is None:
+            anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
+    return quarterLength, anacrusisOffset
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
-    parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
+    parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')    
+    parser.add_argument('--quarter', default=None)
+    parser.add_argument('--offset', default=None)
     args = parser.parse_args()
 
     os.chdir(os.path.dirname(sys.argv[0]))
+    alignment = get_alignment(refFilename=args.ref, perfFilename=args.perf,cleanup=False)
 
-    refFilename = args.ref
-    perfFilename = args.perf
+    quarterLength, anacrusisOffset = prompt_beatInfo(alignment,args.quarter,args.offset)
 
-    alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename,cleanup=False)
-
-    print(alignment[:10]) # Show first 10 lines to give context
-    quarterLength = int(input("Please enter the beat length (in ticks):"))
-    anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
-
-    beats = get_beats(alignment,quarterLength,anacrusisOffset, plotting=True)
+    beats = get_beats(alignment,quarterLength,anacrusisOffset, plotting=False)
     print(beats)
