@@ -6,6 +6,10 @@ import os
 import sys
 
 def get_midiEvents(perfFilename, verbose=False):
+    """ Get a list of midi events from the file
+    Only note on and off events and control events are listed
+    Reads meta events, but does not return them
+    """
     midi = mido.MidiFile(perfFilename)
     
     # Default value for tempo; might be set by a value for set_tempo later
@@ -40,38 +44,25 @@ def get_midiEvents(perfFilename, verbose=False):
                         print('    Key: ' + message.key)
             else:
                 event_time += round(mido.tick2second(message.time, ppq, tempo), 5)
-                #event_time += mido.tick2second(message.time, ppq, tempo)
-                # note_off = 0, note_on = 1
-                if message.type == 'note_off':
+                if message.type == 'note_off' or message.type =='note_on' and message.velocity == 0:
+                    # note_on with velocity = 0 is the same as note_off
                     for event in event_list:
                         # Must look for note_on events since that is the type used for all notes in this format
                         if event['Type'] == 'note_on':
-                            # Find the same note with a zero (unset) end time in order to set the end time
-                            if message.note == event['Note'] and event['EndTime'] == 0:
+                            # Find the same note with a None (unset) end time in order to set the end time
+                            if message.note == event['Note'] and event['EndTime'] == None:
                                 event['EndTime'] = event_time
                                 break
-                elif message.type == 'note_on':
-                    # velocity = 0 is the same as note_off
-                    if message.velocity == 0:
-                        for event in event_list:
-                            if event['Type'] == 'note_on':
-                                # Find the same note with a zero (unset) end time in order to set the end time
-                                if message.note == event['Note'] and event['EndTime'] == 0:
-                                    event['EndTime'] = event_time
-                                    break
-                    else:
-                        event_list.append({'StartTime': event_time, 'EndTime': 0, 'Type': message.type, 'Note': message.note, 'Velocity': message.velocity})
+                elif message.type == 'note_on' and message.velocity != 0:
+                    event_list.append({'StartTime': event_time, 'EndTime': None, 'Type': message.type, 'Note': message.note, 'Velocity': message.velocity})
                 elif message.type == 'control_change':
                     event_list.append({'Time': event_time, 'Type': message.type, 'Control': message.control, 'Value': message.value})
     return event_list
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
+    parser.add_argument('--perf', default='music_features/test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     args = parser.parse_args()
     
-    os.chdir(os.path.dirname(sys.argv[0]))
-    perfFilename = args.perf
-    
-    events = get_midiEvents(perfFilename)
+    events = get_midiEvents(args.perf)
     print(events)
