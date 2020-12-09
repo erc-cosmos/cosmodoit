@@ -55,7 +55,6 @@ if __name__ == "__main__":
     parser.add_argument('--offset', default=None)
     args = parser.parse_args()
     
-    os.chdir(os.path.dirname(sys.argv[0]))
     print(os.getcwd())
     refFilename = args.ref
     perfFilename = args.perf
