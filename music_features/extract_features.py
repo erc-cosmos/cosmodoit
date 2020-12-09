@@ -56,8 +56,11 @@ if __name__ == "__main__":
     parser.add_argument('--offset', default=None)
     args = parser.parse_args()
     
-    os.chdir(os.path.dirname(sys.argv[0]))
-    print(os.getcwd())
+    # Ensure execution directory
+    scriptLocation = os.path.dirname(sys.argv[0])
+    if scriptLocation != '':
+        os.chdir(scriptLocation)
+    
     refFilename = args.ref
     perfFilename = args.perf
 

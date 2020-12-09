@@ -92,7 +92,11 @@ if __name__ == "__main__":
     parser.add_argument('--offset', default=None)
     args = parser.parse_args()
 
-    os.chdir(os.path.dirname(sys.argv[0]))
+    # Ensure execution directory
+    scriptLocation = os.path.dirname(sys.argv[0])
+    if scriptLocation != '':
+        os.chdir(scriptLocation)
+    
     alignment = get_alignment(refFilename=args.ref, perfFilename=args.perf,cleanup=False)
 
     quarterLength, anacrusisOffset = prompt_beatInfo(alignment,args.quarter,args.offset)

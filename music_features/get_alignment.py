@@ -62,7 +62,10 @@ if __name__ == "__main__":
     parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     args = parser.parse_args()
     
-    os.chdir(os.path.dirname(sys.argv[0]))
+    # Ensure execution directory
+    scriptLocation = os.path.dirname(sys.argv[0])
+    if scriptLocation != '':
+        os.chdir(scriptLocation)
     
     refFilename = args.ref
     perfFilename = args.perf
