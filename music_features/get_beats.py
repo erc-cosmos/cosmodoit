@@ -77,7 +77,7 @@ def prompt_beatInfo(alignment,quarterLength=None,anacrusisOffset=None, force=Fal
     Does nothing if all it is already known, unless force is True
     """
     if force or quarterLength is None or anacrusisOffset is None:
-        print(alignment[:10]) # Show first 10 lines to give context
+        [print(it) for it in alignment[:10]] # Show first 10 lines to give context
         if force or quarterLength is None:
             quarterLength = int(input("Please enter the beat length (in ticks):"))
         if force or anacrusisOffset is None:
