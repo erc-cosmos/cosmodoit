@@ -9,6 +9,7 @@ import subprocess
 def get_alignment(refFilename, perfFilename, 
         midi2midiExecLocation="./MIDIToMIDIAlign.sh",
         #score2midiExecLocation="music_features/ScoreToMIDIAlign.sh",
+        museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
         cleanup=True, recompute=False):
     """ Wrapper for Nakamura's alignment software
     Intermediate files will be removed if cleanup is True
@@ -18,10 +19,15 @@ def get_alignment(refFilename, perfFilename,
     refFilename,refType = os.path.splitext(refFilename)
     perfFilename,perfType = os.path.splitext(perfFilename)
 
-    if refType != ".mid": #TODO: accept .midi file extension for midi files
-        # NYI
-        # Generate a midi from the score or run the score-to-midi (once fixed)
-        raise NotImplementedError
+    if refType != ".mid": #TODO: accept .midi file extension for midi files (needs editing the bash script)
+        if refType == ".mxl" or refType == ".mscz": #TODO: add other valid formats
+            # Generate a midi from the score 
+            # TODO: run the score-to-midi instead (once fixed)
+            # TODO: check that musescore is correctly found
+            # TODO: check if conversion is already done
+            subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".mid"])
+        else:
+            raise NotImplementedError
 
     # Run the alignment (only if needed or requested)
     outFile = os.path.basename(perfFilename)+"_match.txt"
@@ -58,7 +64,7 @@ def cleanAlignmentFiles(refFilename, perfFilename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
+    parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mscz')
     parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     args = parser.parse_args()
     
