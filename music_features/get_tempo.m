@@ -41,7 +41,7 @@ end
 if export_tempo
     writetable(T, 'tempo.csv')
     if isfile('tempo.csv')
-        disp(['Exported: ' fullfile(cd, table_exp)])
+        disp(['Exported: ' fullfile(cd, 'tempo.csv')])
     end
 end
 

@@ -1,15 +1,7 @@
-clearvars
-clc
 
-save_file_path = '/Users/bedoya/Downloads/Loudness';
-file_name = '/Users/bedoya/Downloads/Loudness/2020-03-12_EC_Chopin_Ballade_N2_Take_2_beats-V0.1.csv';
-beats_T = readtable(file_name);
-beats_v = beats_T{:,2};
 
-%% Tempo
-[tempo]  = get_tempo(beats_v);
 % Save table
-% writetable(tempo, fullfile(save_file_path, '2020-03-12_EC_Chopin_Ballade_N2_Take_2_Tempo.csv'))
+% writetable(table_tension, fullfile(save_file_path, '2020-03-12_EC_Chopin_Ballade_N2_Take_2_Tension.csv'))
 
 %% Tension
 piece_tension = 'Chopin';
