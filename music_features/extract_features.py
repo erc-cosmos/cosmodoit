@@ -52,8 +52,8 @@ if __name__ == "__main__":
     parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
     parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     #TODO: Add a warning if default ref or perf files are used
-    parser.add_argument('--quarter', default=None)
-    parser.add_argument('--offset', default=None)
+    parser.add_argument('--quarter', default=None, type=int)
+    parser.add_argument('--offset', default=None, type=int)
     args = parser.parse_args()
     
     # Ensure execution directory
