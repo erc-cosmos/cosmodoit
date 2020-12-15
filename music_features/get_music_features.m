@@ -8,16 +8,8 @@ beats_v = beats_T{:,2};
 
 %% Tempo
 [tempo]  = get_tempo(beats_v);
-N        = length(tempo);
-varNames = {'Beats', 'Time', 'Tempo'};
-varTypes = {'double','double', 'double'};
-T        = table('Size',[N 3],'VariableTypes', varTypes, 'VariableNames', varNames);
-T.Beats  = tempo(:,1);
-T.Time   = tempo(:,2);
-T.Tempo  = tempo(:,3);
-
 % Save table
-% writetable(T, fullfile(save_file_path, '2020-03-12_EC_Chopin_Ballade_N2_Take_2_Tempo.csv'))
+% writetable(tempo, fullfile(save_file_path, '2020-03-12_EC_Chopin_Ballade_N2_Take_2_Tempo.csv'))
 
 %% Tension
 piece_tension = 'Chopin';
