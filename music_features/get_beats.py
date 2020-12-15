@@ -28,11 +28,13 @@ def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting = Fa
 
     spline = sp.interpolate.UnivariateSpline(ticks, times,s=1) # s controls smoothing of the Spline
     interpolation = spline(interpolTarget)
+    tempos = [np.nan, *(60/np.diff(interpolation))]
     beats = [{'count': count, 
             'time': time,
-            'interpolated': tick not in ticks
+            'interpolated': tick not in ticks,
+            'tempo':tempo
             }
-            for count,(tick,time) in enumerate(zip(interpolTarget,interpolation))]
+            for count,(tick,time,tempo) in enumerate(zip(interpolTarget,interpolation,tempos))]
 
     scoreTime = ticks/quarterLength
     
