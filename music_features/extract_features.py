@@ -31,9 +31,14 @@ def processFiles(refFilename,perfFilename,quarterLength=None,anacrusisOffset=Non
     alignment = get_alignment(refFilename,perfFilename,cleanup=True)
     basePerf,_ = os.path.splitext(os.path.basename(perfFilename))
 
+    if refFilename is not None: # Skip features requiring a reference if there isn't one
+        alignment = get_alignment(refFilename,perfFilename,cleanup=True)
+
     beats = get_beats(alignment,quarterLength,anacrusisOffset,plotting=False)
     beatsFilename = basePerf+"_beats.csv"
     writeFile(beatsFilename, beats)
+    else:
+        beats = None
     
     sustain = get_sustain(perfFilename)
     pedalFilename = basePerf+"_sustain.csv"
