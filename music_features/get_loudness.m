@@ -1,15 +1,20 @@
-function [L] = get_loudness(audio_file, plot_loudness, export_loudness)
+function [L] = get_loudness(audio_file, columns, export_loudness, plot_loudness)
 % Get loudness
 %  [L] = get_loudness(audio_file, plot_loudness)
-%  audio_file    : path to an audio file
-%  plot_loudness : boolean; plot results
-%  L             : array; Time (:,1) Loudness (:,2), Normalized (:,3), Normalized-smoothed (:,4)
+%  audio_file      : path to an audio file
+%  plot_loudness   : boolean; plot results
+%  export_loudness : boolean; export as csv
+%  columns         : string; which column - 'all', 'raw', 'norm', 'smooth'
+%  L               : array; Time (:,1) Loudness (:,2), Normalized (:,3), Normalized-smoothed (:,4)
 
-if nargin < 2 % Plot by default
-    plot_loudness = true;
+if nargin < 2 % Export all columns by default
+    columns = 'all';
 end
 if nargin < 3 % Export by default
     export_loudness = true;
+end
+if nargin < 4 % Do not Plot by default
+    plot_loudness = false;
 end
 
 % Read audio
@@ -50,9 +55,10 @@ if export_loudness
     % Save table
     table_name        = strcat(fname, '_loudness','.csv');
     table_exp         = fullfile(fpath, table_name);
-    writetable(T, table_exp)
+    T_cols            = assign_columns(T, columns); % only export selected columns
+    writetable(T_cols, table_exp)
     if isfile(table_exp)
-        disp(['Exported: ' table_exp])
+        disp(['Exported ' columns ' to: ' table_exp])
     end
 end
 
@@ -60,5 +66,17 @@ end
 if nargout==0
    clearvars L
 end
+
+    function [T_cols] = assign_columns(T, cols)
+        if strcmp(cols,'all')
+            T_cols = T;
+        elseif strcmp(cols,'raw')
+            T_cols = removevars(T,{'Loudness_norm','Loudness_smooth'});
+        elseif strcmp(cols,'norm')
+            T_cols = removevars(T,{'Loudness','Loudness_smooth'});
+        elseif strcmp(cols,'smooth')
+            T_cols = removevars(T,{'Loudness','Loudness_norm'});
+        end    
+    end
 
 end
