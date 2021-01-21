@@ -1,5 +1,5 @@
 function [L] = get_loudness(input_path, columns, export_loudness, plot_loudness)
-% Get loudness
+% Get loudness - Compute Global Loudness of Audio Files
 %  [L] = get_loudness(audio_file, plot_loudness)
 %  audio_file      : path to an audio file
 %  plot_loudness   : boolean; plot results
@@ -38,6 +38,10 @@ end
     function [L] = compute_loudness(audio_file, columns, export_loudness, plot_loudness)
     % Read audio
     [audio, p.fs] = audioread(audio_file); % sampling rate as p.fs for ma_sone
+    if size(audio, 2)==2 % if audio is stereo then convert to mono
+        audio = mean(audio,2);
+    end
+   
     % Compute loudness using MA Toolbox
     [~, L, ~] = ma_sone(audio, p);
     L(:,3)    = normalize(L(:,2), 'range'); % Normalized data
