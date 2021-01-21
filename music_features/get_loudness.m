@@ -81,7 +81,7 @@ end
         T_cols            = assign_columns(T, columns); % only export selected columns
         writetable(T_cols, table_exp)
         if isfile(table_exp)
-            disp(strcat('Exported ', columns, ' to: ', table_exp))
+            disp(strcat("Exported ", columns, " to: ", table_exp))
         end
     end
 
