@@ -1,10 +1,10 @@
 function [L] = get_loudness(input_path, columns, export_loudness, plot_loudness)
 % Get loudness - Compute Global Loudness of Audio Files
 %  [L] = get_loudness(audio_file, plot_loudness)
-%  audio_file      : path to an audio file
-%  plot_loudness   : boolean; plot results
-%  export_loudness : boolean; export as csv
+%  input_path      : folder path or wav audio file path
 %  columns         : string; which column - 'all', 'raw', 'norm', 'smooth'
+%  export_loudness : boolean; export as csv
+%  plot_loudness   : boolean; plot results
 %  L               : array; Time (:,1) Loudness (:,2), Normalized (:,3), Normalized-smoothed (:,4)
 
 if nargin < 2 % Export all columns by default
