@@ -60,8 +60,8 @@ def processFiles(refFilename,perfFilename,quarterLength=None,anacrusisOffset=Non
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
-    parser.add_argument('--perf', default=None)
+    parser.add_argument('--ref', default=None)
+    parser.add_argument('--perf', required=True)
     #TODO: Add a warning if default ref or perf files are used
     parser.add_argument('--quarter', default=None, type=int)
     parser.add_argument('--offset', default=None, type=int)
