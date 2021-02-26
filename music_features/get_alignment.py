@@ -47,7 +47,7 @@ def readAlignmentFile(filename):
         # Extract relevant columns
         return [{'tatum':int(row[8]), 'time':float(row[1])}
                 for row in csvReader
-                if len(row)>3 and row[8]!='-1' # Not a metaline and not a mismatch
+                if len(row)>3 and row[8]!='-1' and row[9]!='*' # Not a metaline and not a mismatch
                 ]
 
 
