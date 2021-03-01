@@ -2,9 +2,12 @@
 
 import csv
 import mido
+import argparse
 
 def concatMidi(infilenames, outfilename, outmetafile=None, padding=5):
-    newMid = mido.MidiFile(infilenames[0])
+    ppq = mido.MidiFile(infilenames[0]).ticks_per_beat
+    newMid = mido.MidiFile(type=1,ticks_per_beat = ppq)
+
     offset = 0
     allTracks = []
     meta = []
