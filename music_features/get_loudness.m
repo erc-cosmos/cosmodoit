@@ -1,72 +1,73 @@
-function [L] = get_loudness(input_path, columns, export_loudness, plot_loudness)
+function [L] = get_loudness(inputPath, options)
 % Get loudness - Compute Global Loudness of Audio Files
-%  [L] = get_loudness(audio_file, plot_loudness)
-%  input_path      : folder path or wav audio file path
-%  columns         : string; which column - 'all', 'raw', 'norm', 'smooth'
-%  export_loudness : boolean; export as csv
-%  plot_loudness   : boolean; plot results
+%  [L] = get_loudness(inputPath, options)
+%  INPUT ARGUMENTS
+%  inputPath       : string; folder path or wav audio file path
+%  columns         : string; which column - 'all' (default), 'raw', 'norm', 'smooth'
+%  exportLoudness  : boolean; export as csv (true by default)
+%  plotLoudness    : boolean; plot results (false by default)
+%  smoothSpan      : double; number of data points for calculating the smooth curve (0.03 by default)
+%  OUTPUT ARGUMENTS
 %  L               : array; Time (:,1) Loudness (:,2), Normalized (:,3), Normalized-smoothed (:,4)
 
-if nargin < 2 % Export all columns by default
-    columns = 'all';
-end
-if nargin < 3 % Export by default
-    export_loudness = true;
-end
-if nargin < 4 % Do not Plot by default
-    plot_loudness = false;
-end
-
-if isfile(input_path)
-    audio_file = input_path;
-    [L] = compute_loudness(audio_file, columns, export_loudness, plot_loudness);
-elseif isfolder(input_path)
-    files_list = dir(fullfile(input_path,"*.wav"));
-    for idx = 1:length(files_list)
-        audio_file = fullfile(files_list(idx).folder, files_list(idx).name);
-        [L] = compute_loudness(audio_file, columns, export_loudness, plot_loudness);
+    arguments
+        inputPath
+        options.columns (1,1) string = "all"
+        options.export = true
+        options.plot   = false
+        options.smoothSpan {mustBeNumeric} = 0.03
     end
-else
-    disp('Error: Incorrect input path')
-end
 
-% Clear L if there are no output arguments
-if nargout==0
-   clearvars L
-end
+    if isfile(inputPath)
+        audioFile = inputPath;
+        [L] = compute_loudness(audioFile, options.columns, options.export, options.plot, options.smoothSpan);
+    elseif isfolder(inputPath) % get loudness on every .wav file on a folder
+        files_list = dir(fullfile(inputPath,"*.wav"));
+        for idx = 1:length(files_list)
+            audioFile = fullfile(files_list(idx).folder, files_list(idx).name);
+            [L] = compute_loudness(audioFile, options.columns, options.export, options.plot, options.smoothSpan);
+        end
+    else
+        disp('Error: Incorrect input path')
+    end
 
-    function [L] = compute_loudness(audio_file, columns, export_loudness, plot_loudness)
+    % Clear L if there are no output arguments
+    if nargout==0
+       clearvars L
+    end
+
+    function [L] = compute_loudness(audioFile, columns, exportLoudness, plotLoudness, smoothSpan)
     % Read audio
-    [audio, p.fs] = audioread(audio_file); % sampling rate as p.fs for ma_sone
-    if size(audio, 2)==2 % if audio is stereo then convert to mono
+    [audio, p.fs] = audioread(audioFile); % sampling rate as p.fs for ma_sone
+    if size(audio, 2)==2                  % if audio is stereo then convert to mono
         audio = mean(audio,2);
     end
    
     % Compute loudness using MA Toolbox
     [~, L, ~] = ma_sone(audio, p);
-    L(:,3)    = normalize(L(:,2), 'range'); % Normalized data
-    L(:,4)    = smooth(L(:,3), 0.03, 'loess'); % 2nd degree polynomial smooth with 3% of samples
+    L(:,3)    = normalize(L(:,2), 'range');          % Normalized data with range [0 1]
+    L(:,4)    = smooth(L(:,3), smoothSpan, 'loess'); % 2nd degree polynomial smooth
 
     % Optional plot
-    if plot_loudness
+    if plotLoudness
         figure('Name','Loudness','NumberTitle','off');
         colororder({'k','k'})
         plot(L(:,1), L(:,2), 'LineStyle', '-',  'LineWidth', 0.8, 'Color', [0   0 180]/255)
-        ylabel('Loudness (sone)')
-        xlabel('Time (s)')
+        ylabel('Loudness (sone)', 'FontSize', 14)
+        xlabel('Time (s)', 'FontSize', 14)
         yyaxis right
         hold on
         plot(L(:,1), L(:,3), 'LineStyle', '-.', 'LineWidth', 0.2, 'Color', [255 160 0]/255)
         plot(L(:,1), L(:,4), 'LineStyle', '-',  'LineWidth', 3.8, 'Color', [139 0   0]/255)
-        ylabel('Normalized Loudness (sone)')
+        ylabel('Normalized Loudness (sone)', 'FontSize', 14)
         xlim([L(1,1) L(end,1)])
         ylim([0 1])
         legend('original', 'normalized', 'smoothed')
     end
 
     % Export
-    if export_loudness
-        [fpath, fname, ~] = fileparts(audio_file);
+    if exportLoudness
+        [fpath, fname, ~] = fileparts(audioFile);
         N                 = length(L);
         varNames          = {'Time', 'Loudness', 'Loudness_norm', 'Loudness_smooth'};
         varTypes          = {'double','double', 'double', 'double'};
