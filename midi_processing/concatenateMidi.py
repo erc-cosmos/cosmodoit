@@ -9,42 +9,37 @@ def concatMidi(infilenames, outfilename, outmetafile=None, padding=5):
     newMid = mido.MidiFile(type=1,ticks_per_beat = ppq)
 
     offset = 0
-    allTracks = []
+    padNext = False
+    mainTrack = mido.MidiTrack()
+    lastTempoTick = 0
+    lastTempoTime = 0
     meta = []
+    # Default value for tempo; might be set by a value for set_tempo later
+    tempo = 500000
 
     for infilename in infilenames:
         midi = mido.MidiFile(infilename)
-        # Default value for tempo; might be set by a value for set_tempo later
-        tempo = 500000
 
         # Use default for pulses per quarter note if its not set
-        if midi.ticks_per_beat:
-            ppq = midi.ticks_per_beat
-        else:
-            ppq = 96
+        if midi.ticks_per_beat and (midi.ticks_per_beat != ppq):
+            print("PPQ mismatch", ppq, midi.ticks_per_beat)
 
-        trackMaxTimes = []
-        for track in midi.tracks:
-            newTrack = mido.MidiTrack()
-            allTracks.append(newTrack)
-            
-            trackTime = 0
-            firstEvent = True
-            for event in track:
-                trackTime += round(mido.tick2second(event.time, ppq, tempo), 5)
-                if firstEvent:
-                    event.time += round(mido.second2tick(offset,ppq,tempo))
-                    firstEvent = False
-                if event.type == 'set_tempo':
-                    tempo = event.tempo
-                newTrack.append(event)
-            trackMaxTimes.append(trackTime)
+        for event in mido.merge_tracks(midi.tracks):
+            if padNext:
+                padNext = False
+                event.time += round(mido.second2tick(padding,ppq,tempo))
+            if event.type == 'set_tempo':
+                tempo = event.tempo
+            if not isinstance(event.time, int):
+                print(event)
+            mainTrack.append(event)
 
-        # midi.tracks.extend(filteredTracks)
-        duration = max(trackMaxTimes)
-        meta.append((infilename, offset, offset+duration))
+        duration = midi.length
+        meta.append((infilename, offset, offset + duration))
         offset += duration + padding
-    newMid.tracks = allTracks
+        padNext=True
+
+    newMid.tracks = [mainTrack]
     newMid.save(outfilename)
     if outmetafile is not None:
         with open(outmetafile,'w') as metafile:
