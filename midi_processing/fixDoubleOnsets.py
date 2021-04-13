@@ -51,9 +51,12 @@ def fixDoubleOnsets(infilename, outfilename, threshold=.005):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--inFile')
-    parser.add_argument('--outFile')
-    parser.add_argument('--threshold', default=0.005, type=float)
+    parser.add_argument('--inFile',
+                        help="File containing doubled onsets")
+    parser.add_argument('--outFile',
+                        help="Path to save the fixed file")
+    parser.add_argument('--threshold', default=0.005, type=float,
+                        help="Sensitivity of double onset detection")
     args = parser.parse_args()
     
     fixDoubleOnsets(args.inFile, args.outFile, args.threshold)

@@ -44,7 +44,7 @@ def concatMidi(infilenames, outfilename, outmetafile=None, padding=5):
     newMid = mido.MidiFile(type=1,ticks_per_beat = ppq)
     newMid.tracks = [mainTrack]
     newMid.save(outfilename)
-    
+
     if outmetafile is not None:
         writeCsv(metafile, meta, ("File", "Start", "End") )
 
@@ -56,9 +56,14 @@ def writeCsv(outputFile, data, header):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('files', nargs='+')
-    parser.add_argument('--outFile')
-    parser.add_argument('--meta', default=None)
+    parser.add_argument('files', nargs='+', 
+                        help="Files to concatenate")
+    parser.add_argument('--outFile',
+                        help="Main output path")
+    parser.add_argument('--meta', default=None,
+                        help="Optional meta-output path")
+    parser.add_argument('--pad', default=5, type=float,
+                        help="Gap (s) to insert between files [default=5]")
     args = parser.parse_args()
     
-    concatMidi(args.files, args.outFile, args.meta)
+    concatMidi(args.files, args.outFile, args.meta, padding=args.pad)
