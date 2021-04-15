@@ -66,8 +66,8 @@ if ~isfield(p,'do_visu'),   p.do_visu = 0;           end
 if ~isfield(p,'do_sone'),   p.do_sone = 1;           end
 if ~isfield(p,'do_spread'), p.do_spread = 1;         end
 if ~isfield(p,'fs'),        error('sampling frequency (p.fs) not specified'); end
-if ~isfield(p,'fft_size'),  p.fft_size = p.fs/11025*256; end
-if ~isfield(p,'hopsize'),   p.hopsize = p.fs/11025*128;  end
+if ~isfield(p,'fft_size'),  p.fft_size = 4*256; end
+if ~isfield(p,'hopsize'),   p.hopsize = 4*128;  end
 
 %% frequency of fft bins
 c.fft_freq = (0:p.fft_size/2)/p.fft_size*2*p.fs/2;
