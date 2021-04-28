@@ -46,13 +46,13 @@ def concatMidi(infilenames, outfilename, outmetafile=None, padding=5):
     newMid.save(outfilename)
 
     if outmetafile is not None:
-        writeCsv(metafile, meta, ("File", "Start", "End") )
+        writeCsv(outmetafile, meta, ("File", "Start", "End") )
 
 def writeCsv(outputFile, data, header):
-    with open(outmetafile,'w') as outputFile:
+    with open(outputFile,'w') as outputFile:
         writer = csv.writer(outputFile)
         writer.writerow(header)
-        writer.writerows(meta)
+        writer.writerows(data)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
