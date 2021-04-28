@@ -5,49 +5,61 @@ import os
 import argparse
 import sys
 import subprocess
+import xml.etree.ElementTree as ET
+
+def removeDirections(filename, outfile=None):
+    """Remove all directions from a musicxml file."""
+    tree = ET.parse(filename)
+    for elem in tree.findall(".//direction"):
+        elem.clear()  # TODO: actually remove it instad of clearing (causes warnings)
+    tree.write(outfile if outfile is not None else filename)
+
 
 def get_alignment(refFilename, perfFilename, 
         midi2midiExecLocation="./MIDIToMIDIAlign.sh",
-        #score2midiExecLocation="music_features/ScoreToMIDIAlign.sh",
+                  # score2midiExecLocation="music_features/ScoreToMIDIAlign.sh",
         museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
         cleanup=True, recompute=False):
-    """ Wrapper for Nakamura's alignment software
+    """Call Nakamura's midi to midi alignment software.
+
     Intermediate files will be removed if cleanup is True
     If recompute is False, existing intermediate files will be reused if present
     """
     # Crop .mid extension as the script doesn't want them
-    refFilename,refType = os.path.splitext(refFilename)
-    perfFilename,perfType = os.path.splitext(perfFilename)
+    refFilename, refType = os.path.splitext(refFilename)
+    perfFilename, perfType = os.path.splitext(perfFilename)
 
-    if refType != ".mid": #TODO: accept .midi file extension for midi files (needs editing the bash script)
-        if refType == ".mxl" or refType == ".mscz": #TODO: add other valid formats
+    if refType != ".mid":  # TODO: accept .midi file extension for midi files (needs editing the bash script)
+        if refType in [".mxl", ".xml", ".mscz"]:  # TODO: add other valid formats
             # Generate a midi from the score 
             # TODO: run the score-to-midi instead (once fixed)
             # TODO: check that musescore is correctly found
             # TODO: check if conversion is already done
-            subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".mid"])
+            subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".xml"])
+            removeDirections(refFilename+".xml", refFilename+"_nodir.xml")
+            subprocess.run([museScoreExec, refFilename+"_nodir.xml", "--export-to", refFilename+".mid"])
         else:
             raise NotImplementedError
 
     # Run the alignment (only if needed or requested)
     outFile = os.path.basename(perfFilename)+"_match.txt"
     if recompute or not os.path.isfile(outFile):
-        output = subprocess.run([midi2midiExecLocation,refFilename,perfFilename])
+        output = subprocess.run([midi2midiExecLocation, refFilename, perfFilename])
     alignment = readAlignmentFile(outFile)
     
     if cleanup:
         cleanAlignmentFiles(refFilename, perfFilename)
     return alignment
 
+
 def readAlignmentFile(filename):
-    """ Reads the output of Nakamura's software and extracts relevant information
-    """
+    """Read the output of Nakamura's software and extracts relevant information."""
     with open(filename) as csvFile:
         csvReader = csv.reader(csvFile, delimiter='\t')
         # Extract relevant columns
-        return [{'tatum':int(row[8]), 'time':float(row[1])}
+        return [{'tatum': int(row[8]), 'time':float(row[1])}
                 for row in csvReader
-                if len(row)>3 and row[8]!='-1' and row[9]!='*' # Not a metaline and not a mismatch
+                if len(row) > 3 and row[8] != '-1' and row[9] != '*'  # Not a metaline and not a mismatch
                 ]
 
 
@@ -74,6 +86,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mscz')
     parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
+    parser.add_argument('--keep', action='store_true')
     args = parser.parse_args()
     
     # Ensure execution directory
@@ -84,5 +97,5 @@ if __name__ == "__main__":
     refFilename = args.ref
     perfFilename = args.perf
     
-    alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename)
+    alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename, cleanup=False)
     print(alignment)
