@@ -1,7 +1,7 @@
 #! /bin/bash
 
 if [ $# -ne 2 ]; then
-echo "Error in usage: $./align.sh ref(.xml) align(.mid)"
+echo "Error in usage: $./align.sh ref(.mid) align(.mid)"
 exit 1
 fi
 
