@@ -24,9 +24,13 @@ function [L] = get_loudness(inputPath, options)
         audioFile = inputPath;
         [L] = compute_loudness(audioFile, options.columns, options.export, options.plot, options.smoothSpan, options.noNegative);
     elseif isfolder(inputPath) % get loudness on every .wav file on a folder
-        files_list = dir(fullfile(inputPath,"*.wav"));
+        files_list    = dir(fullfile(inputPath,"*.wav"));
+        folder_name   = files_list(1).folder;
+        wav_list      = cell(size(files_list));
+        [wav_list{:}] = files_list(:).name;
+        files_list    = wav_list(~startsWith(wav_list, '._'));
         for idx = 1:length(files_list)
-            audioFile = fullfile(files_list(idx).folder, files_list(idx).name);
+            audioFile = fullfile(folder_name, string(files_list(idx)));
             [L] = compute_loudness(audioFile, options.columns, options.export, options.plot, options.smoothSpan, options.noNegative);
         end
     else
