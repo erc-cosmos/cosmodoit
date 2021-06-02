@@ -7,6 +7,41 @@ import sys
 import subprocess
 import xml.etree.ElementTree as ET
 
+
+def get_score_alignment(refFilename, perfFilename,
+                        score2midiExecLocation="./MusicXMLToMIDIAlign.sh",
+                        museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
+                        cleanup=True, recompute=False):
+    """Call Nakamura's Score to Midi alignment software.
+
+    Intermediate files will be removed if cleanup is True
+    If recompute is False, existing intermediate files will be reused if present
+    """
+    # Crop .mid extension as the script doesn't want them
+    refFilename, refType = os.path.splitext(refFilename)
+    perfFilename, perfType = os.path.splitext(perfFilename)
+
+    if refType not in [".xml"]:
+        if refType in [".mscz", ".mxl"]:  # TODO: add other valid formats
+            # Generate a midi from the score
+            # TODO: check that musescore is correctly found
+            # TODO: check if conversion is already done
+            subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".xml"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            raise NotImplementedError
+
+    # Run the alignment (only if needed or requested)
+    outFile = os.path.basename(perfFilename)+"_match.txt"
+    if recompute or not os.path.isfile(outFile):
+        output = subprocess.run([score2midiExecLocation, refFilename, perfFilename])
+    alignment = readAlignmentFile(outFile)
+
+    if cleanup:
+        cleanAlignmentFiles(refFilename, perfFilename)
+    return alignment
+
+
 def removeDirections(filename, outfile=None):
     """Remove all directions from a musicxml file."""
     tree = ET.parse(filename)
@@ -15,11 +50,11 @@ def removeDirections(filename, outfile=None):
     tree.write(outfile if outfile is not None else filename)
 
 
-def get_alignment(refFilename, perfFilename, 
-        midi2midiExecLocation="./MIDIToMIDIAlign.sh",
+def get_alignment(refFilename, perfFilename,
+                  midi2midiExecLocation="./MIDIToMIDIAlign.sh",
                   # score2midiExecLocation="music_features/ScoreToMIDIAlign.sh",
-        museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
-        cleanup=True, recompute=False):
+                  museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
+                  cleanup=True, recompute=False):
     """Call Nakamura's midi to midi alignment software.
 
     Intermediate files will be removed if cleanup is True
@@ -31,7 +66,7 @@ def get_alignment(refFilename, perfFilename,
 
     if refType != ".mid":  # TODO: accept .midi file extension for midi files (needs editing the bash script)
         if refType in [".mxl", ".xml", ".mscz"]:  # TODO: add other valid formats
-            # Generate a midi from the score 
+            # Generate a midi from the score
             # TODO: run the score-to-midi instead (once fixed)
             # TODO: check that musescore is correctly found
             # TODO: check if conversion is already done
@@ -46,7 +81,7 @@ def get_alignment(refFilename, perfFilename,
     if recompute or not os.path.isfile(outFile):
         output = subprocess.run([midi2midiExecLocation, refFilename, perfFilename])
     alignment = readAlignmentFile(outFile)
-    
+
     if cleanup:
         cleanAlignmentFiles(refFilename, perfFilename)
     return alignment
@@ -88,14 +123,14 @@ if __name__ == "__main__":
     parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     parser.add_argument('--keep', action='store_true')
     args = parser.parse_args()
-    
+
     # Ensure execution directory
     scriptLocation = os.path.dirname(sys.argv[0])
     if scriptLocation != '':
         os.chdir(scriptLocation)
-    
+
     refFilename = args.ref
     perfFilename = args.perf
-    
+
     alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename, cleanup=False)
     print(alignment)
