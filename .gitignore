@@ -26,8 +26,18 @@
 *.sql
 *.sqlite
 
+# Data files #
+######################
+*.csv
+*.mid
+*.wav
+*.sv
+*.mscz
+*.mp4
+
 # OS generated files #
 ######################
+.venv/
 .DS_Store
 .DS_Store?
 ._*
@@ -35,3 +45,11 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+.vscode/.ropeproject/config.py
+.gitignore
+objectdb
+
+music_features/test_midi/MorpheuS Für Elise/.mscbackup/.eliseB.xml_output34-edited.mscz,
+music_features/Chopin_Ballade_No._2_Piano_solo_fmt3x.txt
+music_features/Chopin_Ballade_No._2_Piano_solo_hmm.txt
+music_features/test_midi/Chopin_Ballade_No._2_Piano_solo.mid
