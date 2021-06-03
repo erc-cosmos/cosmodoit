@@ -2,6 +2,7 @@ import argparse
 import itertools as itt
 import os
 import sys
+import collections
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +11,10 @@ import scipy.interpolate
 
 from get_alignment import get_alignment
 
+beatInfo = collections.namedtuple("Beat info", 
+    ("PPQ", # Pulse per quarter note
+     "offset" # Offset of the first beat
+    ))
 
 def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting=False, guess=False):
     """ Extracts beats timing from an alignment of the notes
@@ -73,7 +78,7 @@ def guess_beatInfo(ticks):
             best_offset = offset
             best = onbeat_count
 
-    return quarter_length, best_offset
+    return beatInfo(PPQ=quarter_length, offset=best_offset)
 
 
 def plot_beatRatios(ticks, quarterLength, times, spline):
@@ -115,7 +120,7 @@ def prompt_beatInfo(alignment, quarterLength=None, anacrusisOffset=None, force=F
             quarterLength = int(input("Please enter the beat length (in ticks):"))
         if force or anacrusisOffset is None:
             anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
-    return quarterLength, anacrusisOffset
+    return beatInfo(quarterLength, anacrusisOffset)
 
 
 if __name__ == "__main__":
