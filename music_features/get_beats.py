@@ -65,6 +65,7 @@ def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting=Fals
 
 
 def guess_beatInfo(ticks):
+    """Heuristically guess which is note the starting beat."""
     best = 0
     best_offset = 0
     quarter_length = 500  # Assumed from score to midi generation
