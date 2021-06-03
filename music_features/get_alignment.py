@@ -5,6 +5,7 @@ import os
 import argparse
 import sys
 import subprocess
+import collections
 import xml.etree.ElementTree as ET
 
 
@@ -101,10 +102,11 @@ def clean_preprocess_files(refType, refFilename):
 
 def readAlignmentFile(filename):
     """Read the output of Nakamura's software and extracts relevant information."""
+    AlignmentAtom = collections.namedtuple("AlignmentAtom", ('tatum', 'time'))
     with open(filename) as csvFile:
         csvReader = csv.reader(csvFile, delimiter='\t')
         # Extract relevant columns
-        return [{'tatum': int(row[8]), 'time':float(row[1])}
+        return [AlignmentAtom(tatum=int(row[8]), time=float(row[1]))
                 for row in csvReader
                 if len(row) > 3 and row[8] != '-1' and row[9] != '*'  # Not a metaline and not a mismatch
                 ]

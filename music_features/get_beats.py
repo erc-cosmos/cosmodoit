@@ -11,7 +11,7 @@ import scipy.interpolate
 
 from get_alignment import get_alignment
 
-beatInfo = collections.namedtuple("Beat info", 
+BeatInfo = collections.namedtuple("BeatInfo", 
     ("PPQ", # Pulse per quarter note
      "offset" # Offset of the first beat
     ))
@@ -23,17 +23,17 @@ def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting=Fals
     """
 
     # Find beats' onsets
-    maxTatum = alignment[-1]['tatum']
+    maxTatum = alignment[-1].tatum
 
     # Find outliers and prefilter data
-    times, indices = np.unique(np.array([tatum['time'] for tatum in alignment]), return_index=True)
-    ticks = np.array([tatum['tatum'] for tatum in alignment])[indices]
+    times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
+    ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]
 
     # TODO: In progress
 
     # TODO: determine better which note to use when notes share a tatum
-    ticks, indices = np.unique(np.array([tatum['tatum'] for tatum in alignment]), return_index=True)
-    times = np.array([tatum['time'] for tatum in alignment])[indices]
+    ticks, indices = np.unique(np.array([alignment_atom.tatum for alignment_atom in alignment]), return_index=True)
+    times = np.array([aligmnent_atom.time for aligmnent_atom in alignment])[indices]
 
     # Ask user for the base beat and anacrusis offset if not provided already
     if guess:
@@ -79,7 +79,7 @@ def guess_beatInfo(ticks):
             best_offset = offset
             best = onbeat_count
 
-    return beatInfo(PPQ=quarter_length, offset=best_offset)
+    return BeatInfo(PPQ=quarter_length, offset=best_offset)
 
 
 def plot_beatRatios(ticks, quarterLength, times, spline):
@@ -121,7 +121,7 @@ def prompt_beatInfo(alignment, quarterLength=None, anacrusisOffset=None, force=F
             quarterLength = int(input("Please enter the beat length (in ticks):"))
         if force or anacrusisOffset is None:
             anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
-    return beatInfo(quarterLength, anacrusisOffset)
+    return BeatInfo(quarterLength, anacrusisOffset)
 
 
 if __name__ == "__main__":
