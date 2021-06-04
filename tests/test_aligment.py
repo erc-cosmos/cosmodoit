@@ -1,18 +1,32 @@
-import get_alignment
 import os
+import shutil
+
+import pytest
+from get_alignment import get_alignment
 
 
-def test_cleanup():
-    remote_dir = os.path.join('tests', 'test_data')
-    refFilename = 'tests/test_data/Chopin_Ballade_No2_ref.mscz'
-    perfFilename = 'tests/test_data/Chopin_Ballade_No2_perf.mid'
+@pytest.fixture
+def clean_dir():
+    reference, performance = ('tests/test_data/Chopin_Ballade_No2_ref.mscz',
+                              'tests/test_data/Chopin_Ballade_No2_perf.mid')
+    new_dir = "testDir"
+    os.makedirs(new_dir)
+    new_ref = shutil.copy(reference, new_dir)
+    new_perf = shutil.copy(performance, new_dir)
+    yield (new_ref, new_perf)
+    shutil.rmtree(new_dir)
+
+
+def test_cleanup(clean_dir):
+    ref_filename, perf_filename = clean_dir
+    remote_dir = os.path.dirname(ref_filename)
 
     remote_dir_content_before = sorted(os.listdir(remote_dir))
     local_dir_content_before = sorted(os.listdir())
-    
-    alignment = get_alignment.get_alignment(refFilename=refFilename, perfFilename=perfFilename, cleanup=True,
-        midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
-    
+
+    alignment = get_alignment(refFilename=ref_filename, perfFilename=perf_filename, cleanup=True,
+                              midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
+
     remote_dir_content_after = sorted(os.listdir(remote_dir))
     assert remote_dir_content_after == remote_dir_content_before
     local_dir_content_after = sorted(os.listdir())

@@ -123,16 +123,14 @@ def clean_alignment_files(refFilename, perfFilename):
     # TODO: Add flag to keep the _match file
     interRefExtensions = ['_fmt3x.txt', '_hmm.txt', '_spr.txt']
     interPerfExtensions = ['_spr.txt', '_match.txt']
-    refBase = os.path.basename(refFilename)
-    perfBase = os.path.basename(perfFilename)
     for ext in interRefExtensions:
         try:
-            os.remove(refBase+ext)
+            os.remove(refFilename+ext)
         except FileNotFoundError:
             pass
     for ext in interPerfExtensions:
         try:
-            os.remove(perfBase+ext)
+            os.remove(perfFilename+ext)
         except FileNotFoundError:
             pass
 
