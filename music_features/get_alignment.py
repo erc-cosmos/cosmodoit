@@ -8,6 +8,8 @@ import subprocess
 import collections
 import xml.etree.ElementTree as ET
 
+from MIDIToMIDIAlign import runAlignment
+
 
 def get_score_alignment(refFilename, perfFilename,
                         score2midiExecLocation="./MusicXMLToMIDIAlign.sh",
@@ -33,7 +35,7 @@ def get_score_alignment(refFilename, perfFilename,
             raise NotImplementedError
 
     # Run the alignment (only if needed or requested)
-    outFile = os.path.basename(perfFilename)+"_match.txt"
+    outFile = perfFilename+"_match.txt"
     if recompute or not os.path.isfile(outFile):
         output = subprocess.run([score2midiExecLocation, refFilename, perfFilename])
     alignment = readAlignmentFile(outFile)
@@ -67,16 +69,17 @@ def get_alignment(refFilename, perfFilename,
     perfFilename, perfType = os.path.splitext(perfFilename)
 
     # Run the alignment (only if needed or requested)
-    outFile = os.path.basename(perfFilename)+"_match.txt"
+    outFile = perfFilename+"_match.txt"
     if recompute or not os.path.isfile(outFile):
-        output = subprocess.run([midi2midiExecLocation, refFilename, perfFilename])
+        runAlignment(refFilename, perfFilename)
     alignment = readAlignmentFile(outFile)
 
     if cleanup:
         clean_alignment_files(refFilename, perfFilename)
         clean_preprocess_files(refType, refFilename)
-        
+
     return alignment
+
 
 def preprocess_to_midi(refType, museScoreExec, refFilename):
     if refType != ".mid":  # TODO: accept .midi file extension for midi files (needs editing the bash script)
@@ -85,11 +88,14 @@ def preprocess_to_midi(refType, museScoreExec, refFilename):
             # TODO: run the score-to-midi instead (once fixed)
             # TODO: check that musescore is correctly found
             # TODO: check if conversion is already done
-            subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".xml"])
+            subprocess.run([museScoreExec, refFilename+refType, "--export-to",
+                           refFilename+".xml"], stderr=subprocess.DEVNULL)
             removeDirections(refFilename+".xml", refFilename+"_nodir.xml")
-            subprocess.run([museScoreExec, refFilename+"_nodir.xml", "--export-to", refFilename+".mid"])
+            subprocess.run([museScoreExec, refFilename+"_nodir.xml", "--export-to",
+                           refFilename+".mid"], stderr=subprocess.DEVNULL)
         else:
             raise NotImplementedError
+
 
 def clean_preprocess_files(refType, refFilename):
     """Removes the files generated prior to aligment."""
@@ -133,8 +139,8 @@ def clean_alignment_files(refFilename, perfFilename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mscz')
-    parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
+    parser.add_argument('--ref')
+    parser.add_argument('--perf')
     parser.add_argument('--keep', action='store_true')
     args = parser.parse_args()
 
