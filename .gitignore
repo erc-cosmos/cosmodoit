@@ -49,7 +49,16 @@ Thumbs.db
 .gitignore
 objectdb
 
+# Alignment generated files #
+######################
+*_fmt3x.txt
+*_hmm.txt
+*_match.txt
+*_spr.txt
+
 music_features/test_midi/MorpheuS Für Elise/.mscbackup/.eliseB.xml_output34-edited.mscz,
 music_features/Chopin_Ballade_No._2_Piano_solo_fmt3x.txt
 music_features/Chopin_Ballade_No._2_Piano_solo_hmm.txt
 music_features/test_midi/Chopin_Ballade_No._2_Piano_solo.mid
+.env
+.vscode/settings.json
