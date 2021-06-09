@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 import scipy.interpolate
+import pretty_midi as pm
 
 from get_alignment import get_alignment
 
@@ -34,6 +35,12 @@ def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None
     else:
         quarter_length, anacrusis_offset = prompt_beat_params(alignment, quarter_length, anacrusis_offset)
     return np.arange(anacrusis_offset, max_tatum, quarter_length)
+
+
+def get_beat_reference_pm(ref_filename):
+    """Find the beats in the reference according to pretty-midi."""
+    pretty = pm.PrettyMIDI(ref_filename)
+    return np.array([pretty.time_to_tick(beat_time) for beat_time in pretty.get_beats()])
 
 
 def get_beats(alignment, reference_beats):
