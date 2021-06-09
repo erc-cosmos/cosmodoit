@@ -1,5 +1,4 @@
 import get_beats
-import get_alignment
 import pytest
 
 
@@ -8,8 +7,9 @@ test_files = [("tests/test_data/Chopin_Ballade_No2_ref.mscz","tests/test_data/Ch
 
 @pytest.mark.parametrize("ref, perf", test_files)
 def test_sorted_beats(ref, perf):
-    alignment = get_alignment.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False, midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
+    alignment = get_beats.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False, midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
+    reference_beats = get_beats.make_beat_reference(alignment, guess=True)
 
-    beats = get_beats.get_beats(alignment, plotting=False, guess=True)
+    beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
     sorted(beats, key=lambda b:b['time']) == beats
 

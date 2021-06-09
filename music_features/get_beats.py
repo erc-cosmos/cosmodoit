@@ -11,20 +11,51 @@ import scipy.interpolate
 
 from get_alignment import get_alignment
 
-BeatInfo = collections.namedtuple("BeatInfo", 
-    ("PPQ", # Pulse per quarter note
-     "offset" # Offset of the first beat
-    ))
+BeatParams = collections.namedtuple("BeatParams",
+                                    ("PPQ",  # Pulse per quarter note
+                                     "offset"  # Offset of the first beat
+                                     ))
 
-def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting=False, guess=False):
-    """ Extracts beats timing from an alignment of the notes
-    quarterLength is the number of midi ticks during a beat in the reference
-    anacrusisOffset is the offset of the first whole beat (not necessarily the first beat of the first bar) 
+
+def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None, guess=False):
     """
+    Generate a simple beat reference based on a constant beat length.
 
-    # Find beats' onsets
-    maxTatum = alignment[-1].tatum
+    quarterLength --- the number of midi ticks during a beat in the reference
+    anacrusisOffset --- the offset of the first whole beat (not necessarily the first beat of the first bar)
+    guess --- flag for whether to guess or ask the beat parameters (overrides the previous parameters if True)
+    """
+    max_tatum = alignment[-1].tatum
 
+    ticks, _ = filter_outliers(alignment)
+    # Obtain the beat parameters if not provided already
+    if guess:
+        quarter_length, anacrusis_offset = guess_beat_params(ticks)
+    else:
+        quarter_length, anacrusis_offset = prompt_beat_params(alignment, quarter_length, anacrusis_offset)
+    return np.arange(anacrusis_offset, max_tatum, quarter_length)
+
+
+def get_beats(alignment, reference_beats):
+    """Extract beats timing from an alignment of the notes."""
+
+    # Find outliers and prefilter data
+    ticks, times = filter_outliers(alignment)
+
+    spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
+    interpolation = spline(reference_beats)
+    tempos = [np.nan, *(60/np.diff(interpolation))]
+    beats = [{'count': count,
+              'time': time,
+              'interpolated': tick not in ticks,
+              'tempo': tempo
+              }
+             for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
+
+    return beats
+
+
+def filter_outliers(alignment):
     # Find outliers and prefilter data
     times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
     ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]
@@ -34,38 +65,11 @@ def get_beats(alignment, quarterLength=None, anacrusisOffset=None, plotting=Fals
     # TODO: determine better which note to use when notes share a tatum
     ticks, indices = np.unique(np.array([alignment_atom.tatum for alignment_atom in alignment]), return_index=True)
     times = np.array([aligmnent_atom.time for aligmnent_atom in alignment])[indices]
-
-    # Ask user for the base beat and anacrusis offset if not provided already
-    if guess:
-        quarterLength, anacrusisOffset = guess_beatInfo(ticks)
-    else:
-        quarterLength, anacrusisOffset = prompt_beatInfo(alignment, quarterLength, anacrusisOffset)
-
-    interpolTarget = np.arange(anacrusisOffset, maxTatum, quarterLength)
-
-    spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s controls smoothing of the Spline
-    interpolation = spline(interpolTarget)
-    tempos = [np.nan, *(60/np.diff(interpolation))]
-    beats = [{'count': count,
-              'time': time,
-              'interpolated': tick not in ticks,
-              'tempo': tempo
-              }
-             for count, (tick, time, tempo) in enumerate(zip(interpolTarget, interpolation, tempos))]
-
-    scoreTime = ticks/quarterLength
-
-    if plotting:
-        plot_beats(beats, interpolation, ticks, quarterLength, times)
-
-    if plotting:
-        plot_beatRatios(ticks, quarterLength, times, spline)
-
-    return beats
+    return ticks, times
 
 
-def guess_beatInfo(ticks):
-    """Heuristically guess which is note the starting beat."""
+def guess_beat_params(ticks):
+    """Heuristically guess which note is the starting beat."""
     best = 0
     best_offset = 0
     quarter_length = 500  # Assumed from score to midi generation
@@ -79,11 +83,12 @@ def guess_beatInfo(ticks):
             best_offset = offset
             best = onbeat_count
 
-    return BeatInfo(PPQ=quarter_length, offset=best_offset)
+    return BeatParams(PPQ=quarter_length, offset=best_offset)
 
 
-def plot_beatRatios(ticks, quarterLength, times, spline):
-    """ Plots the ratio of actual note duration to expected
+def plot_beat_ratios(ticks, quarter_length, times, spline):
+    """Plot the ratio of actual note duration to expected.
+
     Expected note duration is based on neighbouring tempo
     """
     ratios = []
@@ -91,37 +96,37 @@ def plot_beatRatios(ticks, quarterLength, times, spline):
         # TODO: Separate by line
         if tick == tick_next:  # Ignore simultaneous notes
             continue
-        expectedDuration = spline(tick_next)-spline(tick)
-        actualDuration = time_next-time
-        ratios.append(actualDuration/expectedDuration)
-    plt.plot(ticks[:-1]/quarterLength, ratios)
-    plt.plot(ticks[:-1]/quarterLength, np.diff(ticks)/quarterLength)
-    plt.hlines(1, xmin=ticks[0], xmax=ticks[-1]/quarterLength)
+        expected_duration = spline(tick_next)-spline(tick)
+        actual_duration = time_next-time
+        ratios.append(actual_duration/expected_duration)
+    plt.plot(ticks[:-1]/quarter_length, ratios)
+    plt.plot(ticks[:-1]/quarter_length, np.diff(ticks)/quarter_length)
+    plt.hlines(1, xmin=ticks[0], xmax=ticks[-1]/quarter_length)
     plt.show(block=True)
 
 
-def plot_beats(beats, interpolation, ticks, quarterLength, times):
+def plot_beats(beats, interpolation, ticks, quarter_length, times):
     """ Plots score time against real time and tempo against score time
     """
     #plt.plot(np.array([beat['count'] for beat in beats])[1:],60/np.diff(interpolation),label="IOI")
     plt.plot([beat['count'] for beat in beats], interpolation)
-    plt.scatter(ticks/quarterLength, times)
+    plt.scatter(ticks/quarter_length, times)
     plt.show(block=True)
     plt.plot(60/np.diff([beat['time'] for beat in beats]))
     plt.show(block=True)
 
 
-def prompt_beatInfo(alignment, quarterLength=None, anacrusisOffset=None, force=False):
+def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, force=False):
     """ Prompts for missing information in beat detection
     Does nothing if all it is already known, unless force is True
     """
-    if force or quarterLength is None or anacrusisOffset is None:
+    if force or quarter_length is None or anacrusis_offset is None:
         [print(it) for it in alignment[:10]]  # Show first 10 lines to give context
-        if force or quarterLength is None:
-            quarterLength = int(input("Please enter the beat length (in ticks):"))
-        if force or anacrusisOffset is None:
-            anacrusisOffset = int(input("Please enter the beat offset (in ticks):"))
-    return BeatInfo(quarterLength, anacrusisOffset)
+        if force or quarter_length is None:
+            quarter_length = int(input("Please enter the beat length (in ticks):"))
+        if force or anacrusis_offset is None:
+            anacrusis_offset = int(input("Please enter the beat offset (in ticks):"))
+    return BeatParams(quarter_length, anacrusis_offset)
 
 
 if __name__ == "__main__":
@@ -139,7 +144,8 @@ if __name__ == "__main__":
 
     alignment = get_alignment(refFilename=args.ref, perfFilename=args.perf, cleanup=False)
 
-    quarterLength, anacrusisOffset = prompt_beatInfo(alignment, args.quarter, args.offset)
+    quarterLength, anacrusisOffset = prompt_beat_params(alignment, args.quarter, args.offset)
+    reference_beats = make_beat_reference(alignment, quarterLength, anacrusisOffset)
 
-    beats = get_beats(alignment, quarterLength, anacrusisOffset, plotting=False)
+    beats = get_beats(alignment, reference_beats, plotting=False)
     print(beats)
