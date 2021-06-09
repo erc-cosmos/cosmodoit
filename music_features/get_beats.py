@@ -136,6 +136,17 @@ def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, fo
     return BeatParams(quarter_length, anacrusis_offset)
 
 
+def find_outliers(beats, factor=3):
+    """Perform an automated check for outliers."""
+    beats = [beat["time"] for beat in beats]
+    inter_beat_intervals = np.diff(beats)
+    mean_IBI = np.mean(inter_beat_intervals)
+    anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
+                       if ibi > factor * mean_IBI] # Only check values in excess, low values are likely valid
+    [print(f"Anomaly between beats {i} and {j} detected") for i,j in anomaly_indices]
+    return anomaly_indices
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
