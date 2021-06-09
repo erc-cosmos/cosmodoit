@@ -37,5 +37,5 @@ def test_no_outliers(ref, perf):
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)
 
     beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
-    outliers = get_beats.find_outliers(beats)
+    outliers = get_beats.find_outliers(beats, verbose=True)
     assert outliers == []

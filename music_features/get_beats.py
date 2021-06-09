@@ -3,6 +3,7 @@ import itertools as itt
 import os
 import sys
 import collections
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,7 +29,7 @@ def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None
     """
     max_tatum = alignment[-1].tatum
 
-    ticks, _ = filter_outliers(alignment)
+    ticks, _ = preprocess(alignment)
     # Obtain the beat parameters if not provided already
     if guess:
         quarter_length, anacrusis_offset = guess_beat_params(ticks)
@@ -43,26 +44,57 @@ def get_beat_reference_pm(ref_filename):
     return np.array([pretty.time_to_tick(beat_time) for beat_time in pretty.get_beats()])
 
 
-def get_beats(alignment, reference_beats):
+def get_beats(alignment, reference_beats, *, max_tries=3):
     """Extract beats timing from an alignment of the notes."""
+    beats = None # for scope
+    for _ in range(max_tries):
+        # Find outliers and prefilter data
+        ticks, times = preprocess(alignment)
 
-    # Find outliers and prefilter data
-    ticks, times = filter_outliers(alignment)
+        spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
+        interpolation = spline(reference_beats)
+        tempos = [np.nan, *(60/np.diff(interpolation))]
+        beats = [{'count': count,
+                'time': time,
+                'interpolated': tick not in ticks,
+                'tempo': tempo
+                }
+                for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
 
-    spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
-    interpolation = spline(reference_beats)
-    tempos = [np.nan, *(60/np.diff(interpolation))]
-    beats = [{'count': count,
-              'time': time,
-              'interpolated': tick not in ticks,
-              'tempo': tempo
-              }
-             for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
+        anomalies = find_outliers(beats)
+        if anomalies == []:
+            return beats
+        else:
+            alignment = attempt_correction(beats, alignment, reference_beats, anomalies)
 
+    warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
     return beats
 
 
-def filter_outliers(alignment):
+def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=True):
+    """Attempt to correct the beat extraction by removing the values causing outliers."""
+    for index_before, index_after in anomalies:
+        # Convert indices to ticks
+        tick_before = reference_beats[index_before]
+        tick_after = reference_beats[index_after]
+        # Remove the alignment entries with these ticks (should interpolate on the next run)
+        if verbose:
+            [print(f"Removing {item} in correction attempt") for item in alignment if item.tatum in (tick_before, tick_after)]
+        alignment = [item for item in alignment if item.tatum not in (tick_before, tick_after)]
+        # If the beat is already interpolated, remove the closest value
+        if beats[index_before]['interpolated']:
+            closest = np.min(np.abs(np.array([item.tatum for item in alignment])-tick_before))
+            if verbose:
+                [print(f"Removing {item} in correction attempt") for item in alignment if item.tatum - tick_before == closest]
+            alignment = [item for item in alignment if item.tatum - tick_before != closest]
+        if beats[index_after]['interpolated']:
+            closest = np.min(np.abs(np.array([item.tatum for item in alignment])-tick_after))
+            if verbose:
+                [print(f"Removing {item} in correction attempt") for item in alignment if item.tatum - tick_after == closest]
+            alignment = [item for item in alignment if item.tatum - tick_after != closest]
+    return alignment
+
+def preprocess(alignment):
     # Find outliers and prefilter data
     times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
     ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]
@@ -136,14 +168,15 @@ def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, fo
     return BeatParams(quarter_length, anacrusis_offset)
 
 
-def find_outliers(beats, factor=3):
+def find_outliers(beats, *, factor=3, verbose=True):
     """Perform an automated check for outliers."""
     beats = [beat["time"] for beat in beats]
     inter_beat_intervals = np.diff(beats)
     mean_IBI = np.mean(inter_beat_intervals)
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
-                       if ibi > factor * mean_IBI] # Only check values in excess, low values are likely valid
-    [print(f"Anomaly between beats {i} and {j} detected") for i,j in anomaly_indices]
+                       if ibi * factor < mean_IBI] # Only check values too quick, slow values are likely valid
+    if verbose:
+        [print(f"Anomaly between beats {i} and {j} detected") for i,j in anomaly_indices]
     return anomaly_indices
 
 
