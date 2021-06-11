@@ -1,11 +1,18 @@
 import get_beats
 import pytest
+import os
 
+def test_files():
+    scores = [os.path.join("tests", "test_data", "scores", f) 
+        for f in sorted(os.listdir(os.path.join("tests", "test_data", "scores"))) 
+        if '.mscz' in f]
+    perfs = [os.path.join("tests", "test_data", "perfs", f) 
+        for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs"))) 
+        if '.mid' in f]
+    assert len(scores) == len(perfs)
+    return tuple(zip(scores,perfs))
 
-test_files = [("tests/test_data/Chopin_Ballade_No2_ref.mscz","tests/test_data/Chopin_Ballade_No2_perf.mid"),
-              ("tests/test_data/Fur_Elise_ref.mscz","tests/test_data/Fur_Elise_perf.mid")]
-
-@pytest.mark.parametrize("ref, perf", test_files)
+@pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_beats(ref, perf):
     alignment = get_beats.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False, midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)
@@ -14,7 +21,7 @@ def test_sorted_beats(ref, perf):
     sorted(beats, key=lambda b:b['time']) == beats
 
 
-@pytest.mark.parametrize("ref, perf", test_files)
+@pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_ref_beats_manual(ref, perf):
     alignment = get_beats.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False, midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)
@@ -22,7 +29,7 @@ def test_sorted_ref_beats_manual(ref, perf):
     sorted(reference_beats) == reference_beats
 
 
-@pytest.mark.parametrize("ref, perf", test_files)
+@pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_ref_beats_prettymidi(ref, perf):
     alignment = get_beats.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False, midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
     ref_midi = ref.replace(".mscz", ".mid")
@@ -31,7 +38,7 @@ def test_sorted_ref_beats_prettymidi(ref, perf):
     sorted(reference_beats) == reference_beats
 
 
-@pytest.mark.parametrize("ref, perf", test_files)
+@pytest.mark.parametrize("ref, perf", test_files())
 def test_no_outliers(ref, perf):
     alignment = get_beats.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False, midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)

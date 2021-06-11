@@ -7,8 +7,8 @@ from get_alignment import get_alignment
 
 @pytest.fixture
 def clean_dir():
-    reference, performance = ('tests/test_data/Chopin_Ballade_No2_ref.mscz',
-                              'tests/test_data/Chopin_Ballade_No2_perf.mid')
+    reference, performance = ('tests/test_data/scores/Chopin_Ballade_No2_ref.mscz',
+                              'tests/test_data/perfs/Chopin_Ballade_No2_perf.mid')
     new_dir = "testDir"
     os.makedirs(new_dir)
     new_ref = shutil.copy(reference, new_dir)
