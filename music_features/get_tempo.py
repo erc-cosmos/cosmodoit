@@ -1,18 +1,21 @@
-# -*- coding: utf-8 -*-
+# Compute tempo using manual beat annotations
 import os
 import argparse
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def importBeats(inputPath):
     """ Import annotated csv file. Must include a header named 'beats' """
+
     df       = pd.read_csv(inputPath)
     beatTime = df['beats'].to_numpy()
     return beatTime
 
 def genExportName(inputPath, columns):
     """ Generate export file name from input.
-    Beat annotation files must include _beats before extension"""
+    Beat annotation files must include _beats before extension """
+
     baseName    = os.path.basename(inputPath)
     baseName, _ = os.path.splitext(baseName)
     baseName, _ = baseName.split('_beats')
@@ -26,6 +29,7 @@ def genExportName(inputPath, columns):
 
 def computeTempo(beatTime):
     """ Compute tempo from beat onsets """
+
     N            = len(beatTime)
     beatCount    = np.linspace(0, N-1, N, dtype='int')  # beat count starting from 0
     beatMidpoint =    (beatTime[1:N] + beatTime[0:N-1])/2 # time from midpoint between two bars
@@ -36,6 +40,7 @@ def computeTempo(beatTime):
 
 def makeTempoTable(beatTime):
     """ Create a pandas DataFrame from tempo computation """
+
     [beatCount, beatMidpoint, tempo_v] = computeTempo(beatTime)
     data  = {'Count':beatCount, 'Time':beatTime, 'beatMidpoint':beatMidpoint, 'Tempo':tempo_v}
     tempo = pd.DataFrame.from_dict(data)
@@ -43,7 +48,7 @@ def makeTempoTable(beatTime):
 
 def plotTempoCurve(tempo):
     """ Plot tempo curve over time """
-    import matplotlib.pyplot as plt
+
     plt.plot(tempo['Time'], tempo['Tempo'], c='black')
     plt.xlabel('Time [s]')
     plt.ylabel('Tempo [BPM]')
@@ -53,6 +58,7 @@ def plotTempoCurve(tempo):
 def getTempo(inputPath, plotTempo, exportTempo, columns):
     """
     Import beat annotations and compute tempo table with beat counts
+
     Input
         beatTime   : 1D numpy array
         plotTempo  : bool, default False
@@ -61,6 +67,7 @@ def getTempo(inputPath, plotTempo, exportTempo, columns):
     Output
         tempo      : pandas DataFrame with selected columns
     """
+
     beatTime = importBeats(inputPath)
     tempo    = makeTempoTable(beatTime)
     if plotTempo:
@@ -81,11 +88,13 @@ def getTempo(inputPath, plotTempo, exportTempo, columns):
 def main(inputPath, plotTempo=False, exportTempo=True, columns='all'):
     """
     Compute Tempo from the beat annotations of a labeled csv file
+
      -inputPath,--var <arg>   Input path: csv file or folder
      -plotTempo,--var <arg>   bool, default False
      -exportTempo,--var <arg>   bool, default True
      -columns,--var <arg>   str, columns to export (all, time, beats)
     """
+
     if os.path.isfile(inputPath):
         tempo = getTempo(inputPath, plotTempo=plotTempo, exportTempo=exportTempo, columns=columns)
         return tempo

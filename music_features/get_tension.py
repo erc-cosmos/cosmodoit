@@ -1,12 +1,17 @@
-# -*- coding: utf-8 -*-
+# Compute harmonic tension from a MIDI file
+# uses the midi-miner library https://github.com/ruiguo-bio/midi-miner
 import os
 import argparse
+import pickle
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from subprocess import Popen, PIPE, call
 
 def callTensionCalculator(inputFile, outputFile, args):
     """ Use subprocess to execute tension_calculation.py from midi-miner """
-    from subprocess import Popen, PIPE, call
+
+    # TODO: Refer to relative path
     tensionScript = '/Users/bedoya/OneDrive/COSMOS/Software/midi-miner/tension_calculation.py'
     command_list = ['python', tensionScript,
                     '-f', inputFile,
@@ -20,9 +25,8 @@ def callTensionCalculator(inputFile, outputFile, args):
     print(stdout.decode('utf-8'))
 
 def removeExtraFiles(inputFile):
-    """
-    Check if TensionVisualiser generated excess files and remove them
-    """
+    """ Check if TensionVisualiser generated excess files and remove them """
+
     dirName    = os.path.dirname(inputFile)
     baseName   = genBaseName(inputFile)
     extraFiles =   [os.path.join(dirName, 'tension_calculate.log'),
@@ -39,6 +43,7 @@ def removeExtraFiles(inputFile):
 
 def genBaseName(inputFile):
     """ Generate full path base name (without extension) from midi file """
+
     baseName     = os.path.basename(inputFile)
     baseName, _  = os.path.splitext(baseName)
     dirName      = os.path.dirname(inputFile)
@@ -47,8 +52,7 @@ def genBaseName(inputFile):
 
 def openTension(inputFile):
     """ Create dataframe from results of midi-Miner """
-    import pickle
-    import pandas as pd
+    
     baseName    = genBaseName(inputFile)
     diameter    = pickle.load(open(baseName + '.diameter','rb'))
     momentum    = pickle.load(open(baseName + '.centroid_diff','rb'))
@@ -61,13 +65,32 @@ def openTension(inputFile):
 
 def getTension(inputFile, args, plotTension, exportTension, columns):
     """Compute Harmonic Tension using midi-miner
-    Creates a pandas DataFrame and deletes additional files"""
+    Creates a pandas DataFrame and deletes additional files
+
+    Parameters
+    ----------
+    inputFile : str
+        The file location of the .mid file
+    args : dict
+        The arguments for midi-miner (windowSize, verticalStep, keyChanged)
+    plotTension : bool, optional
+        A flag used to plot the resulting curves
+    exportTension : bool, optional
+        A flag used to export the resulting dataframe as a csv
+    columns : str, optional
+        Which columns to export with tension
+        ['all', 'time', 'beats'] default is 'all'
+    Returns
+    -------
+    dataframe
+        Pandas dataframe of the harmonic tension
+    """
+
     outputPath = os.path.dirname(inputFile)
     callTensionCalculator(inputFile, outputPath, args)
     df = openTension(inputFile)
     removeExtraFiles(inputFile)
     if plotTension:
-        print('plotting?')
         plotTensionCurves(df)
     if columns.lower() == 'time':
         df.drop(['beat'], axis=1, inplace=True)
@@ -79,7 +102,7 @@ def getTension(inputFile, args, plotTension, exportTension, columns):
 
 def plotTensionCurves(df, figSize=(16,10)):
     """ Plot tension parameters in 3 rows"""
-    import matplotlib.pyplot as plt
+
     fig, ax = plt.subplots(nrows=3, ncols=1, figsize=figSize, sharex=True, sharey=False)
     parameters = ['diameter', 'momentum', 'strain']
     colors     = ['orange', 'gold', 'red']
@@ -90,6 +113,8 @@ def plotTensionCurves(df, figSize=(16,10)):
     return
 
 def exportTensionCSV(inputFile, df, columns):
+    """ Export dataframe as a csv file adding a suffix to the inputFile name """
+
     if columns =='all':
         fileSuffix = '_tension_all.csv'
     else:
@@ -102,6 +127,7 @@ def exportTensionCSV(inputFile, df, columns):
 def main(inputFile, args, plotTension=False, exportTension=True, columns='all'):
     """
     Compute Harmonic Tension from a MIDI file
+
      -inputPath,--var <arg>   Input path: .mid file or folder
      -w, windowSize. Integer number of beats or -1 for backbeat
      -v, verticalStep, Float vertical step for the spiral array. Between sqrt(2/15) and sqrt(3/15)
