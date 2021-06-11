@@ -144,12 +144,13 @@ def plot_beat_ratios(ticks, quarter_length, times, spline):
     plt.show(block=True)
 
 
-def plot_beats(beats, interpolation, ticks, quarter_length, times):
+# def plot_beats(beats, ticks, quarter_length, times):
+def plot_beats(beats):
     """ Plots score time against real time and tempo against score time
     """
     #plt.plot(np.array([beat['count'] for beat in beats])[1:],60/np.diff(interpolation),label="IOI")
-    plt.plot([beat['count'] for beat in beats], interpolation)
-    plt.scatter(ticks/quarter_length, times)
+    # plt.plot([beat['count'] for beat in beats], interpolation)
+    # plt.scatter(ticks/quarter_length, times)
     plt.show(block=True)
     plt.plot(60/np.diff([beat['time'] for beat in beats]))
     plt.show(block=True)
@@ -195,8 +196,9 @@ if __name__ == "__main__":
 
     alignment = get_alignment(refFilename=args.ref, perfFilename=args.perf, cleanup=False)
 
-    quarterLength, anacrusisOffset = prompt_beat_params(alignment, args.quarter, args.offset)
-    reference_beats = make_beat_reference(alignment, quarterLength, anacrusisOffset)
+    # quarterLength, anacrusisOffset = prompt_beat_params(alignment, args.quarter, args.offset)
+    reference_beats = make_beat_reference(alignment, guess=True)
 
-    beats = get_beats(alignment, reference_beats, plotting=False)
+    beats = get_beats(alignment, reference_beats)
+    plot_beats(beats)
     print(beats)
