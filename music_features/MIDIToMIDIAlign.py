@@ -17,6 +17,8 @@ def runAlignment(reference, performance, workingFolder=None):
     # Folder to use for operations
     if workingFolder is None:
         workingFolder = os.path.dirname(performance)
+    
+
     # Copy (if required) to working directory    
     for originalFile in [reference+".mid", performance+".mid"]:
         try:
@@ -26,15 +28,20 @@ def runAlignment(reference, performance, workingFolder=None):
 
 
     # File paths
+    ref_midi = os.path.join(workingFolder, ref_base+"_ref")
     ref_pianoroll = os.path.join(workingFolder, ref_base+"_spr.txt")
     ref_HMM = os.path.join(workingFolder, ref_base+"_hmm.txt")
     ref_FMT3X = os.path.join(workingFolder, ref_base+"_fmt3x.txt")
+    perf_midi = os.path.join(workingFolder, perf_base+"_perf")
     perf_pianoroll = os.path.join(workingFolder, perf_base+"_spr.txt")
     perf_prematch = os.path.join(workingFolder, perf_base+"_pre_match.txt")
     perf_errmatch = os.path.join(workingFolder, perf_base+"_err_match.txt")
     perf_realigned = os.path.join(workingFolder, perf_base+"_realigned_match.txt")
     perf_match = os.path.join(workingFolder, perf_base+"_match.txt")
     
+    shutil.copy(reference+".mid", ref_midi+".mid")
+    shutil.copy(performance+".mid", perf_midi+".mid")
+
     subprocess.run([os.path.join(ProgramFolder, "midi2pianoroll"), str(0), os.path.join(workingFolder, ref_base)])
     subprocess.run([os.path.join(ProgramFolder, "midi2pianoroll"), str(0), os.path.join(workingFolder, perf_base)])
 
