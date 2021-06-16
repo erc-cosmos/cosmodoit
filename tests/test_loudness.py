@@ -18,8 +18,40 @@ def loudness_old_pairs():
     return tuple(zip(audios,old_loudness))
 
 
-@pytest.mark.parametrize('wav_file, old_file', loudness_old_pairs())
-def test_same_as_matlab(wav_file, old_file, clean_dir):
+@pytest.mark.parametrize('wav_file, old_path', loudness_old_pairs())
+def test_same_as_matlab(wav_file, old_path, clean_dir):
     get_loudness.get_loudness(wav_file, export_dir=clean_dir)
-    new_file = os.path.join(clean_dir,os.path.basename(wav_file).replace('.wav', '_loudness.csv'))
-    assert filecmp.cmp(new_file, old_file, shallow=False)
+    new_path = os.path.join(clean_dir,os.path.basename(wav_file).replace('.wav', '_loudness.csv'))
+    
+    assert_numeric_equiv_csv(old_path, new_path)
+
+
+@pytest.mark.parametrize('_, old_path', loudness_old_pairs())
+def test_read_write_identity(_, old_path, clean_dir):
+    data = get_loudness.read_loudness(old_path)
+    new_path = os.path.join(clean_dir, "idem.csv")
+    get_loudness.write_loudness(data, new_path)
+
+    assert_numeric_equiv_csv(old_path, new_path)
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_read_write_read_is_read(_, old_file, clean_dir):
+    # TODO: actually test write_read identity
+    data_before = get_loudness.read_loudness(old_file)
+
+    new_path = os.path.join(clean_dir, "idem.csv")
+    get_loudness.write_loudness(data_before, new_path)
+    data_after = get_loudness.read_loudness(new_path)
+
+    assert (data_after == data_before).all().all()
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_rescale_same_as_matlab(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    new_rescale = get_loudness.rescale(loudnessTable.Loudness)
+
+    assert (abs(new_rescale - loudnessTable.Loudness_norm) < 1e-6).all()
+    # assert (new_rescale == loudnessTable.Loudness_norm).all()
