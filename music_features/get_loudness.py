@@ -118,7 +118,7 @@ def smooth(data, span):
 
 
 def peak_envelope(data, min_separation):
-    peaks_idx = scipy.signal.find_peaks(data, distance=min_separation)
+    peaks_idx,_ = scipy.signal.find_peaks(data, distance=min_separation+1) # +1 for consistency with matlab
     peaks_y = data[peaks_idx]
     spline = scipy.interpolate.InterpolatedUnivariateSpline(peaks_idx, peaks_y)
     return spline(range(len(data)))

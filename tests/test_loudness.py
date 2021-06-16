@@ -1,6 +1,6 @@
-import filecmp
 import os
 import pytest
+import numpy as np
 
 from helpers import *
 
@@ -54,4 +54,13 @@ def test_rescale_same_as_matlab(_, old_file):
     new_rescale = get_loudness.rescale(loudnessTable.Loudness)
 
     assert (abs(new_rescale - loudnessTable.Loudness_norm) < 1e-6).all()
-    # assert (new_rescale == loudnessTable.Loudness_norm).all()
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_envelope_same_as_matlab(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    min_separation = np.floor(len(loudnessTable.Time)/list(loudnessTable.Time)[-1])
+    new_envelope = get_loudness.clipNegative(get_loudness.peak_envelope(np.array(loudnessTable.Loudness_norm), min_separation))
+
+    assert (abs(new_envelope - loudnessTable.Loudness_envelope) < 1e-6).all()
