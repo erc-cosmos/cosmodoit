@@ -20,6 +20,6 @@ def loudness_old_pairs():
 
 @pytest.mark.parametrize('wav_file, old_file', loudness_old_pairs())
 def test_same_as_matlab(wav_file, old_file, clean_dir):
-    get_loudness.get_loudness(wav_file, dest_dir=clean_dir)
+    get_loudness.get_loudness(wav_file, export_dir=clean_dir)
     new_file = os.path.join(clean_dir,os.path.basename(wav_file).replace('.wav', '_loudness.csv'))
     assert filecmp.cmp(new_file, old_file, shallow=False)
