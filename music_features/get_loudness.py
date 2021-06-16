@@ -7,7 +7,6 @@ import scipy.io.wavfile
 import scipy.signal
 import scipy.interpolate
 import pandas as pd
-from extract_features import writeFile
 
 
 def get_loudness(inputPath, *, export_dir=None, **kwargs):
@@ -95,10 +94,13 @@ def compute_loudness(audioFile, columns='all', exportLoudness=True, export_dir=N
         pass
 
     if exportLoudness:
-        loudness_table = [{'Time': t, 'Loudness': l, 'Loudness_norm': n, 'Loudness_smooth': s, 'Loudness_envelope': e}
-                          for t, l, n, s, e in zip(time, raw_loudness, norm_loudness, smooth_loudness, enveloppe_loudness)]
+        df = pd.DataFrame({'Time': time, 
+            'Loudness': raw_loudness, 
+            'Loudness_norm': norm_loudness, 
+            'Loudness_smooth': smooth_loudness, 
+            'Loudness_envelope': enveloppe_loudness})
         export_path = os.path.join(export_dir, os.path.basename(audioFile).replace(".wav", "_loudness.csv"))
-        writeFile(export_path, loudness_table)
+        write_loudness(df, export_path)
         print(f"Exported {columns} to: {export_path}")
 
 
