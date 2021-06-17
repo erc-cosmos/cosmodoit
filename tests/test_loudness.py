@@ -57,6 +57,25 @@ def test_rescale_same_as_matlab(_, old_file):
 
 
 @pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_rescale_keeps_size(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    new_rescale = get_loudness.rescale(loudnessTable.Loudness)
+
+    assert len(loudnessTable.Loudness) == len(new_rescale)
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_rescale_tight_interval(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    new_rescale = get_loudness.rescale(loudnessTable.Loudness)
+
+    assert new_rescale.max() == 1.0
+    assert new_rescale.min() == 0.0
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
 def test_envelope_same_as_matlab(_, old_file):
     loudnessTable = get_loudness.read_loudness(old_file)
 
@@ -65,3 +84,14 @@ def test_envelope_same_as_matlab(_, old_file):
         np.array(loudnessTable.Loudness_norm), min_separation))
 
     assert (abs(new_envelope - loudnessTable.Loudness_envelope) < 1e-6).all()
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_enveloppe_keeps_size(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    min_separation = np.floor(len(loudnessTable.Time)/list(loudnessTable.Time)[-1])
+    new_envelope = get_loudness.clipNegative(get_loudness.peak_envelope(
+        np.array(loudnessTable.Loudness_norm), min_separation))
+
+    assert len(new_envelope) == len(loudnessTable.Loudness_envelope)
