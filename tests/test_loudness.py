@@ -95,3 +95,23 @@ def test_enveloppe_keeps_size(_, old_file):
         np.array(loudnessTable.Loudness_norm), min_separation))
 
     assert len(new_envelope) == len(loudnessTable.Loudness_envelope)
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_smoothing_same_as_matlab(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    span = 0.03
+    smoothed = get_loudness.clipNegative(get_loudness.smooth(loudnessTable.Loudness_norm, span))
+    halfspan = int(np.floor(np.floor(len(loudnessTable.Loudness_norm)*span)/2))
+
+    assert (abs(smoothed - loudnessTable.Loudness_smooth) < 1e-3)[halfspan:-halfspan].all()
+
+
+@pytest.mark.parametrize('_, old_file', loudness_old_pairs())
+def test_smoothing_keeps_size(_, old_file):
+    loudnessTable = get_loudness.read_loudness(old_file)
+
+    smoothed = get_loudness.smooth(loudnessTable.Loudness_norm, 0.03)
+
+    assert len(smoothed) == len(loudnessTable.Loudness_smooth)

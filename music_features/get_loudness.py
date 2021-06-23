@@ -7,6 +7,9 @@ import scipy.io.wavfile
 import scipy.signal
 import scipy.interpolate
 import pandas as pd
+import lowess
+import matplotlib.pyplot as plt
+from scipy.signal.filter_design import BadCoefficients
 
 
 def get_loudness(inputPath, *, export_dir=None, **kwargs):
@@ -55,7 +58,7 @@ def assign_columns(T, cols):
         raise ValueError(f"Unsupported export type: {cols}")
 
 
-def compute_loudness(audioFile, columns='all', exportLoudness=True, export_dir=None, plotLoudness=False, smoothSpan=0.03, noNegative=True):
+def compute_loudness(audioFile, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, noNegative=True):
     audio, fs = scipy.io.wavfile.read(audioFile)
     if np.size(audio, 2) == 2:
         audio = np.mean(audio, 2)
@@ -64,44 +67,54 @@ def compute_loudness(audioFile, columns='all', exportLoudness=True, export_dir=N
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
     min_separation = np.floor(len(time)/time[-1])
-    enveloppe_loudness = peak_envelope(norm_loudness, min_separation)
+    envelope_loudness = peak_envelope(norm_loudness, min_separation)
     # [~, L, ~]  = ma_sone(audio, p);
-    # L(:,3)     = normalize(L(:,2), 'range');          % Normalized data with range [0 1]
-    # L(:,4)     = smooth(L(:,3), smoothSpan, 'loess'); % 2nd degree polynomial smooth
-    # [L(:,5),~] = envelope(L(:,3),floor(length(L(:,1))/L(end,1)),'peak'); % upper peak envelope
+    # norm_loudness     = normalize(L(:,2), 'range');          % Normalized data with range [0 1]
+    # smooth_loudness     = smooth(norm_loudness, smoothSpan, 'loess'); % 2nd degree polynomial smooth
+    # [envelope_loudness,~] = envelope(norm_loudness,floor(length(time)/L(end,1)),'peak'); % upper peak envelope
 
     # Remove values below zero
     if noNegative:
         smooth_loudness = clipNegative(smooth_loudness)
-        enveloppe_loudness = clipNegative(enveloppe_loudness)
-
-    if plotLoudness:
-        # NYI
-        # figure('Name','Loudness','NumberTitle','off');
-        # colororder({'k','k'})
-        # plot(L(:,1), L(:,2), 'LineStyle', '-',  'LineWidth', 0.8, 'Color', [0   0 180]/255)
-        # ylabel('Loudness (sone)', 'FontSize', 14)
-        # xlabel('Time (s)', 'FontSize', 14)
-        # yyaxis right
-        # hold on
-        # plot(L(:,1), L(:,3), 'LineStyle', '-.', 'LineWidth', 0.2, 'Color', [255 160 0]/255)
-        # plot(L(:,1), L(:,4), 'LineStyle', '-',  'LineWidth', 3.8, 'Color', [139 0   0]/255)
-        # plot(L(:,1), L(:,5), 'LineStyle', '--', 'LineWidth', 1.5, 'Color', [0.5 0.5 0.5])
-        # ylabel('Normalized Loudness (sone)', 'FontSize', 14)
-        # xlim([L(1,1) L(end,1)])
-        # ylim([0 1])
-        # legend('original', 'normalized', 'smoothed', 'envelope')
-        pass
-
+        envelope_loudness = clipNegative(envelope_loudness)
+    
     if exportLoudness:
         df = pd.DataFrame({'Time': time, 
             'Loudness': raw_loudness, 
             'Loudness_norm': norm_loudness, 
             'Loudness_smooth': smooth_loudness, 
-            'Loudness_envelope': enveloppe_loudness})
+            'Loudness_envelope': envelope_loudness})
         export_path = os.path.join(export_dir, os.path.basename(audioFile).replace(".wav", "_loudness.csv"))
         write_loudness(df, export_path)
         print(f"Exported {columns} to: {export_path}")
+
+def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_loudness, *, show=True):
+    # WIP
+    fig, ax1 = plt.subplots()
+    p1 = ax1.plot(time, raw_loudness, linestyle='-', linewidth=0.8, color=(0,0,180/255))
+    # plt.plot(time, raw_loudness, 'LineStyle', '-',  'LineWidth', 0.8, 'Color', [0   0 180]/255)
+    ax1.set_ylabel('Loudness (sone)', fontsize=14)
+    ax1.set_xlabel('Time (s)', fontsize=14)
+    # plt.ylabel('Loudness (sone)', 'FontSize', 14)
+    # plt.xlabel('Time (s)', 'FontSize', 14)
+    ax2 = ax1.twinx()
+    # plt.yyaxis right
+    p2 = ax2.plot(time, norm_loudness, linestyle='-.', linewidth=0.5, color=(1,160/255, 0))
+    p3 = ax2.plot(time, smooth_loudness, linestyle='-', linewidth=3.8, color=(139/255, 0, 0))
+    p4 = ax2.plot(time, envelope_loudness, linestyle='--', linewidth=1.5, color=(0.5, 0.5, 0.5))
+    # plt.plot(time, norm_loudness, 'LineStyle', '-.', 'LineWidth', 0.2, 'Color', [255, 160 0]/255)
+    # plt.plot(time, smooth_loudness, 'LineStyle', '-',  'LineWidth', 3.8, 'Color', [139 0   0]/255)
+    # plt.plot(time, envelope_loudness, 'LineStyle', '--', 'LineWidth', 1.5, 'Color', [0.5 0.5 0.5])
+    ax2.set_ylabel('Normalized Loudness (sone)', fontsize=14)
+    ax2.set_xlim((time[0], time[-1]))
+    ax2.set_ylim((0, 1))
+    ax2.legend(p1+p2+p3+p4, ('original','normalized', 'smoothed', 'envelope'))
+    # plt.ylabel('Normalized Loudness (sone)', 'FontSize', 14)
+    # plt.xlim([L(1,1) L(end,1)])
+    # plt.ylim([0 1])
+    # plt.legend('original', 'normalized', 'smoothed', 'envelope')
+    if show:
+        plt.show()
 
 
 def ma_sone(audio, fs):
@@ -116,7 +129,11 @@ def rescale(data):
 
 def smooth(data, span):
     # NYI
-    return data
+    if 0 < span < 1: # span is given as a ratio
+        span = np.floor(len(data)*span)
+        span+= span%2 - 1
+    bandwidth = (span+2)/len(data)
+    return lowess.lowess(pd.Series(range(len(data))), data, bandwidth=bandwidth, polynomialDegree=2)
 
 
 def peak_envelope(data, min_separation):
