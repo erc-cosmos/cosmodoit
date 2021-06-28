@@ -10,8 +10,9 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 import pretty_midi as pm
+from util import write_file
 
-from get_alignment import get_alignment
+import get_alignment
 
 BeatParams = collections.namedtuple("BeatParams",
                                     ("PPQ",  # Pulse per quarter note
@@ -181,6 +182,28 @@ def find_outliers(beats, *, factor=3, verbose=True):
     return anomaly_indices
 
 
+def gen_tasks(ref_path, perf_path, working_folder="tmp"):
+    ref_noext, _ = os.path.splitext(os.path.basename(ref_path))
+    ref_midi = os.path.join(working_folder, ref_noext+"_ref.mid")
+    perf_noext, _ = os.path.splitext(os.path.basename(perf_path))
+    perf_match = os.path.join(working_folder, perf_noext+"_match.txt")
+    perf_beats = os.path.join(working_folder, perf_noext+"_beats.csv")
+
+    def caller(perf_match, ref_midi, perf_beats, **kwargs):
+        alignment = get_alignment.readAlignmentFile(perf_match)
+        beat_reference = get_beat_reference_pm(ref_midi)
+        beats = get_beats(alignment, beat_reference)
+        write_file(perf_beats, beats)
+        return True
+    yield {
+        'basename': "beats",
+        'file_dep': [perf_match, ref_midi, __file__],
+        'name': perf_noext,
+        'targets': [perf_beats],
+        'actions': [(caller, [perf_match, ref_midi, perf_beats])]
+    }
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
@@ -194,9 +217,8 @@ if __name__ == "__main__":
     if scriptLocation != '':
         os.chdir(scriptLocation)
 
-    alignment = get_alignment(refFilename=args.ref, perfFilename=args.perf, cleanup=False)
+    alignment = get_alignment.get_alignment(refFilename=args.ref, perfFilename=args.perf, cleanup=False)
 
-    # quarterLength, anacrusisOffset = prompt_beat_params(alignment, args.quarter, args.offset)
     reference_beats = make_beat_reference(alignment, guess=True)
 
     beats = get_beats(alignment, reference_beats)

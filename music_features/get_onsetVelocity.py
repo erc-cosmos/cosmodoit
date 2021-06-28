@@ -6,7 +6,7 @@ import os
 import sys
 from get_midiEvents import *
 
-def get_onsetVelocity(perfFilename):
+def get_onset_velocity(perfFilename):
     """ Extracts onset velocities from a midi file
     """
     event_list = get_midiEvents(perfFilename)
@@ -26,5 +26,5 @@ if __name__ == "__main__":
     parser.add_argument('--perf', default='music_features/test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
     args = parser.parse_args()
     
-    velocities = get_onsetVelocity(args.perf)
+    velocities = get_onset_velocity(args.perf)
     print(velocities)

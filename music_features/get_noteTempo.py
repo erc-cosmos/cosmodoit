@@ -7,8 +7,8 @@ import scipy.interpolate
 import matplotlib.pyplot as plt
 import itertools as itt
 from get_alignment import *
+from util import write_file
 
-from extract_features import writeFile
 
 def extractITempoForwards(alignment):
     data = []
@@ -90,8 +90,8 @@ if __name__ == "__main__":
     # )
 
     # data = [{'tatum':b,'time':t,'tempo':it/1000} for (b,t,it) in zip(scoreTimes,realTimes,instantTempo_unscaled) if it < 0000]
-    writeFile("itempoForward.csv",dataForwards)
-    writeFile("itempoBackward.csv",dataBackwards)
+    write_file("itempoForward.csv",dataForwards)
+    write_file("itempoBackward.csv",dataBackwards)
     # plt.plot(scoreTimes,instantTempo_unscaled)
     # plt.show(block=False)
     # plt.figure()
