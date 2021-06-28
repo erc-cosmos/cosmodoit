@@ -62,3 +62,5 @@ music_features/Chopin_Ballade_No._2_Piano_solo_hmm.txt
 music_features/test_midi/Chopin_Ballade_No._2_Piano_solo.mid
 .env
 .vscode/settings.json
+music_features/.doit.db.db
+.doit.db.db

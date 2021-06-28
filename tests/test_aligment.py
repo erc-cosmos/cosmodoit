@@ -24,8 +24,7 @@ def test_cleanup(clean_dir):
     remote_dir_content_before = sorted(os.listdir(remote_dir))
     local_dir_content_before = sorted(os.listdir())
 
-    alignment = get_alignment(refFilename=ref_filename, perfFilename=perf_filename, cleanup=True,
-                              midi2midiExecLocation="music_features/MIDIToMIDIAlign.sh")
+    _ = get_alignment(refFilename=ref_filename, perfFilename=perf_filename, cleanup=True, working_folder='testDir')
 
     remote_dir_content_after = sorted(os.listdir(remote_dir))
     assert remote_dir_content_after == remote_dir_content_before

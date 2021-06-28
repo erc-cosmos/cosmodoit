@@ -6,46 +6,47 @@ import argparse
 import sys
 import subprocess
 import collections
+import shutil
 import xml.etree.ElementTree as ET
 
-from MIDIToMIDIAlign import runAlignment
+from util import string_escape_concat, run_doit
 
 
-def get_score_alignment(refFilename, perfFilename,
-                        score2midiExecLocation="./MusicXMLToMIDIAlign.sh",
-                        museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
-                        cleanup=True, recompute=False):
-    """Call Nakamura's Score to Midi alignment software.
+# def get_score_alignment(refFilename, perfFilename,
+#                         score2midiExecLocation="./MusicXMLToMIDIAlign.sh",
+#                         museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
+#                         cleanup=True, recompute=False):
+#     """Call Nakamura's Score to Midi alignment software.
 
-    Intermediate files will be removed if cleanup is True
-    If recompute is False, existing intermediate files will be reused if present
-    """
-    # Crop .mid extension as the script doesn't want them
-    refFilename, refType = os.path.splitext(refFilename)
-    perfFilename, perfType = os.path.splitext(perfFilename)
+#     Intermediate files will be removed if cleanup is True
+#     If recompute is False, existing intermediate files will be reused if present
+#     """
+#     # Crop .mid extension as the script doesn't want them
+#     refFilename, refType = os.path.splitext(refFilename)
+#     perfFilename, perfType = os.path.splitext(perfFilename)
 
-    if refType not in [".xml"]:
-        if refType in [".mscz", ".mxl"]:  # TODO: add other valid formats
-            # Generate a midi from the score
-            # TODO: check that musescore is correctly found
-            # TODO: check if conversion is already done
-            subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".xml"],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            raise NotImplementedError
+#     if refType not in [".xml"]:
+#         if refType in [".mscz", ".mxl"]:  # TODO: add other valid formats
+#             # Generate a midi from the score
+#             # TODO: check that musescore is correctly found
+#             # TODO: check if conversion is already done
+#             subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".xml"],
+#                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+#         else:
+#             raise NotImplementedError
 
-    # Run the alignment (only if needed or requested)
-    outFile = perfFilename+"_match.txt"
-    if recompute or not os.path.isfile(outFile):
-        output = subprocess.run([score2midiExecLocation, refFilename, perfFilename])
-    alignment = readAlignmentFile(outFile)
+#     # Run the alignment (only if needed or requested)
+#     outFile = perfFilename+"_match.txt"
+#     if recompute or not os.path.isfile(outFile):
+#         output = subprocess.run([score2midiExecLocation, refFilename, perfFilename])
+#     alignment = readAlignmentFile(outFile)
 
-    if cleanup:
-        clean_alignment_files(refFilename, perfFilename)
-    return alignment
+#     if cleanup:
+#         clean_alignment_files(refFilename, perfFilename)
+#     return alignment
 
 
-def removeDirections(filename, outfile=None):
+def _removeDirections(filename, outfile=None):
     """Remove all directions from a musicxml file."""
     tree = ET.parse(filename)
     for elem in tree.findall(".//direction"):
@@ -53,48 +54,19 @@ def removeDirections(filename, outfile=None):
     tree.write(outfile if outfile is not None else filename)
 
 
-def get_alignment(refFilename, perfFilename,
-                  midi2midiExecLocation="./MIDIToMIDIAlign.sh",
-                  # score2midiExecLocation="music_features/ScoreToMIDIAlign.sh",
-                  museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
-                  cleanup=True, recompute=False):
-    """Call Nakamura's midi to midi alignment software.
-
-    Intermediate files will be removed if cleanup is True
-    If recompute is False, existing intermediate files will be reused if present
-    """
-    # Crop .mid extension as the script doesn't want them
-    refFilename, refType = os.path.splitext(refFilename)
-    preprocess_to_midi(refType, museScoreExec, refFilename)
-    perfFilename, perfType = os.path.splitext(perfFilename)
-
-    # Run the alignment (only if needed or requested)
-    outFile = perfFilename+"_match.txt"
-    if recompute or not os.path.isfile(outFile):
-        runAlignment(refFilename, perfFilename)
+def get_alignment(refFilename, perfFilename, working_folder='tmp', cleanup=True):
+    def task_wrapper():
+        yield from gen_tasks(refFilename, perfFilename, working_folder)
+    task_set = {'task_alignment': task_wrapper}
+    run_doit(task_set)
+    
+    outFile = os.path.join(working_folder, os.path.basename(perfFilename).replace('.mid',"_match.txt"))
     alignment = readAlignmentFile(outFile)
-
+    
     if cleanup:
-        clean_alignment_files(refFilename, perfFilename)
-        clean_preprocess_files(refType, refFilename)
-
+        commands = ['clean']
+        run_doit(task_set, commands)
     return alignment
-
-
-def preprocess_to_midi(refType, museScoreExec, refFilename):
-    if refType != ".mid":  # TODO: accept .midi file extension for midi files (needs editing the bash script)
-        if refType in [".mxl", ".xml", ".mscz"]:  # TODO: add other valid formats
-            # Generate a midi from the score
-            # TODO: run the score-to-midi instead (once fixed)
-            # TODO: check that musescore is correctly found
-            # TODO: check if conversion is already done
-            subprocess.run([museScoreExec, refFilename+refType, "--export-to",
-                           refFilename+".xml"], stderr=subprocess.DEVNULL)
-            removeDirections(refFilename+".xml", refFilename+"_nodir.xml")
-            subprocess.run([museScoreExec, refFilename+"_nodir.xml", "--export-to",
-                           refFilename+".mid"], stderr=subprocess.DEVNULL)
-        else:
-            raise NotImplementedError
 
 
 def clean_preprocess_files(refType, refFilename):
@@ -135,11 +107,143 @@ def clean_alignment_files(refFilename, perfFilename):
             pass
 
 
+def gen_subtasks_midi(ref_path, museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
+    """Generate doit tasks for the midi conversion and preprocessing."""
+    ref_name, ref_ext = os.path.splitext(ref_path)
+
+    if ref_ext not in [".mxl", ".xml", ".mscz"]:
+        raise NotImplementedError(f"Unsupported format {ref_ext}")
+
+    ref_xml = ref_name+".xml"
+    yield {
+        'basename': '_XML_Conversion',
+        'name': ref_name,
+        'file_dep': [ref_path, __file__, museScoreExec],
+        'targets': [ref_xml],
+        'actions': [string_escape_concat([museScoreExec, ref_path, "--export-to", ref_xml])],
+        'clean': True,
+        'verbosity': 0
+    }
+    ref_nodir = ref_name+"_nodir.xml"
+    yield {
+        'basename': '_strip_direction',
+        'name': ref_name,
+        'file_dep': [ref_xml, __file__],
+        'targets': [ref_nodir],
+        'actions': [(_removeDirections, [ref_xml, ref_nodir],)],
+        'clean': True
+    }
+    ref_mid = ref_name+".mid"
+    yield {
+        'basename': 'MIDI_Conversion',
+        'name': ref_name,
+        'file_dep': [ref_nodir, __file__, museScoreExec],
+        'targets': [ref_mid],
+        'actions': [string_escape_concat([museScoreExec, ref_nodir, "--export-to", ref_mid])],
+        'clean': True,
+        'verbosity': 0
+    }
+
+def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
+    """Generate doit tasks for the alignment."""
+    ProgramFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
+
+    ref_noext, _ = os.path.splitext(os.path.basename(ref_path))
+    perf_noext, _ = os.path.splitext(os.path.basename(perf_path))
+    
+    ref_midi = os.path.join(working_folder, ref_noext+"_ref")
+    ref_pianoroll = os.path.join(working_folder, ref_noext+"_ref_spr.txt")
+    ref_HMM = os.path.join(working_folder, ref_noext+"_hmm.txt")
+    ref_FMT3X = os.path.join(working_folder, ref_noext+"_fmt3x.txt")
+
+    perf_midi = os.path.join(working_folder, perf_noext+"_perf")
+    perf_pianoroll = os.path.join(working_folder, perf_noext+"_perf_spr.txt")
+    perf_prematch = os.path.join(working_folder, perf_noext+"_pre_match.txt")
+    perf_errmatch = os.path.join(working_folder, perf_noext+"_err_match.txt")
+    perf_realigned = os.path.join(working_folder, perf_noext+"_match.txt")
+
+    exec_pianoroll = os.path.join(ProgramFolder, "midi2pianoroll")
+    exec_fmt3x = os.path.join(ProgramFolder, "SprToFmt3x")
+    exec_hmm = os.path.join(ProgramFolder, "Fmt3xToHmm")
+    exec_prealignment = os.path.join(ProgramFolder, "ScorePerfmMatcher")
+    exec_errmatch = os.path.join(ProgramFolder, "ErrorDetection")
+    exec_realignment = os.path.join(ProgramFolder, "RealignmentMOHMM")
+
+    yield {
+        'basename': '_pianoroll_conversion_ref',
+        'name': ref_noext,
+        'file_dep': [ref_path, exec_pianoroll, __file__],
+        'targets': [ref_pianoroll, ref_midi+".mid"],
+        'actions': [
+            (shutil.copy,[ref_path.replace('.mscz', '.mid'), ref_midi+".mid"],),
+            string_escape_concat([exec_pianoroll, str(0), ref_midi])
+        ],
+        'clean': True
+    }
+    yield {
+        'basename': '_pianoroll_conversion_perf',
+        'name': perf_noext,
+        'file_dep': [perf_path, exec_pianoroll, __file__],
+        'targets': [perf_pianoroll, perf_midi+'.mid'],
+        'actions': [
+            (shutil.copy,[perf_path, perf_midi+'.mid'],),
+            string_escape_concat([exec_pianoroll, str(0), perf_midi])
+        ],
+        'clean': True
+    }
+    yield {
+        'basename': '_FMT3X_conversion',
+        'name': perf_noext,
+        'file_dep': [ref_pianoroll, exec_fmt3x, __file__],
+        'targets': [ref_FMT3X],
+        'actions': [string_escape_concat([exec_fmt3x, ref_pianoroll, ref_FMT3X])],
+        'clean': True
+    }
+    yield {
+        'basename': '_HMM_conversion',
+        'name': perf_noext,
+        'file_dep': [ref_FMT3X, exec_hmm, __file__],
+        'targets': [ref_HMM],
+        'actions': [string_escape_concat([exec_hmm, ref_FMT3X, ref_HMM])],
+        'clean': True
+    }
+    yield {
+        'basename': '_prealignment',
+        'name': perf_noext,
+        'file_dep': [ref_HMM, perf_pianoroll, exec_prealignment, __file__],
+        'targets': [perf_prematch],
+        'actions': [string_escape_concat([exec_prealignment, ref_HMM, perf_pianoroll, perf_prematch, str(0.01)])],
+        'clean': True
+    }
+    yield {
+        'basename': '_error_detection',
+        'name': perf_noext,
+        'file_dep': [ref_FMT3X, ref_HMM, perf_prematch, exec_errmatch, __file__],
+        'targets': [perf_errmatch],
+        'actions': [string_escape_concat([exec_errmatch, ref_FMT3X, ref_HMM, perf_prematch, perf_errmatch, str(0)])],
+        'clean': True
+    }
+    yield {
+        'basename': '_realignment',
+        'name': perf_noext,
+        'file_dep': [ref_FMT3X, ref_HMM, perf_errmatch, __file__],
+        'targets': [perf_realigned],
+        'actions': [string_escape_concat([exec_realignment, ref_FMT3X, ref_HMM, perf_errmatch, perf_realigned, str(0.3)])],
+        'clean': True
+    }
+
+
+def gen_tasks(ref_path, perf_path, working_folder="tmp"):
+    """Generate doit tasks to call Nakamura's midi to midi alignment software."""
+    yield from gen_subtasks_midi(ref_path, working_folder=working_folder)
+    yield from gen_subtasks_Nakamura(ref_path, perf_path, working_folder)
+    
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref')
     parser.add_argument('--perf')
-    parser.add_argument('--keep', action='store_true')
     args = parser.parse_args()
 
     # Ensure execution directory
