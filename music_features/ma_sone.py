@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def maSone(wav,
+def maSone(wav, *,
            fs           = 44100,
            fftSize     = 512,
            hopSize     = 256,
@@ -33,10 +33,10 @@ def maSone(wav,
     frames = getFrames(fftSize, hopSize)
 
     # Rescale to dB max (default is 96dB = 2^16)
-    wav = wav * (10**(dB_max/20)) 
+    wav_dB = wav * (10**(dB_max/20))
 
     # compute power spectrum
-    dlinearOuterEar, dlinear = getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb)
+    dlinearOuterEar, dlinear = getPowerspectrum(wav_dB, fftSize, frames, hopSize, w_Adb)
 
     # create sone
     sone = computeSone(cb, frames, fft_freq, bark_upper, dlinearOuterEar)
@@ -161,7 +161,7 @@ def getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb):
     
 def computeSone(cb, frames, fft_freq, bark_upper, dlinear):
     """ Compute sone matrix from critical band scale and powerspectrum """
-    sone = np.zeros((cb,frames)) # data after bark scale
+    sone = np.zeros((cb,frames))
     k = 0  
     for i in range(0,cb): # group into bark bands
         idx = np.nonzero(fft_freq[k:len(fft_freq)]<=bark_upper[i])[0]
