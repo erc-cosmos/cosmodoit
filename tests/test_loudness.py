@@ -18,13 +18,15 @@ def loudness_old_pairs():
     return tuple(zip(audios, old_loudness))
 
 
-@pytest.mark.parametrize('wav_file, old_path', loudness_old_pairs())
-def test_same_as_matlab(wav_file, old_path, clean_dir):
-    get_loudness.get_loudness(wav_file, export_dir=clean_dir)
-    new_path = os.path.join(clean_dir, os.path.basename(wav_file).replace('.wav', '_loudness.csv'))
+@pytest.mark.parametrize('wav_path, old_path', loudness_old_pairs())
+def test_raw_same_as_matlab(wav_path, old_path, clean_dir):
+    loudnessTable = get_loudness.read_loudness(old_path)
+    
+    time, raw_loudness = get_loudness.compute_raw_loudness(wav_path)
 
-    assert_numeric_equiv_csv(old_path, new_path)
-
+    assert (abs(time - loudnessTable.Time) < 1e-3).all()
+    assert (abs(raw_loudness - loudnessTable.Loudness) < 1e-3).all()
+    
 
 @pytest.mark.parametrize('_, old_path', loudness_old_pairs())
 def test_read_write_identity(_, old_path, clean_dir):

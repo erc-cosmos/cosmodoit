@@ -1,6 +1,4 @@
 import os
-import csv
-from tempfile import SpooledTemporaryFile
 import numpy as np
 import scipy
 import scipy.io.wavfile
@@ -9,7 +7,8 @@ import scipy.interpolate
 import pandas as pd
 import lowess
 import matplotlib.pyplot as plt
-from scipy.signal.filter_design import BadCoefficients
+
+import ma_sone
 
 
 def get_loudness(inputPath, *, export_dir=None, **kwargs):
@@ -58,12 +57,8 @@ def assign_columns(T, cols):
         raise ValueError(f"Unsupported export type: {cols}")
 
 
-def compute_loudness(audioFile, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, noNegative=True):
-    audio, fs = scipy.io.wavfile.read(audioFile)
-    if np.size(audio, 2) == 2:
-        audio = np.mean(audio, 2)
-
-    time, raw_loudness = ma_sone(audio, fs)
+def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, noNegative=True):
+    time, raw_loudness = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
     min_separation = np.floor(len(time)/time[-1])
@@ -84,42 +79,39 @@ def compute_loudness(audioFile, columns='all', exportLoudness=True, export_dir=N
             'Loudness_norm': norm_loudness, 
             'Loudness_smooth': smooth_loudness, 
             'Loudness_envelope': envelope_loudness})
-        export_path = os.path.join(export_dir, os.path.basename(audioFile).replace(".wav", "_loudness.csv"))
+        export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
         write_loudness(df, export_path)
         print(f"Exported {columns} to: {export_path}")
 
 def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_loudness, *, show=True):
-    # WIP
     fig, ax1 = plt.subplots()
-    p1 = ax1.plot(time, raw_loudness, linestyle='-', linewidth=0.8, color=(0,0,180/255))
-    # plt.plot(time, raw_loudness, 'LineStyle', '-',  'LineWidth', 0.8, 'Color', [0   0 180]/255)
     ax1.set_ylabel('Loudness (sone)', fontsize=14)
     ax1.set_xlabel('Time (s)', fontsize=14)
-    # plt.ylabel('Loudness (sone)', 'FontSize', 14)
-    # plt.xlabel('Time (s)', 'FontSize', 14)
+    
+    p1 = ax1.plot(time, raw_loudness, linestyle='-', linewidth=0.8, color=(0,0,180/255))
+    
     ax2 = ax1.twinx()
-    # plt.yyaxis right
+    
     p2 = ax2.plot(time, norm_loudness, linestyle='-.', linewidth=0.5, color=(1,160/255, 0))
     p3 = ax2.plot(time, smooth_loudness, linestyle='-', linewidth=3.8, color=(139/255, 0, 0))
     p4 = ax2.plot(time, envelope_loudness, linestyle='--', linewidth=1.5, color=(0.5, 0.5, 0.5))
-    # plt.plot(time, norm_loudness, 'LineStyle', '-.', 'LineWidth', 0.2, 'Color', [255, 160 0]/255)
-    # plt.plot(time, smooth_loudness, 'LineStyle', '-',  'LineWidth', 3.8, 'Color', [139 0   0]/255)
-    # plt.plot(time, envelope_loudness, 'LineStyle', '--', 'LineWidth', 1.5, 'Color', [0.5 0.5 0.5])
+
     ax2.set_ylabel('Normalized Loudness (sone)', fontsize=14)
     ax2.set_xlim((time[0], time[-1]))
     ax2.set_ylim((0, 1))
     ax2.legend(p1+p2+p3+p4, ('original','normalized', 'smoothed', 'envelope'))
-    # plt.ylabel('Normalized Loudness (sone)', 'FontSize', 14)
-    # plt.xlim([L(1,1) L(end,1)])
-    # plt.ylim([0 1])
-    # plt.legend('original', 'normalized', 'smoothed', 'envelope')
+    
     if show:
         plt.show()
 
 
-def ma_sone(audio, fs):
-    # NYI
-    pass
+def compute_raw_loudness(audio_path):
+    """Compute the raw loudness using the python port of the MA toolbox."""
+    audio, fs = scipy.io.wavfile.read(audio_path)
+    if np.size(audio, 2) == 2:
+        audio = np.mean(audio, 2)
+
+    return ma_sone.maSone(audio, fs=fs)
 
 
 def rescale(data):
