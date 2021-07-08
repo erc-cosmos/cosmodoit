@@ -1,5 +1,4 @@
 import argparse
-import itertools as itt
 import os
 import sys
 import collections
@@ -10,7 +9,7 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 import pretty_midi as pm
-from util import write_file
+from util import write_file, targets_factory
 
 import get_alignment
 
@@ -158,8 +157,9 @@ def plot_beats(beats):
 
 
 def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, force=False):
-    """ Prompts for missing information in beat detection
-    Does nothing if all it is already known, unless force is True
+    """Prompt for missing information in beat detection.
+
+    Does nothing if all are already known, unless force is True
     """
     if force or quarter_length is None or anacrusis_offset is None:
         [print(it) for it in alignment[:10]]  # Show first 10 lines to give context
@@ -183,11 +183,12 @@ def find_outliers(beats, *, factor=3, verbose=True):
 
 
 def gen_tasks(ref_path, perf_path, working_folder="tmp"):
-    ref_noext, _ = os.path.splitext(os.path.basename(ref_path))
-    ref_midi = os.path.join(working_folder, ref_noext+"_ref.mid")
-    perf_noext, _ = os.path.splitext(os.path.basename(perf_path))
-    perf_match = os.path.join(working_folder, perf_noext+"_match.txt")
-    perf_beats = os.path.join(working_folder, perf_noext+"_beats.csv")
+    ref_targets = targets_factory(ref_path, working_folder=working_folder)
+    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+
+    ref_midi = ref_targets("_ref.mid")
+    perf_match = perf_targets("_match.txt")
+    perf_beats = perf_targets("_beats.csv")
 
     def caller(perf_match, ref_midi, perf_beats, **kwargs):
         alignment = get_alignment.readAlignmentFile(perf_match)
@@ -198,7 +199,7 @@ def gen_tasks(ref_path, perf_path, working_folder="tmp"):
     yield {
         'basename': "beats",
         'file_dep': [perf_match, ref_midi, __file__],
-        'name': perf_noext,
+        'name': perf_beats,
         'targets': [perf_beats],
         'actions': [(caller, [perf_match, ref_midi, perf_beats])]
     }
