@@ -1,27 +1,18 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import argparse
-import mido
-import os
-import sys
-from get_midiEvents import *
+from get_midiEvents import get_midi_events
 
-def get_sustain(perfFilename):
-    """ Extracts sustain pedal information from a midi file
-    """
+def get_sustain(perf_path):
+    """Extract sustain pedal information from a midi file."""
     #TODO: add flag for binary output
-    midiBasename,_ = os.path.splitext(os.path.basename(perfFilename))
+    return [{'Time':event['Time'],'Sustain':event['Value']} 
+            for event in get_midi_events(perf_path) 
+            if is_sustain_event(event)]
 
-    event_list = get_midiEvents(perfFilename)
-    # Filter to keep only pedal events
-    sustainValues = [{'Time':event['Time'],'Sustain':event['Value']} for event in event_list 
-        if is_sustainEvent(event)]
 
-    return sustainValues
-
-def is_sustainEvent(event):
-    """ Determines whether the passed event is a sustain pedal event
-    """
+def is_sustain_event(event):
+    """Test whether the passed event is a sustain pedal event."""
+    # 64 is the Midi code for the sustain pedal
     return event['Type'] == 'control_change' and event['Control']==64
 
 if __name__ == "__main__":

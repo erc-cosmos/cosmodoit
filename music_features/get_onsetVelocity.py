@@ -1,24 +1,17 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
 import argparse
-import mido
-import os
-import sys
-from get_midiEvents import *
+from get_midiEvents import get_midi_events
 
 def get_onset_velocity(perfFilename):
-    """ Extracts onset velocities from a midi file
-    """
-    event_list = get_midiEvents(perfFilename)
-    # Filter to keep only note_on and extract velocity information
-    velocityValues = [{'Time':event['StartTime'],'Velocity':event['Velocity']} for event in event_list 
-        if is_noteEvent(event)]
+    """Extract onset velocities from a midi file."""
+    return [{'Time':event['StartTime'],'Velocity':event['Velocity']} 
+            for event in get_midi_events(perfFilename) 
+            if is_note_event(event)]
 
-    return velocityValues
 
-def is_noteEvent(event):
-    """ Determines whether the passed event is a sustain pedal event
-    """
+def is_note_event(event):
+    """Test whether the passed event is a note."""
     return event['Type'] == 'note_on'
 
 if __name__ == "__main__":
