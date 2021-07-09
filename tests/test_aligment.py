@@ -24,7 +24,7 @@ def test_cleanup(clean_dir):
     remote_dir_content_before = sorted(os.listdir(remote_dir))
     local_dir_content_before = sorted(os.listdir())
 
-    _ = get_alignment(refFilename=ref_filename, perfFilename=perf_filename, cleanup=True, working_folder='testDir')
+    _ = get_alignment(ref_path=ref_filename, perf_path=perf_filename, cleanup=True, working_folder='testDir')
 
     remote_dir_content_after = sorted(os.listdir(remote_dir))
     assert remote_dir_content_after == remote_dir_content_before

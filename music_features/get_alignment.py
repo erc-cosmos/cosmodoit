@@ -3,8 +3,6 @@
 import csv
 import os
 import argparse
-import sys
-import subprocess
 import collections
 import shutil
 import xml.etree.ElementTree as ET
@@ -46,7 +44,7 @@ from util import string_escape_concat, run_doit, targets_factory
 #     return alignment
 
 
-def _removeDirections(filename, outfile=None):
+def _remove_directions(filename, outfile=None):
     """Remove all directions from a musicxml file."""
     tree = ET.parse(filename)
     for elem in tree.findall(".//direction"):
@@ -54,14 +52,14 @@ def _removeDirections(filename, outfile=None):
     tree.write(outfile if outfile is not None else filename)
 
 
-def get_alignment(refFilename, perfFilename, working_folder='tmp', cleanup=True):
+def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
     def task_wrapper():
-        yield from gen_tasks(refFilename, perfFilename, working_folder)
+        yield from gen_tasks(ref_path, perf_path, working_folder)
     task_set = {'task_alignment': task_wrapper}
     run_doit(task_set)
     
-    outFile = os.path.join(working_folder, os.path.basename(perfFilename).replace('.mid',"_match.txt"))
-    alignment = readAlignmentFile(outFile)
+    outFile = os.path.join(working_folder, os.path.basename(perf_path).replace('.mid',"_match.txt"))
+    alignment = read_alignment_file(outFile)
     
     if cleanup:
         commands = ['clean']
@@ -69,19 +67,19 @@ def get_alignment(refFilename, perfFilename, working_folder='tmp', cleanup=True)
     return alignment
 
 
-def readAlignmentFile(filename):
+def read_alignment_file(file_path):
     """Read the output of Nakamura's software and extracts relevant information."""
     AlignmentAtom = collections.namedtuple("AlignmentAtom", ('tatum', 'time'))
-    with open(filename) as csvFile:
-        csvReader = csv.reader(csvFile, delimiter='\t')
+    with open(file_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter='\t')
         # Extract relevant columns
         return [AlignmentAtom(tatum=int(row[8]), time=float(row[1]))
-                for row in csvReader
+                for row in csv_reader
                 if len(row) > 3 and row[8] != '-1' and row[9] != '*'  # Not a metaline and not a mismatch
                 ]
 
 
-def gen_subtasks_midi(ref_path, museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
+def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
     """Generate doit tasks for the midi conversion and preprocessing."""
     ref_name, ref_ext = os.path.splitext(ref_path)
 
@@ -92,9 +90,9 @@ def gen_subtasks_midi(ref_path, museScoreExec="/Applications/MuseScore 3.app/Con
     yield {
         'basename': '_XML_Conversion',
         'name': ref_name,
-        'file_dep': [ref_path, __file__, museScoreExec],
+        'file_dep': [ref_path, __file__, musescore_exec],
         'targets': [ref_xml],
-        'actions': [string_escape_concat([museScoreExec, ref_path, "--export-to", ref_xml])],
+        'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_xml])],
         'clean': True,
         'verbosity': 0
     }
@@ -104,16 +102,16 @@ def gen_subtasks_midi(ref_path, museScoreExec="/Applications/MuseScore 3.app/Con
         'name': ref_name,
         'file_dep': [ref_xml, __file__],
         'targets': [ref_nodir],
-        'actions': [(_removeDirections, [ref_xml, ref_nodir],)],
+        'actions': [(_remove_directions, [ref_xml, ref_nodir],)],
         'clean': True
     }
     ref_mid = ref_name+".mid"
     yield {
         'basename': 'MIDI_Conversion',
         'name': ref_name,
-        'file_dep': [ref_nodir, __file__, museScoreExec],
+        'file_dep': [ref_nodir, __file__, musescore_exec],
         'targets': [ref_mid],
-        'actions': [string_escape_concat([museScoreExec, ref_nodir, "--export-to", ref_mid])],
+        'actions': [string_escape_concat([musescore_exec, ref_nodir, "--export-to", ref_mid])],
         'clean': True,
         'verbosity': 0
     }
@@ -217,17 +215,17 @@ def gen_tasks(ref_path, perf_path, working_folder="tmp"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ref')
-    parser.add_argument('--perf')
+    parser.add_argument('--ref', required=True)
+    parser.add_argument('--perf', required=True)
     args = parser.parse_args()
 
-    # Ensure execution directory
-    scriptLocation = os.path.dirname(sys.argv[0])
-    if scriptLocation != '':
-        os.chdir(scriptLocation)
+    # # Ensure execution directory
+    # script_location = os.path.dirname(__file__)
+    # if script_location != '':
+    #     os.chdir(script_location)
 
-    refFilename = args.ref
-    perfFilename = args.perf
+    ref_path = args.ref
+    perf_path = args.perf
 
-    alignment = get_alignment(refFilename=refFilename, perfFilename=perfFilename, cleanup=False)
+    alignment = get_alignment(ref_path=ref_path, perf_path=perf_path, cleanup=False)
     print(alignment)

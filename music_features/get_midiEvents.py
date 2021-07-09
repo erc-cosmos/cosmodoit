@@ -4,6 +4,9 @@ import argparse
 import mido
 import warnings
 
+from mido import messages
+from mido.midifiles import meta
+
 def get_midi_events(perfFilename, verbose=False):
     """Get a list of midi events from the file.
 
@@ -26,7 +29,7 @@ def get_midi_events(perfFilename, verbose=False):
         unmatched_note_on = []
         for message in track:
             if verbose:
-                print(message)
+                print_message(message)
             if not message.is_meta:
                 event_time += round(mido.tick2second(message.time, ppq, tempo), 5)
                 if is_note_off(message):
@@ -41,8 +44,6 @@ def get_midi_events(perfFilename, verbose=False):
                     unmatched_note_on.append(event)
                 elif message.type == 'control_change':
                     event_list.append({'Time': event_time, 'Type': message.type, 'Control': message.control, 'Value': message.value})
-            elif verbose:
-                print_meta(message)
         # Warn if not all note ons have been matched
         if unmatched_note_on:
             warnings.warn(f"Found unbalanced note ons: {unmatched_note_on}")
@@ -59,16 +60,21 @@ def is_note_off(message):
     return message.type == 'note_off' or message.type =='note_on' and message.velocity == 0
 
 
-def print_meta(meta_message):
-    """Print a human-readable version of some meta-events."""
-    if meta_message.type == 'set_tempo':
-        tempo = meta_message.tempo
-        print(f'\tTempo: {tempo}')
-        print(f'\tBPM: {mido.tempo2bpm(tempo)}')
-    elif meta_message.type == 'time_signature':
-        print(f'\tTime Signature: {meta_message.numerator}/{meta_message.denominator}')
-    elif meta_message.type == 'key_signature':
-        print(f'\tKey: {meta_message.key}')
+def print_message(message):
+    """Print a human-readable version of some meta-events or the raw event otherwise."""
+    if message.is_meta:
+        if message.type == 'set_tempo':
+            tempo = message.tempo
+            print(f'\tTempo: {tempo}')
+            print(f'\tBPM: {mido.tempo2bpm(tempo)}')
+        elif message.type == 'time_signature':
+            print(f'\tTime Signature: {message.numerator}/{message.denominator}')
+        elif message.type == 'key_signature':
+            print(f'\tKey: {message.key}')
+        else:
+            print(message)
+    else:
+        print(message)
 
 
 if __name__ == "__main__":

@@ -11,57 +11,42 @@ import matplotlib.pyplot as plt
 import ma_sone
 
 
-def get_loudness(inputPath, *, export_dir=None, **kwargs):
+def get_loudness(input_path, *, export_dir=None, **kwargs):
     """Compute Global Loudness of Audio Files.
 
-    inputPath       : string; folder path or wav audio file path
+    input_path       : string; folder path or wav audio file path
     columns         : string; which column - 'all' (default), 'raw', 'norm', 'smooth', 'envelope'
     exportLoudness  : boolean; export as csv (true by default)
     export_dir        : string; folder in which to save the export (default: same as input)
     plotLoudness    : boolean; plot results (false by default)
     smoothSpan      : double; number of data points for calculating the smooth curve (0.03 by default)
-    noNegative      : boolean; set L(i) < 0 = 0 (true by default)
+    no_negative      : boolean; set L(i) < 0 = 0 (true by default)
 
     returns         :  array; Time (:,1) Loudness (:,2), Normalized (:,3), Normalized-smoothed (:,4), Normalized-envelope (:,5)
     """
     if export_dir is None:
-        export_dir = os.path.dirname(inputPath)
+        export_dir = os.path.dirname(input_path)
 
     # Dispatch between single or batch run based on path type
-    if os.path.isfile(inputPath):  # Single run
-        return [compute_loudness(inputPath, export_dir=export_dir, **kwargs)]
-    elif os.path.isdir(inputPath):  # Batch run
-        files_list = [f for f in os.listdir(inputPath) if f.endswith('.wav') and not f.startswith('._')]
-        return [compute_loudness(audioFile, export_dir=export_dir, **kwargs)
-                for audioFile in files_list]
+    if os.path.isfile(input_path):  # Single run
+        files_list = [input_path]
+    elif os.path.isdir(input_path):  # Batch run
+        files_list = [f for f in os.listdir(input_path) if f.endswith('.wav') and not f.startswith('._')]
     else:
-        raise ValueError(f"Invalid path: {inputPath}")
+        raise ValueError(f"Invalid path: {input_path}")
+
+    return [compute_loudness(audio_file, export_dir=export_dir, **kwargs) for audio_file in files_list]
 
 
 def clipNegative(x_array):
     return [0 if x < 0 else x for x in x_array]
 
 
-def assign_columns(T, cols):
-    if cols == 'all':
-        return T
-    elif cols == 'raw':
-        return T['Loudness']
-    elif cols == 'norm':
-        return T['Loudness_norm']
-    elif cols == 'smooth':
-        return T['Loudness_smooth']
-    elif cols == 'envelope':
-        return T['Loudness_envelope']
-    else:
-        raise ValueError(f"Unsupported export type: {cols}")
-
-
-def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, noNegative=True):
+def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, no_negative=True):
     time, raw_loudness = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
-    min_separation = np.floor(len(time)/time[-1])
+    min_separation = len(time) // time[-1]
     envelope_loudness = peak_envelope(norm_loudness, min_separation)
     # [~, L, ~]  = ma_sone(audio, p);
     # norm_loudness     = normalize(L(:,2), 'range');          % Normalized data with range [0 1]
@@ -69,7 +54,7 @@ def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=
     # [envelope_loudness,~] = envelope(norm_loudness,floor(length(time)/L(end,1)),'peak'); % upper peak envelope
 
     # Remove values below zero
-    if noNegative:
+    if no_negative:
         smooth_loudness = clipNegative(smooth_loudness)
         envelope_loudness = clipNegative(envelope_loudness)
     

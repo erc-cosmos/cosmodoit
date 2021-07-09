@@ -15,7 +15,7 @@ def test_files():
 
 @pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_beats(ref, perf):
-    alignment = get_alignment.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False)
+    alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False)
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)
 
     beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
@@ -24,7 +24,7 @@ def test_sorted_beats(ref, perf):
 
 @pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_ref_beats_manual(ref, perf):
-    alignment = get_alignment.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False)
+    alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False)
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)
 
     sorted(reference_beats) == reference_beats
@@ -32,7 +32,7 @@ def test_sorted_ref_beats_manual(ref, perf):
 
 @pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_ref_beats_prettymidi(ref, perf):
-    alignment = get_alignment.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False)
+    alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False)
     ref_midi = ref.replace(".mscz", ".mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
@@ -41,7 +41,7 @@ def test_sorted_ref_beats_prettymidi(ref, perf):
 
 @pytest.mark.parametrize("ref, perf", test_files())
 def test_no_outliers(ref, perf):
-    alignment = get_alignment.get_alignment(refFilename=ref, perfFilename=perf, cleanup=False)
+    alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False)
     reference_beats = get_beats.make_beat_reference(alignment, guess=True)
 
     beats = get_beats.get_beats(alignment, reference_beats=reference_beats)

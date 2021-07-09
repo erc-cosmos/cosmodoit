@@ -46,7 +46,7 @@ def get_beat_reference_pm(ref_filename):
 
 def get_beats(alignment, reference_beats, *, max_tries=3):
     """Extract beats timing from an alignment of the notes."""
-    beats = None # for scope
+    # beats = None # for scope
     for _ in range(max_tries):
         # Find outliers and prefilter data
         ticks, times = preprocess(alignment)
@@ -57,8 +57,7 @@ def get_beats(alignment, reference_beats, *, max_tries=3):
         beats = [{'count': count,
                 'time': time,
                 'interpolated': tick not in ticks,
-                'tempo': tempo
-                }
+                'tempo': tempo}
                 for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
 
         anomalies = find_outliers(beats)
@@ -191,7 +190,7 @@ def gen_tasks(ref_path, perf_path, working_folder="tmp"):
     perf_beats = perf_targets("_beats.csv")
 
     def caller(perf_match, ref_midi, perf_beats, **kwargs):
-        alignment = get_alignment.readAlignmentFile(perf_match)
+        alignment = get_alignment.read_alignment_file(perf_match)
         beat_reference = get_beat_reference_pm(ref_midi)
         beats = get_beats(alignment, beat_reference)
         write_file(perf_beats, beats)
@@ -218,7 +217,7 @@ if __name__ == "__main__":
     if scriptLocation != '':
         os.chdir(scriptLocation)
 
-    alignment = get_alignment.get_alignment(refFilename=args.ref, perfFilename=args.perf, cleanup=False)
+    alignment = get_alignment.get_alignment(ref_path=args.ref, perf_path=args.perf, cleanup=False)
 
     reference_beats = make_beat_reference(alignment, guess=True)
 
