@@ -31,7 +31,7 @@ def get_midi_events(perfFilename, verbose=False):
             if verbose:
                 print_message(message)
             if not message.is_meta:
-                event_time += round(mido.tick2second(message.time, ppq, tempo), 5)
+                event_time += mido.tick2second(message.time, ppq, tempo)
                 if is_note_off(message):
                     # Pair the note off to the first matching note on without an end time
                     if any(message.note == (match_:=event)['Note'] for event in unmatched_note_on):
