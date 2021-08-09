@@ -4,8 +4,6 @@ import argparse
 import mido
 import warnings
 
-from mido import messages
-from mido.midifiles import meta
 
 def get_midi_events(perfFilename, verbose=False):
     """Get a list of midi events from the file.
