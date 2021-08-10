@@ -19,7 +19,7 @@ def loudness_old_pairs():
 
 
 @pytest.mark.parametrize('wav_path, old_path', loudness_old_pairs())
-def test_raw_same_as_matlab(wav_path, old_path, clean_dir):
+def test_raw_same_as_matlab(wav_path, old_path):
     loudnessTable = get_loudness.read_loudness(old_path)
     
     time, raw_loudness = get_loudness.compute_raw_loudness(wav_path)

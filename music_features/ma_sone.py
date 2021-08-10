@@ -184,9 +184,9 @@ def computeTotalLoudness(sone_dB, frames, hopSize, fs):
         stevens method, see 'Signal sound and sensation' p73, Hartmann """
     totLoudness = np.zeros((sone_dB.shape[1],2))
     notIdx = np.full((1,sone_dB.shape[0]),True)[0]
-    for i in range(sone_dB.shape[1]):
-        maxi = np.max(sone_dB[:,i])
-        idx  = np.nonzero(sone_dB==maxi)[0][0]
+    maximums = np.max(sone_dB, 0)
+    for i, maxi in enumerate(maximums):
+        idx  = np.nonzero(sone_dB[:,i]==maxi)[0]
         notIdx[idx] = False
         totLoudness[i,1]   = maxi + 0.15*np.sum(sone_dB[notIdx,i])
     for frame in range(frames):
