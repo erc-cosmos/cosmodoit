@@ -24,8 +24,8 @@ def test_raw_same_as_matlab(wav_path, old_path, clean_dir):
     
     time, raw_loudness = get_loudness.compute_raw_loudness(wav_path)
 
-    assert (abs(time - loudnessTable.Time) < 1e-3).all()
-    assert (abs(raw_loudness - loudnessTable.Loudness) < 1e-3).all()
+    np.testing.assert_allclose(time, loudnessTable.Time, atol = 1e-3)
+    np.testing.assert_allclose(raw_loudness, loudnessTable.Loudness, atol=0.01)
     
 
 @pytest.mark.parametrize('_, old_path', loudness_old_pairs())
