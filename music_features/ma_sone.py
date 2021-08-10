@@ -30,7 +30,7 @@ def maSone(wav, *,
     spread, w_Adb = computeSpreading(cb, outerear, fft_freq)
 
     # fft frames
-    frames = getFrames(fftSize, hopSize)
+    frames = getFrames(wav, fftSize, hopSize)
 
     # Rescale to dB max (default is 96dB = 2^16)
     wav_dB = wav * (10**(dB_max/20))
@@ -138,7 +138,7 @@ def outerEarCases(outerear, fft_freq):
     else:
         raise ValueError('Unknown outer ear model: outerear = {}'.format(outerear))
 
-def getFrames(fftSize, hopSize):
+def getFrames(wav, fftSize, hopSize):
     """ Figure out number of fft frames """
     frames = 0
     idx = fftSize

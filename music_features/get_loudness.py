@@ -92,9 +92,9 @@ def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_l
 
 def compute_raw_loudness(audio_path):
     """Compute the raw loudness using the python port of the MA toolbox."""
-    audio, fs = scipy.io.wavfile.read(audio_path)
-    if np.size(audio, 2) == 2:
-        audio = np.mean(audio, 2)
+    fs, audio = scipy.io.wavfile.read(audio_path)
+    if np.size(audio, 1) == 2:
+        audio = np.mean(audio, 1)
 
     return ma_sone.maSone(audio, fs=fs)
 
