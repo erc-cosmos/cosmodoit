@@ -43,7 +43,7 @@ def clipNegative(x_array):
 
 
 def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, no_negative=True):
-    time, raw_loudness = compute_raw_loudness(audio_path)
+    time, raw_loudness  = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
     min_separation = len(time) // time[-1]
@@ -96,7 +96,9 @@ def compute_raw_loudness(audio_path):
     if np.size(audio, 1) == 2:
         audio = np.mean(audio, 1)
 
-    return ma_sone.maSone(audio, fs=fs)
+    _, tmp = ma_sone.maSone(audio, fs=fs)
+    time, raw_loudness = zip(*tmp)
+    return time, raw_loudness
 
 
 def rescale(data):
