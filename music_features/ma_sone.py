@@ -251,17 +251,10 @@ def plotFigure(wav, cb, bark_center, fft_freq, w_Adb, dlinear, dlinearOuterEar, 
     ax[2].set(ylabel='Outer Ear', xticklabels='')
     ax[3].set(ylabel='Bark Scale', xticklabels='')
     ax[4].set(ylabel='Masking', xticklabels='')
-    ax[5].set_ylabel('Sone');
+    ax[5].set_ylabel('Sone')
 
     fig3, ax = plt.subplots(nrows=1, ncols=1, figsize=(12, 7))
     ax.plot(totLoudness[:,0],totLoudness[:,1])
-    ax.set(xlabel='Time [s]', ylabel='Loudness [sones]', title='Ntot');
+    ax.set(xlabel='Time [s]', ylabel='Loudness [sones]', title='Ntot')
     plt.show()
     return
-
-# # test
-# testFile = '/Users/bedoya/OneDrive/COSMOS/Code/test.txt'
-# wav      = np.loadtxt(testFile, dtype='float')
-# sone_dB, totLoudness = maSone(wav, plotLoudness=True)
-# df = pd.DataFrame(totLoudness, columns=['time', 'loudness'])
-# df.to_csv('/Users/bedoya/OneDrive/COSMOS/Code/loudness_test.csv', index=False)
