@@ -11,8 +11,8 @@ import matplotlib.gridspec as gridspec
 
 def maSone(wav, *,
            fs           = 44100,
-           fftSize     = 512,
-           hopSize     = 256,
+           fftSize     = 1024,
+           hopSize     = 512,
            outerear     = 'terhardt',
            bark_type    = 'table',
            dB_max       = 96,
@@ -140,11 +140,12 @@ def outerEarCases(outerear, fft_freq):
 
 def getFrames(wav, fftSize, hopSize):
     """ Figure out number of fft frames """
-    frames = 0
-    idx = fftSize
-    while idx <= len(wav):
-        frames = frames + 1; 
-        idx    = idx + hopSize
+    # frames = 0
+    # idx = fftSize
+    # while idx <= len(wav):
+    #     frames = frames + 1; 
+    #     idx    = idx + hopSize
+    frames = (len(wav) - fftSize) // hopSize + 1
     return frames
 
 def getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb):
