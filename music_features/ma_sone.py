@@ -150,13 +150,13 @@ def getFrames(wav, fftSize, hopSize):
 
 def getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb):
     """ Compute normalized powerspectrum """
-    dlinear = np.zeros((int(fftSize/2+1),frames)) # data from fft (linear freq scale)
-    idx = np.linspace(0,fftSize-1,fftSize, dtype=int) # not used
+    half_window_size = fftSize//2+1
+    dlinear = np.zeros((half_window_size,frames)) # data from fft (linear freq scale)
     w   = np.hanning(fftSize)
-    for i in range(0, frames): # fft
-        X = np.fft.fft(wav[idx]*w,n=fftSize)
-        dlinear[:,i] = abs(X[0:int(fftSize/2+1),]/np.sum(w)*2)**2 # normalized powerspectrum
-        idx = idx + hopSize
+    scaling = np.sum(w)/2
+    for i in range(frames): # fft
+        X = np.fft.fft(wav[hopSize*i:hopSize*i+fftSize]*w,n=fftSize)
+        dlinear[:,i] = abs(X[0:half_window_size]/scaling)**2 # normalized powerspectrum
     dlinearOuterEar = np.multiply(np.tile(np.transpose(w_Adb), (1, dlinear.shape[1])), dlinear) # outer ear
     return dlinearOuterEar, dlinear
     
