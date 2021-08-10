@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import scipy
-import scipy.io.wavfile
+import soundfile as sf
 import scipy.signal
 import scipy.interpolate
 import pandas as pd
@@ -92,8 +92,8 @@ def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_l
 
 def compute_raw_loudness(audio_path):
     """Compute the raw loudness using the python port of the MA toolbox."""
-    fs, audio = scipy.io.wavfile.read(audio_path)
-    if np.size(audio, 1) == 2:
+    audio, fs = sf.read(audio_path)
+    if audio.ndim == 2:
         audio = np.mean(audio, 1)
 
     _, tmp = ma_sone.maSone(audio, fs=fs)
