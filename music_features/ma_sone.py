@@ -120,7 +120,7 @@ def outerEarCases(outerear, fft_freq):
     N = len(fft_freq)
     w_Adb = np.ones((1, len(fft_freq)), dtype=float)
     if outerear == 'terhardt': # terhardt 1979 (calculating virtual pitch, hearing research #1, pp 155-182)
-        w_Adb[0,0] = 0;
+        w_Adb[0,0] = 0
         w_Adb[0, range(1,len(fft_freq))] = 10**((-3.64*(fft_freq[1:N]/1000)**-0.8
                                         + 6.5 * np.exp(-0.6 * (fft_freq[1:N]/1000 - 3.3)**2)
                                         - 0.001*(fft_freq[1:N]/1000)**4)/20)
