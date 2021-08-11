@@ -1,6 +1,8 @@
 import sys
 import warnings
+
 sys.path.append("music_features")
+import get_loudness
 import get_alignment
 import get_sustain
 import get_beats
@@ -22,13 +24,17 @@ def discover_files():
     perfs = [os.path.join("tests", "test_data", "perfs", f)
              for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs")))
              if '.mid' in f]
+    wavs = [os.path.join("tests", "test_data", "perfs", f)
+             for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs")))
+             if '.wav' in f]
     assert len(scores) == len(perfs)
-    return tuple(zip(scores, perfs))
+    assert len(scores) == len(wavs)
+    return tuple(zip(scores, perfs, wavs))
 
 
 def task_sustain():
     paths = discover_files()
-    for _, perf_path in paths:
+    for _, perf_path, _ in paths:
         yield {
             'name': perf_path,
             'file_dep': [perf_path],
@@ -49,7 +55,7 @@ def task_velocities():
         else:
             write_file(velocityFilename, velocities)
         return None
-    for _, perf_path in paths:
+    for _, perf_path, _ in paths:
         yield {
             'name': perf_path,
             'file_dep': [perf_path],
@@ -61,14 +67,20 @@ def task_velocities():
 
 def task_alignment():
     paths = discover_files()
-    for (ref_path, perf_path) in paths:
+    for (ref_path, perf_path, _) in paths:
         yield from get_alignment.gen_tasks(ref_path, perf_path, working_folder=working_folder)
 
 
 def task_beats():
     paths = discover_files()
-    for (ref_path, perf_path) in paths:
+    for (ref_path, perf_path, _) in paths:
         yield from get_beats.gen_tasks(ref_path, perf_path, working_folder=working_folder)
+
+
+def task_loudness():
+    paths = discover_files()
+    for (_, _, audio_path) in paths:
+        yield from get_loudness.gen_tasks(audio_path, working_folder=working_folder)
 
 
 if __name__ == "__main__":

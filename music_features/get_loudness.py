@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 import ma_sone
 
+from util import targets_factory, write_file
+
 
 def get_loudness(input_path, *, export_dir=None, **kwargs):
     """Compute Global Loudness of Audio Files.
@@ -42,7 +44,7 @@ def clipNegative(x_array):
     return [0 if x < 0 else x for x in x_array]
 
 
-def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, smoothSpan=0.03, no_negative=True):
+def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, export_path=None, smoothSpan=0.03, no_negative=True):
     time, raw_loudness  = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
@@ -64,7 +66,8 @@ def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=
             'Loudness_norm': norm_loudness, 
             'Loudness_smooth': smooth_loudness, 
             'Loudness_envelope': envelope_loudness})
-        export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
+        if export_path is None:
+            export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
         write_loudness(df, export_path)
         print(f"Exported {columns} to: {export_path}")
 
@@ -97,7 +100,7 @@ def compute_raw_loudness(audio_path):
         audio = np.mean(audio, 1)
 
     _, tmp = ma_sone.maSone(audio, fs=fs)
-    time, raw_loudness = zip(*tmp)
+    time, raw_loudness = tmp.T  # Unpack by column
     return time, raw_loudness
 
 
@@ -112,7 +115,7 @@ def smooth(data, span):
         span = np.floor(len(data)*span)
         span+= span%2 - 1
     bandwidth = (span+2)/len(data)
-    return lowess.lowess(pd.Series(range(len(data))), data, bandwidth=bandwidth, polynomialDegree=2)
+    return lowess.lowess(pd.Series(range(len(data))), pd.Series(data), bandwidth=bandwidth, polynomialDegree=2)
 
 
 def peak_envelope(data, min_separation):
@@ -127,8 +130,26 @@ def write_loudness(data, path):
 
 
 def read_loudness(path):
+    """Read a loudness table from disk."""
     df = pd.read_csv(path)
     expected_header = ['Time', 'Loudness', 'Loudness_norm', 'Loudness_smooth', 'Loudness_envelope']
     if list(df.columns) != expected_header:
         raise IOError(f"Bad csv header: expected \n{expected_header}\n but got\n{df.columns}")
     return df
+
+
+def gen_tasks(perf_wav, working_folder="tmp"):
+    perf_targets = targets_factory(perf_wav, working_folder=working_folder)
+
+    perf_loudness = perf_targets("_loudness.csv")
+
+    def caller(perf_path, perf_loudness, **kwargs):
+        loudness = compute_loudness(perf_path, exportLoudness=True, export_path=perf_loudness, **kwargs)
+        return True
+    yield {
+        'basename': "loudness",
+        'file_dep': [perf_wav, __file__],
+        'name': perf_loudness,
+        'targets': [perf_loudness],
+        'actions': [(caller, [perf_wav, perf_loudness])]
+    }
