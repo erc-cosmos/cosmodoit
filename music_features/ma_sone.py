@@ -60,8 +60,9 @@ def maSone(wav, *,
 
 def array2dB(vector):
     """ Replace with 1 values < 1 and convert array to dB """
-    vector[vector < 1] = 1 # avoid negative values
-    dB = 10*np.log10(vector)
+    linearVector = np.copy(vector)
+    linearVector[linearVector < 1] = 1 # avoid negative values
+    dB = 10*np.log10(linearVector)
     return dB
 
 def isNumeric(x):
