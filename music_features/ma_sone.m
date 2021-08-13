@@ -264,12 +264,7 @@ end
 
 if nargout >= 2 %% Ntot requested
     Ntot    = zeros(size(sone,2),2);
-    not_idx = true(1,size(sone,1));
-    for i=1:size(sone,2)
-        [maxi, idx]  = max(sone(:,i));
-        not_idx(idx) = false;
-        Ntot(i,2)    = maxi + 0.15*sum(sone(not_idx,i));
-    end
+    Ntot(:,2) = 0.85*max(sone,[],1)+0.15*sum(sone,1);
     for t=0:frames-1
         Ntot(t+1,1) = t*(p.hopsize/p.fs); % time vector in sec
     end

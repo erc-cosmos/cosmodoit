@@ -184,12 +184,14 @@ def computeTotalLoudness(sone_dB, frames, hopSize, fs):
     """ Compute total loudness as a vector with timestamps 
         stevens method, see 'Signal sound and sensation' p73, Hartmann """
     totLoudness = np.zeros((sone_dB.shape[1],2))
-    notIdx = np.full((1,sone_dB.shape[0]),True)[0]
-    maximums = np.max(sone_dB, 0)
-    for i, maxi in enumerate(maximums):
-        idx  = np.nonzero(sone_dB[:,i]==maxi)[0]
-        notIdx[idx] = False
-        totLoudness[i,1]   = maxi + 0.15*np.sum(sone_dB[notIdx,i])
+    F = 0.15  # Masking factor
+    totLoudness[:,1] = (1-F) * np.max(sone_dB, 0) + F * np.sum(sone_dB, 0)
+    # notIdx = np.full((1,sone_dB.shape[0]),True)[0]
+    # maximums = np.max(sone_dB, 0)
+    # for i, maxi in enumerate(maximums):
+    #     idx  = np.nonzero(sone_dB[:,i]==maxi)[0]
+    #     notIdx[idx] = False
+    #     totLoudness[i,1]   = maxi + 0.15*np.sum(sone_dB[notIdx,i])
     for frame in range(frames):
         totLoudness[frame,0] = frame * (hopSize/fs) # time vector in sec
     return totLoudness
