@@ -107,7 +107,7 @@ def test_smoothing_same_as_matlab(_, old_file):
     smoothed = get_loudness.clipNegative(get_loudness.smooth(loudnessTable.Loudness_norm, span))
     halfspan = int(np.floor(np.floor(len(loudnessTable.Loudness_norm)*span)/2))
 
-    assert (abs(smoothed - loudnessTable.Loudness_smooth) < 1e-3)[halfspan:-halfspan].all()
+    np.testing.assert_allclose(smoothed[halfspan:-halfspan], loudnessTable.Loudness_smooth[halfspan:-halfspan], atol=1e-3)
 
 
 @pytest.mark.parametrize('_, old_file', loudness_old_pairs())
