@@ -145,13 +145,19 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--vertical_step', default=0.4, type=float,
                         help="the vertical step parameter in the spiral array,"
                              "which should be set between sqrt(2/15) and sqrt(0.2)")
+    parser.add_argument("-plot", "--plotTension", action='store_true', help="Plot tension curve, default False", default=False)
+    parser.add_argument("-noPlot", "--dontPlot", action='store_false', help="Do not plot tension curve", dest='plotTension')
+    parser.add_argument("-exp", "--exportTension", action='store_true', help="Export Tension as csv, default True", default=True)
+    parser.add_argument("-noExp", "--dontExport", action='store_false', help="Do not export Tension as csv", dest='exportTension')
     parser.add_argument("-cols", "--columns", type=str,
                         help="Columns to export, all:Beats,Time,Tension - time=Time,Tension - beats:Beats,Tension")
     
     args = parser.parse_args()
     inputPath = args.file_name
+    plotTension = args.plotTension
+    exportTension = args.exportTension
     if args.columns:
         columns = args.columns
     else:
         columns = 'all'
-    main(inputPath, args, plotTension=False, exportTension=True, columns='all')
+    main(inputPath, args, plotTension=plotTension, exportTension=exportTension, columns=columns)
