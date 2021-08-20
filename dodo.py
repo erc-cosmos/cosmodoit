@@ -1,3 +1,4 @@
+from genericpath import isdir
 import sys
 import warnings
 
@@ -17,20 +18,36 @@ DOIT_CONFIG = {'action_string_formatting': 'both'}
 working_folder = "tmp"
 
 
-def discover_files():
-    scores = [os.path.join("tests", "test_data", "scores", f)
-              for f in sorted(os.listdir(os.path.join("tests", "test_data", "scores")))
+def discover_files(base_folder="tests/test_data"):
+    """Find targets in a feature-type first directory structure."""
+    scores = [os.path.join(base_folder, "scores", f)
+              for f in sorted(os.listdir(os.path.join(base_folder, "scores")))
               if '.mscz' in f]
-    perfs = [os.path.join("tests", "test_data", "perfs", f)
-             for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs")))
+    perfs = [os.path.join(base_folder, "perfs", f)
+             for f in sorted(os.listdir(os.path.join(base_folder, "perfs")))
              if '.mid' in f]
-    wavs = [os.path.join("tests", "test_data", "perfs", f)
-             for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs")))
+    wavs = [os.path.join(base_folder, "perfs", f)
+             for f in sorted(os.listdir(os.path.join(base_folder, "perfs")))
              if '.wav' in f]
     assert len(scores) == len(perfs)
     assert len(scores) == len(wavs)
     return tuple(zip(scores, perfs, wavs))
 
+
+def discover_by_piece(base_folder):
+    """Find targets in a piece first directory structure."""
+    piece_folders = [os.path.join('base_folder', folder) 
+        for folder in os.listdir(base_folder) 
+        if os.path.isdir(folder)]
+    def find_ext(path, ext):
+        files = [os.path.join(path,f) for f in os.listdir(path) if ext in f]
+        if len(files) == 0:
+            warnings.warn(f"Found no file with extension {ext} in {path}")
+            return None
+        if len(files) > 1:
+            warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
+        return files[0]
+    return [tuple(find_ext(folder, ext) for ext in ('mscz', 'mid', 'wav')) for folder in piece_folders]
 
 def task_sustain():
     paths = discover_files()
