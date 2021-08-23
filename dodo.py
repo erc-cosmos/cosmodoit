@@ -101,7 +101,7 @@ def task_loudness():
         yield from get_loudness.gen_tasks(audio_path, working_folder=working_folder)
 
 
-def task_loudness():
+def task_tension():
     paths = discover_files()
     for (ref_path, perf_path, _) in paths:
         yield from get_tension.gen_tasks(ref_path, perf_path, working_folder=working_folder)
