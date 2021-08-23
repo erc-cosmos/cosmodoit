@@ -363,9 +363,9 @@ def moving_average(tension,window=4):
 
 def cal_tension(file_name, piano_roll, beat_data, args, window_size=1, key_name='', generate_pickle=True, generate_plots=False):
 
-    try:
+    # try:
         # all the major key pos is C major pos, all the minor key pos is a minor pos
-        key_name,key_pos, note_shift = cal_key(piano_roll, key_name,end_ratio=args.end_ratio)
+        key_name,key_pos, note_shift = cal_key(piano_roll, key_name,end_ratio=args['end_ratio'])
         # bar_step = downbeat_indices[1] - downbeat_indices[0]
         centroids = cal_centroid(piano_roll, note_shift,-1,-1)
 
@@ -388,8 +388,7 @@ def cal_tension(file_name, piano_roll, beat_data, args, window_size=1, key_name=
         centroid_diff = np.linalg.norm(centroid_diff, axis=-1)
         centroid_diff = np.insert(centroid_diff, 0, 0)
 
-        new_output_folder = gen_new_output_folder(file_name, args)
-
+        new_output_folder = not(generate_pickle and generate_plots) or gen_new_output_folder(file_name, args)
         if generate_pickle:
             export_tension(new_output_folder, file_name, total_tension, diameters, centroid_diff, window_time)
 
@@ -398,15 +397,15 @@ def cal_tension(file_name, piano_roll, beat_data, args, window_size=1, key_name=
 
         return [tension_time, total_tension, diameters, centroid_diff, key_name,kc['change_time'],kc['key_change_bar'], kc['changed_key_name'], new_output_folder]
 
-    except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
-        exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
-        logger.info(exception_str)
+    # except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
+    #     exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
+    #     logger.info(exception_str)
 
 def gen_new_output_folder(file_name, args):
 
-    if args.input_folder[-1] != '/':
-        args.input_folder += '/'
-    name_with_sub_folder = file_name.replace(args.input_folder, "")
+    if args['input_folder'][-1] != '/':
+        args['input_folder'] += '/'
+    name_with_sub_folder = file_name.replace(args['input_folder'], "")
 
     output_name = os.path.join(args.output_folder, name_with_sub_folder)
 
@@ -444,7 +443,7 @@ def windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, args)
     down_beat_time = beat_data['down_beat_time']
     sixteenth_time = beat_data['sixteenth_time']
 
-    if args.key_changed is True:
+    if args['key_changed']:
         # use a bar window to detect key change
         merged_centroids = merge_tension(centroids,beat_indices, down_beat_indices, window_size=-1)
 
@@ -715,9 +714,9 @@ def extract_notes(file_name,track_num):
         #     return None
 
         if track_num != 0:
-            if len(pm.instruments) < track_num:
-                logger.warning(f'the file {file_name} has {len(pm.instruments)} tracks,'
-                               f'less than the required track num {track_num}. Use all the tracks')
+            # if len(pm.instruments) < track_num:
+            #     logger.warning(f'the file {file_name} has {len(pm.instruments)} tracks,'
+            #                    f'less than the required track num {track_num}. Use all the tracks')
             pm.instruments = pm.instruments[:track_num]
 
 

@@ -8,6 +8,7 @@ import get_alignment
 import get_sustain
 import get_beats
 import get_onsetVelocity
+import get_tension
 import os
 import argparse
 
@@ -98,6 +99,12 @@ def task_loudness():
     paths = discover_files()
     for (_, _, audio_path) in paths:
         yield from get_loudness.gen_tasks(audio_path, working_folder=working_folder)
+
+
+def task_loudness():
+    paths = discover_files()
+    for (ref_path, perf_path, _) in paths:
+        yield from get_tension.gen_tasks(ref_path, perf_path, working_folder=working_folder)
 
 
 if __name__ == "__main__":

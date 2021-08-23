@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import tension_calculation as tc
+from util import targets_factory
+
 
 def genBaseName(inputFile):
     """ Generate full path base name (without extension) from midi file """
@@ -24,14 +26,14 @@ def createTensionDataFrame(time, momentum, diameter, strain):
 
 def computeTension(inputFile, args):
     """Use midi-miner to compute Harmonic Tension data"""
-    _, piano_roll,beat_data = tc.extract_notes(inputFile,args.track_num)
-    if args.key_name == '':
+    _, piano_roll,beat_data = tc.extract_notes(inputFile,args['track_num'])
+    if args['key_name'] == '':
         # key_name = get_key_name(inputFile)
         from tension_calculation import all_key_names
         key_name = all_key_names
-        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args.window_size, key_name, generate_pickle=False)
+        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args['window_size'], key_name, generate_pickle=False)
     else:
-        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args.window_size,[args.key_name], generate_pickle=False)
+        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args['window_size'],[args['key_name']], generate_pickle=False)
 
     # tension_time, total_tension, diameters, centroid_diff, _, _, _, _ = tension_result
     tension_time, total_tension, diameters,centroid_diff, key_name, key_change_time, key_change_bar,key_change_name, new_output_folder = tension_result
@@ -120,6 +122,38 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
         for inputFile in fileList:
             tension = getTension(inputFile, args=args, plotTension=plotTension, exportTension=exportTension, columns=columns)
     return
+
+
+def gen_tasks(ref_score, perf_path, working_folder="tmp"):
+    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+    ref_targets = ref_targets = targets_factory(ref_score, working_folder=working_folder)
+
+    ref_midi = ref_targets("_ref.mid")
+    perf_tension = perf_targets("_tension.csv")
+    perf_beats = perf_targets("_beats.csv")
+
+    def caller(perf_tension, ref_midi, perf_beats, **kwargs):
+        args = {
+            'window_size':1,
+            'key_name':'',
+            'track_num': 3,
+            'end_ratio':.5,
+            'key_changed':False,
+            'vertical_step':0.4
+        }
+        tension = getTension(ref_midi, args=args, plotTension=False, exportTension=False, columns='time')
+        df_beats = pd.read_csv(perf_beats).tail(-1) # Drop the first beat as tension is not computed there
+        tension['time'] = df_beats['time']
+        tension.to_csv(perf_tension, sep=',', index=False)
+        return True
+    yield {
+        'basename': "tension",
+        'file_dep': [ref_midi, perf_beats, __file__],
+        'name': perf_tension,
+        'targets': [perf_tension],
+        'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
+    }
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
