@@ -124,7 +124,7 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
     return
 
 
-def gen_tasks(ref_score, perf_path, working_folder="tmp"):
+def gen_tasks(piece_id, ref_score, perf_path, working_folder="tmp"):
     perf_targets = targets_factory(perf_path, working_folder=working_folder)
     ref_targets = ref_targets = targets_factory(ref_score, working_folder=working_folder)
 
@@ -149,7 +149,7 @@ def gen_tasks(ref_score, perf_path, working_folder="tmp"):
     yield {
         'basename': "tension",
         'file_dep': [ref_midi, perf_beats, __file__],
-        'name': perf_tension,
+        'name': piece_id,
         'targets': [perf_tension],
         'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
     }

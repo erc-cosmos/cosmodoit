@@ -138,7 +138,7 @@ def read_loudness(path):
     return df
 
 
-def gen_tasks(perf_wav, working_folder="tmp"):
+def gen_tasks(piece_id, perf_wav, working_folder="tmp"):
     perf_targets = targets_factory(perf_wav, working_folder=working_folder)
 
     perf_loudness = perf_targets("_loudness.csv")
@@ -149,7 +149,7 @@ def gen_tasks(perf_wav, working_folder="tmp"):
     yield {
         'basename': "loudness",
         'file_dep': [perf_wav, __file__],
-        'name': perf_loudness,
+        'name': piece_id,
         'targets': [perf_loudness],
         'actions': [(caller, [perf_wav, perf_loudness])]
     }

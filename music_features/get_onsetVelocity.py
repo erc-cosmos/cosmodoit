@@ -17,11 +17,11 @@ def is_note_event(event):
     return event['Type'] == 'note_on'
 
 
-def gen_tasks(perf_path, working_folder):
+def gen_tasks(piece_id, perf_path, working_folder):
     perf_targets = targets_factory(perf_path, working_folder)
     perf_velocity = perf_targets("_velocity.csv")
-    def runner(perf_filename):
-        velocities = get_onset_velocity(perf_path, perf_velocity)
+    def runner(perf_filename, perf_velocity):
+        velocities = get_onset_velocity(perf_path)
         if velocities == []:
             warnings.warn("Warning: no note on event detected in " + perf_filename)
         else:
@@ -29,10 +29,10 @@ def gen_tasks(perf_path, working_folder):
         return None
     yield {
         'basename': 'velocities',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [perf_path],
         'targets': [perf_velocity],
-        'actions': [(runner, [perf_path])]
+        'actions': [(runner, [perf_path, perf_velocity])]
     }
 
 

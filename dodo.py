@@ -32,7 +32,8 @@ def discover_files_by_type(base_folder="tests/test_data"):
              if '.wav' in f]
     assert len(scores) == len(perfs)
     assert len(scores) == len(wavs)
-    return tuple(zip(scores, perfs, wavs))
+    piece_ids = (os.path.splitext(perf)[0] for perf in perfs)
+    return tuple(zip(piece_ids, scores, perfs, wavs))
 
 
 def discover_files_by_piece(base_folder='tests/piece_directory_structure'):
@@ -50,7 +51,7 @@ def discover_files_by_piece(base_folder='tests/piece_directory_structure'):
         if len(files) > 1:
             warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
         return files[0]
-    grouped_files = [tuple(find_ext(folder, ext) for ext in ('.mscz', '.mid', '.wav')) for folder in piece_folders]
+    grouped_files = [(folder, *(find_ext(folder, ext) for ext in ('.mscz', '.mid', '.wav'))) for folder in piece_folders]
     return grouped_files
 
 
@@ -63,13 +64,14 @@ def task_generator():
     """Generates tasks for all files."""
     working_folder = default_working_folder
     paths = discover_files()
-    for (ref_path, perf_path, audio_path) in paths:
-        yield from get_tension.gen_tasks(ref_path, perf_path, working_folder=working_folder)
-        yield from get_loudness.gen_tasks(audio_path, working_folder=working_folder)
-        yield from get_beats.gen_tasks(ref_path, perf_path, working_folder=working_folder)
-        yield from get_alignment.gen_tasks(ref_path, perf_path, working_folder=working_folder)
-        yield from get_sustain.gen_tasks(perf_path, working_folder=working_folder)
-        yield from get_onsetVelocity.gen_tasks(perf_path, working_folder=working_folder)
+    for (piece_id, ref_path, perf_path, audio_path) in paths:
+        print(piece_id)
+        yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+        yield from get_loudness.gen_tasks(piece_id, audio_path, working_folder=working_folder)
+        yield from get_beats.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+        yield from get_alignment.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+        yield from get_sustain.gen_tasks(piece_id, perf_path, working_folder=working_folder)
+        yield from get_onsetVelocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
 
 
 if __name__ == "__main__":

@@ -181,7 +181,7 @@ def find_outliers(beats, *, factor=3, verbose=True):
     return anomaly_indices
 
 
-def gen_tasks(ref_path, perf_path, working_folder="tmp"):
+def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
     perf_targets = targets_factory(perf_path, working_folder=working_folder)
 
@@ -198,7 +198,7 @@ def gen_tasks(ref_path, perf_path, working_folder="tmp"):
     yield {
         'basename': "beats",
         'file_dep': [perf_match, ref_midi, __file__],
-        'name': perf_beats,
+        'name': piece_id,
         'targets': [perf_beats],
         'actions': [(caller, [perf_match, ref_midi, perf_beats])]
     }

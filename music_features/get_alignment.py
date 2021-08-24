@@ -79,7 +79,7 @@ def read_alignment_file(file_path):
                 ]
 
 
-def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
+def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
     """Generate doit tasks for the midi conversion and preprocessing."""
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
     
@@ -94,7 +94,7 @@ def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Co
 
     yield {
         'basename': '_XML_Conversion',
-        'name': ref_name,
+        'name': piece_id, 
         'file_dep': [ref_path, __file__, musescore_exec],
         'targets': [ref_xml],
         'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_xml])],
@@ -103,7 +103,7 @@ def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Co
     }
     yield {
         'basename': '_strip_direction',
-        'name': ref_name,
+        'name': piece_id, 
         'file_dep': [ref_xml, __file__],
         'targets': [ref_nodir],
         'actions': [(_remove_directions, [ref_xml, ref_nodir],)],
@@ -111,7 +111,7 @@ def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Co
     }
     yield {
         'basename': 'MIDI_Conversion',
-        'name': ref_name,
+        'name': piece_id, 
         'file_dep': [ref_nodir, __file__, musescore_exec],
         'targets': [ref_mid],
         'actions': [string_escape_concat([musescore_exec, ref_nodir, "--export-to", ref_mid])],
@@ -119,7 +119,7 @@ def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Co
         'verbosity': 0
     }
 
-def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
+def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
     """Generate doit tasks for the alignment."""
     program_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
 
@@ -147,7 +147,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
 
     yield {
         'basename': '_pianoroll_conversion_ref',
-        'name': ref_pianoroll,
+        'name': piece_id, 
         'file_dep': [ref_path, exec_pianoroll, __file__],
         'targets': [ref_pianoroll, ref_midi],
         'actions': [
@@ -158,7 +158,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
     yield {
         'basename': '_pianoroll_conversion_perf',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [perf_path, exec_pianoroll, __file__],
         'targets': [perf_pianoroll, perf_copy_noext+'.mid'],
         'actions': [
@@ -169,7 +169,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
     yield {
         'basename': '_FMT3X_conversion',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [ref_pianoroll, exec_fmt3x, __file__],
         'targets': [ref_FMT3X],
         'actions': [string_escape_concat([exec_fmt3x, ref_pianoroll, ref_FMT3X])],
@@ -177,7 +177,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
     yield {
         'basename': '_HMM_conversion',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [ref_FMT3X, exec_hmm, __file__],
         'targets': [ref_HMM],
         'actions': [string_escape_concat([exec_hmm, ref_FMT3X, ref_HMM])],
@@ -185,7 +185,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
     yield {
         'basename': '_prealignment',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [ref_HMM, perf_pianoroll, exec_prealignment, __file__],
         'targets': [perf_prematch],
         'actions': [string_escape_concat([exec_prealignment, ref_HMM, perf_pianoroll, perf_prematch, str(0.01)])],
@@ -193,7 +193,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
     yield {
         'basename': '_error_detection',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [ref_FMT3X, ref_HMM, perf_prematch, exec_errmatch, __file__],
         'targets': [perf_errmatch],
         'actions': [string_escape_concat([exec_errmatch, ref_FMT3X, ref_HMM, perf_prematch, perf_errmatch, str(0)])],
@@ -201,7 +201,7 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
     yield {
         'basename': '_realignment',
-        'name': perf_path,
+        'name': piece_id, 
         'file_dep': [ref_FMT3X, ref_HMM, perf_errmatch, __file__],
         'targets': [perf_realigned],
         'actions': [string_escape_concat([exec_realignment, ref_FMT3X, ref_HMM, perf_errmatch, perf_realigned, str(0.3)])],
@@ -209,10 +209,10 @@ def gen_subtasks_Nakamura(ref_path, perf_path, working_folder="tmp"):
     }
 
 
-def gen_tasks(ref_path, perf_path, working_folder="tmp"):
+def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
     """Generate doit tasks to call Nakamura's midi to midi alignment software."""
-    yield from gen_subtasks_midi(ref_path, working_folder=working_folder)
-    yield from gen_subtasks_Nakamura(ref_path, perf_path, working_folder)
+    yield from gen_subtasks_midi(piece_id, ref_path, working_folder=working_folder)
+    yield from gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder)
     
 
 
