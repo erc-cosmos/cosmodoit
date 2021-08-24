@@ -7,7 +7,7 @@ import get_loudness
 import get_alignment
 import get_sustain
 import get_beats
-import get_onsetVelocity
+import get_onset_velocity
 import get_tension
 import os
 import argparse
@@ -36,7 +36,7 @@ def discover_files_by_type(base_folder="tests/test_data"):
     return tuple(zip(piece_ids, scores, perfs, wavs))
 
 
-def discover_files_by_piece(base_folder='tests/piece_directory_structure'):
+def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structure'):
     """Find targets in a piece first directory structure.
     
     This expects pieces to be in one folder each"""
@@ -61,7 +61,7 @@ discover_files= discover_files_by_piece
 
 
 def task_generator():
-    """Generates tasks for all files."""
+    #"""Generates tasks for all files."""
     working_folder = default_working_folder
     paths = discover_files()
     for (piece_id, ref_path, perf_path, audio_path) in paths:
@@ -71,7 +71,7 @@ def task_generator():
         yield from get_beats.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
         yield from get_alignment.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
         yield from get_sustain.gen_tasks(piece_id, perf_path, working_folder=working_folder)
-        yield from get_onsetVelocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
+        yield from get_onset_velocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
 
 
 if __name__ == "__main__":
