@@ -30,7 +30,7 @@ def gen_tasks(piece_id, perf_path, working_folder):
     yield {
         'basename': 'velocities',
         'name': piece_id, 
-        'file_dep': [perf_path],
+        'file_dep': [perf_path, __file__],
         'targets': [perf_velocity],
         'actions': [(runner, [perf_path, perf_velocity])]
     }
