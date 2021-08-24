@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
-from get_midiEvents import get_midi_events
+from get_midi_events import get_midi_events
 from util import targets_factory, write_file
 
 def get_sustain(perf_path):
