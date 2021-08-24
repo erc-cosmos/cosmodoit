@@ -16,10 +16,10 @@ from util import write_file, run_doit
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
-working_folder = "tmp"
+default_working_folder = "tmp"
 
 
-def discover_files(base_folder="tests/test_data"):
+def discover_files_by_type(base_folder="tests/test_data"):
     """Find targets in a feature-type first directory structure."""
     scores = [os.path.join(base_folder, "scores", f)
               for f in sorted(os.listdir(os.path.join(base_folder, "scores")))
@@ -35,11 +35,13 @@ def discover_files(base_folder="tests/test_data"):
     return tuple(zip(scores, perfs, wavs))
 
 
-def discover_by_piece(base_folder):
-    """Find targets in a piece first directory structure."""
-    piece_folders = [os.path.join('base_folder', folder) 
+def discover_files_by_piece(base_folder='tests/piece_directory_structure'):
+    """Find targets in a piece first directory structure.
+    
+    This expects pieces to be in one folder each"""
+    piece_folders = [os.path.join(base_folder, folder) 
         for folder in os.listdir(base_folder) 
-        if os.path.isdir(folder)]
+        if os.path.isdir(os.path.join(base_folder, folder))]
     def find_ext(path, ext):
         files = [os.path.join(path,f) for f in os.listdir(path) if ext in f]
         if len(files) == 0:
@@ -48,72 +50,36 @@ def discover_by_piece(base_folder):
         if len(files) > 1:
             warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
         return files[0]
-    return [tuple(find_ext(folder, ext) for ext in ('mscz', 'mid', 'wav')) for folder in piece_folders]
+    grouped_files = [tuple(find_ext(folder, ext) for ext in ('.mscz', '.mid', '.wav')) for folder in piece_folders]
+    return grouped_files
 
-def task_sustain():
+
+# Switch between discovery modes
+discover_files= discover_files_by_piece
+# discover_files= discover_files_by_type
+
+
+def task_generator():
+    """Generates tasks for all files."""
+    working_folder = default_working_folder
     paths = discover_files()
-    for _, perf_path, _ in paths:
-        yield {
-            'name': perf_path,
-            'file_dep': [perf_path],
-            # 'targets': [target],
-            'actions': [(lambda path:{'sustain': get_sustain.get_sustain(path)}, [perf_path])]
-        }
-
-
-def task_velocities():
-    paths = discover_files()
-    def runner(perf_filename):
-        perf_noext, _ = os.path.splitext(os.path.basename(perf_filename))
-        velocityFilename = os.path.join(working_folder, perf_noext+"_velocity.csv")
-
-        velocities = get_onsetVelocity.get_onset_velocity(perf_filename)
-        if velocities == []:
-            warnings.warn("Warning: no note on event detected in " + perf_filename)
-        else:
-            write_file(velocityFilename, velocities)
-        return None
-    for _, perf_path, _ in paths:
-        yield {
-            'name': perf_path,
-            'file_dep': [perf_path],
-            # 'targets': [target],
-            'actions': [(runner, [perf_path])]
-        }
-
-
-
-def task_alignment():
-    paths = discover_files()
-    for (ref_path, perf_path, _) in paths:
-        yield from get_alignment.gen_tasks(ref_path, perf_path, working_folder=working_folder)
-
-
-def task_beats():
-    paths = discover_files()
-    for (ref_path, perf_path, _) in paths:
-        yield from get_beats.gen_tasks(ref_path, perf_path, working_folder=working_folder)
-
-
-def task_loudness():
-    paths = discover_files()
-    for (_, _, audio_path) in paths:
-        yield from get_loudness.gen_tasks(audio_path, working_folder=working_folder)
-
-
-def task_tension():
-    paths = discover_files()
-    for (ref_path, perf_path, _) in paths:
+    for (ref_path, perf_path, audio_path) in paths:
         yield from get_tension.gen_tasks(ref_path, perf_path, working_folder=working_folder)
+        yield from get_loudness.gen_tasks(audio_path, working_folder=working_folder)
+        yield from get_beats.gen_tasks(ref_path, perf_path, working_folder=working_folder)
+        yield from get_alignment.gen_tasks(ref_path, perf_path, working_folder=working_folder)
+        yield from get_sustain.gen_tasks(perf_path, working_folder=working_folder)
+        yield from get_onsetVelocity.gen_tasks(perf_path, working_folder=working_folder)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', required=True)
-    parser.add_argument('--perf', required=True)
+    parser.add_argument('--ref', required=False)
+    parser.add_argument('--perf', required=False)
 
     args = parser.parse_args()
 
-    globals['discover_files'] = lambda:[(args.ref, args.perf)]
+    if args.ref and args.perf:
+        globals['discover_files'] = lambda:[(args.ref, args.perf)]
     run_doit(globals)
     

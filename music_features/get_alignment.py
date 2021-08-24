@@ -81,12 +81,17 @@ def read_alignment_file(file_path):
 
 def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
     """Generate doit tasks for the midi conversion and preprocessing."""
+    ref_targets = targets_factory(ref_path, working_folder=working_folder)
+    
     ref_name, ref_ext = os.path.splitext(ref_path)
 
     if ref_ext not in [".mxl", ".xml", ".mscz"]:
         raise NotImplementedError(f"Unsupported format {ref_ext}")
 
-    ref_xml = ref_name+".xml"
+    ref_xml = ref_targets(".xml")
+    ref_nodir = ref_targets("_nodir.xml")
+    ref_mid = ref_targets(".mid")
+
     yield {
         'basename': '_XML_Conversion',
         'name': ref_name,
@@ -96,7 +101,6 @@ def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Co
         'clean': True,
         'verbosity': 0
     }
-    ref_nodir = ref_name+"_nodir.xml"
     yield {
         'basename': '_strip_direction',
         'name': ref_name,
@@ -105,7 +109,6 @@ def gen_subtasks_midi(ref_path, musescore_exec="/Applications/MuseScore 3.app/Co
         'actions': [(_remove_directions, [ref_xml, ref_nodir],)],
         'clean': True
     }
-    ref_mid = ref_name+".mid"
     yield {
         'basename': 'MIDI_Conversion',
         'name': ref_name,
