@@ -1,22 +1,24 @@
 from genericpath import isdir
 import sys
 import warnings
+import os
 
-sys.path.append("music_features")
+sys.path.append(os.path.join(os.path.dirname(__file__), "music_features"))
 import get_loudness
 import get_alignment
 import get_sustain
 import get_beats
 import get_onset_velocity
 import get_tension
-import os
 import argparse
+import doit
 
 from util import run_doit
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
-default_working_folder = "tmp"
+
+default_working_folder = os.path.join(doit.get_initial_workdir(), 'tmp')
 
 
 def discover_files_by_type(base_folder="tests/test_data"):
@@ -40,6 +42,9 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     """Find targets in a piece first directory structure.
     
     This expects pieces to be in one folder each"""
+
+    if doit.get_initial_workdir() != os.getcwd():
+        base_folder = os.getcwd()
     piece_folders = [os.path.join(base_folder, folder) 
         for folder in os.listdir(base_folder) 
         if os.path.isdir(os.path.join(base_folder, folder))]

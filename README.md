@@ -25,7 +25,8 @@ NB: If the `doit` command is not on the `PATH`, the `python -m doit` command is 
 
 Computed files will be put in a `tmp` folder at the root of the repository (this is temporary—make sure it exists!).
 
-The pipeline will look for pieces in the `tests/test_data/piece_directory_structure` folder (this is temporary). Each piece should be in its own folder, and requires :
+By default, the pipeline will look for pieces in the `tests/test_data/piece_directory_structure` folder; however, the `--dir <target_dir>` option can be used to override that behavior. 
+Each piece should be in its own folder, and requires :
 * a performance in `.mid` format;
 * a score in `.mscz` format (Musescore);
 * a recording in `.wav` format.
@@ -39,3 +40,5 @@ Type `doit list` to list all valid feature tasks, or `doit list --all` to list a
 To force a task to be recomputed, type `doit forget <task>` and it will be run on the next execution.
 
 Running `doit clean` will remove the intermediary files, keeping only the final features.
+
+If processing is long, using `doit -n <N> -P thread` will run tasks on N threads.
