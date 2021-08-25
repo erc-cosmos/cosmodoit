@@ -12,7 +12,7 @@ import get_tension
 import os
 import argparse
 
-from util import write_file, run_doit
+from util import run_doit
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
@@ -65,7 +65,6 @@ def task_generator():
     working_folder = default_working_folder
     paths = discover_files()
     for (piece_id, ref_path, perf_path, audio_path) in paths:
-        print(piece_id)
         yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
         yield from get_loudness.gen_tasks(piece_id, audio_path, working_folder=working_folder)
         yield from get_beats.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
