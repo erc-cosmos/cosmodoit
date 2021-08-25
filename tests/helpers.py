@@ -12,6 +12,17 @@ def clean_dir():
     shutil.rmtree(new_dir)
 
 
+def test_files():
+    scores = [os.path.join("tests", "test_data", "scores", f) 
+        for f in sorted(os.listdir(os.path.join("tests", "test_data", "scores"))) 
+        if '.mscz' in f]
+    perfs = [os.path.join("tests", "test_data", "perfs", f) 
+        for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs"))) 
+        if '.mid' in f]
+    assert len(scores) == len(perfs)
+    return tuple(zip(scores,perfs))
+
+
 def assert_numeric_equiv_csv(path_a, path_b):
     """Compares 2 csv files as far as  is concerned."""
     with open(path_a) as file_a:

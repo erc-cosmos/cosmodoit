@@ -54,7 +54,7 @@ def _remove_directions(filename, outfile=None):
 
 def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
     def task_wrapper():
-        yield from gen_tasks(ref_path, perf_path, working_folder)
+        yield from gen_tasks(os.path.basename(ref_path), ref_path, perf_path, working_folder)
     task_set = {'task_alignment': task_wrapper}
     run_doit(task_set)
     

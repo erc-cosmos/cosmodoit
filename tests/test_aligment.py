@@ -3,28 +3,26 @@ import shutil
 
 import pytest
 from get_alignment import get_alignment
-
+from helpers import clean_dir
 
 @pytest.fixture
-def clean_dir():
-    reference, performance = ('tests/test_data/scores/Chopin_Ballade_No2_ref.mscz',
-                              'tests/test_data/perfs/Chopin_Ballade_No2_perf.mid')
-    new_dir = "testDir"
-    os.makedirs(new_dir)
-    new_ref = shutil.copy(reference, new_dir)
-    new_perf = shutil.copy(performance, new_dir)
-    yield (new_ref, new_perf)
-    shutil.rmtree(new_dir)
+def prepared_dir(clean_dir):
+    reference, performance = ('tests/test_data/scores/Mazurka 33-4, Pachmann DA.mscz',
+                              'tests/test_data/perfs/Mazurka 33-4, Pachmann DA.mid')
+    new_ref = shutil.copy(reference, clean_dir)
+    new_perf = shutil.copy(performance, clean_dir)
+    yield (clean_dir, new_ref, new_perf)
 
 
 def test_cleanup(clean_dir):
-    ref_filename, perf_filename = clean_dir
+    ref_filename, perf_filename = ('tests/test_data/scores/Mazurka 33-4, Pachmann DA.mscz',
+                                   'tests/test_data/perfs/Mazurka 33-4, Pachmann DA.mid')
     remote_dir = os.path.dirname(ref_filename)
 
     remote_dir_content_before = sorted(os.listdir(remote_dir))
     local_dir_content_before = sorted(os.listdir())
 
-    _ = get_alignment(ref_path=ref_filename, perf_path=perf_filename, cleanup=True, working_folder='testDir')
+    _ = get_alignment(ref_path=ref_filename, perf_path=perf_filename, cleanup=True, working_folder=clean_dir)
 
     remote_dir_content_after = sorted(os.listdir(remote_dir))
     assert remote_dir_content_after == remote_dir_content_before
