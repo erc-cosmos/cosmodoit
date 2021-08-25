@@ -53,6 +53,7 @@ def get_beats(alignment, reference_beats, *, max_tries=3):
 
         spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
         interpolation = spline(reference_beats)
+        interpolation[(reference_beats<ticks.min()) | (reference_beats>ticks.max())] = np.nan
         tempos = [np.nan, *(60/np.diff(interpolation))]
         beats = [{'count': count,
                 'time': time,
