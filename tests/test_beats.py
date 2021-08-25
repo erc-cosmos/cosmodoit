@@ -28,8 +28,9 @@ def test_sorted_ref_beats_manual(ref, perf):
 
 @pytest.mark.parametrize("ref, perf", test_files())
 def test_sorted_ref_beats_prettymidi(ref, perf):
-    alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False)
-    ref_midi = ref.replace(".mscz", ".mid")
+    cache_folder = 'tmp'
+    _ = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False, working_folder=cache_folder)
+    ref_midi = targets_factory(ref,working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
     sorted(reference_beats) == reference_beats
