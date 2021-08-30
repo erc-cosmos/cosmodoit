@@ -23,8 +23,6 @@ Create your own folders and upload code with their respective filetypes.
 
 NB: If the `doit` command is not on the `PATH`, the `python -m doit` command is equivalent.
 
-Computed files will be put in a `tmp` folder at the root of the repository (this is temporary—make sure it exists!).
-
 By default, the pipeline will look for pieces in the `tests/test_data/piece_directory_structure` folder; however, the `--dir <target_dir>` option can be used to override that behavior. 
 Each piece should be in its own folder, and requires :
 * a performance in `.mid` format;
@@ -32,6 +30,8 @@ Each piece should be in its own folder, and requires :
 * a recording in `.wav` format.
 
 The files don't need to have the same name before the extension, but it is recommended anyway.
+
+Computed files will be put in a `tmp` folder at the root of the repository if no custom path is given, or a `tmp` folder at the custom path (this is temporary).
 
 It is possible to run only a given feature and/or a given piece by using `doit <feature>[:<piece>]` (dependencies will still get computed if needed). Either can accept wildcards `*`, e.g. `doit loudness` or `doit loudness:*` to compute loudness for all detected pieces or `doit *:*Mazurka\ 17-4` to compute all features on Mazurka 17-4.
 

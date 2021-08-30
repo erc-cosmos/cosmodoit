@@ -18,8 +18,8 @@ from util import run_doit
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
 
-default_working_folder = os.path.join(doit.get_initial_workdir(), 'tmp')
-
+# default_working_folder = os.path.join(doit.get_initial_workdir(), 'tmp')
+default_working_folder = 'tmp'
 
 def discover_files_by_type(base_folder="tests/test_data"):
     """Find targets in a feature-type first directory structure."""
@@ -47,7 +47,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
         base_folder = os.getcwd()
     piece_folders = [os.path.join(base_folder, folder) 
         for folder in os.listdir(base_folder) 
-        if os.path.isdir(os.path.join(base_folder, folder))]
+        if os.path.isdir(os.path.join(base_folder, folder)) and folder != 'tmp']
     def find_ext(path, ext):
         files = [os.path.join(path,f) for f in os.listdir(path) if ext in f]
         if len(files) == 0:
@@ -66,9 +66,10 @@ discover_files= discover_files_by_piece
 
 
 def task_generator():
-    #"""Generates tasks for all files."""
+    # """Generates tasks for all files."""
     working_folder = default_working_folder
     paths = discover_files()
+    os.makedirs(working_folder, exist_ok=True)
     for (piece_id, ref_path, perf_path, audio_path) in paths:
         yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
         yield from get_loudness.gen_tasks(piece_id, audio_path, working_folder=working_folder)
