@@ -30,6 +30,7 @@ def gen_tasks(piece_id, perf_path, working_folder):
     yield {
         'basename': 'velocities',
         'name': piece_id, 
+        'doc': "Extract onset velocities from a midi file.",
         'file_dep': [perf_path, __file__],
         'targets': [perf_velocity],
         'actions': [(runner, [perf_path, perf_velocity])]

@@ -150,6 +150,7 @@ def gen_tasks(piece_id, ref_score, perf_path, working_folder="tmp"):
         'basename': "tension",
         'file_dep': [ref_midi, perf_beats, __file__],
         'name': piece_id,
+        'doc': "Compute the tension parameters —cloud momentum, tensile strain and cloud diameter— using midi-miner.",
         'targets': [perf_tension],
         'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
     }

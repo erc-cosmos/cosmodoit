@@ -150,6 +150,7 @@ def gen_tasks(piece_id, perf_wav, working_folder="tmp"):
         'basename': "loudness",
         'file_dep': [perf_wav, __file__],
         'name': piece_id,
+        'doc': "Compute loudness using a port of the MA matlab toolbox",
         'targets': [perf_loudness],
         'actions': [(caller, [perf_wav, perf_loudness])]
     }

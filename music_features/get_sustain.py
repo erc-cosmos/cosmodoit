@@ -27,6 +27,7 @@ def gen_tasks(piece_id, perf_path, working_folder):
     yield {
             'basename': 'sustain',
             'name': piece_id, 
+            'doc': "Extract sustain pedal information from a midi file.",
             'file_dep': [perf_path, __file__],
             'targets': [perf_sustain],
             'actions': [(runner, [perf_path, perf_sustain])]

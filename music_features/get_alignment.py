@@ -112,6 +112,7 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
     yield {
         'basename': 'MIDI_Conversion',
         'name': piece_id, 
+        'doc': "Converts a Musescore file to a stripped down midi",
         'file_dep': [ref_nodir, __file__, musescore_exec],
         'targets': [ref_mid],
         'actions': [string_escape_concat([musescore_exec, ref_nodir, "--export-to", ref_mid])],

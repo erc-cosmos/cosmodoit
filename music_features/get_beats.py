@@ -200,6 +200,7 @@ def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
         'basename': "beats",
         'file_dep': [perf_match, ref_midi, __file__],
         'name': piece_id,
+        'doc': "Find beats' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
         'targets': [perf_beats],
         'actions': [(caller, [perf_match, ref_midi, perf_beats])]
     }
