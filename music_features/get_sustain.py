@@ -6,9 +6,11 @@ from util import targets_factory, write_file
 def get_sustain(perf_path):
     """Extract sustain pedal information from a midi file."""
     #TODO: add flag for binary output
-    return [{'Time':event['Time'],'Sustain':event['Value']} 
+    sustain = [{'Time':event['Time'],'Sustain':event['Value']} 
             for event in get_midi_events(perf_path) 
             if is_sustain_event(event)]
+    #TODO: Switch to pandas dataframes rather than this fallback
+    return sustain or [{'Time':None,'Sustain':None}]
 
 
 def is_sustain_event(event):

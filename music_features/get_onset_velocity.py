@@ -7,9 +7,11 @@ from util import targets_factory, write_file
 
 def get_onset_velocity(perfFilename):
     """Extract onset velocities from a midi file."""
-    return [{'Time':event['StartTime'],'Velocity':event['Velocity']} 
+    velocities = [{'Time':event['StartTime'],'Velocity':event['Velocity']} 
             for event in get_midi_events(perfFilename) 
             if is_note_event(event)]
+    #TODO: Switch to pandas dataframes rather than this fallback
+    return velocities or [{'Time':None, 'Velocity':None}]
 
 
 def is_note_event(event):
