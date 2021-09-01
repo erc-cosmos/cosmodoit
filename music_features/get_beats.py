@@ -64,13 +64,13 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
 
         anomalies = find_outliers(beats)
         if anomalies == []:
-            return beats, ignored if return_ignored else beats
+            return (beats, ignored) if return_ignored else beats
         else:
             alignment, new_ignored = attempt_correction(beats, alignment, reference_beats, anomalies)
             ignored.extend(new_ignored)
 
     warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
-    return beats, ignored if return_ignored else beats
+    return (beats, ignored) if return_ignored else beats
     
 
 def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=True):
