@@ -90,10 +90,10 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
 
     ref_xml = ref_targets(".xml")
     ref_nodir = ref_targets("_nodir.xml")
-    ref_mid = ref_targets(".mid")
+    ref_mid = ref_targets("_ref.mid")
 
     yield {
-        'basename': '_XML_Conversion',
+        'basename': 'XML_Conversion',
         'name': piece_id, 
         'file_dep': [ref_path, __file__, musescore_exec],
         'targets': [ref_xml],
@@ -102,11 +102,11 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
         'verbosity': 0
     }
     yield {
-        'basename': '_strip_direction',
+        'basename': 'strip_direction',
         'name': piece_id, 
         'file_dep': [ref_xml, __file__],
         'targets': [ref_nodir],
-        'actions': [(_remove_directions, [ref_xml, ref_nodir],)],
+        'actions': [(_remove_directions, [ref_xml, ref_nodir])],
         'clean': True
     }
     yield {
@@ -147,18 +147,17 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
     exec_realignment = os.path.join(program_folder, "RealignmentMOHMM")
 
     yield {
-        'basename': '_pianoroll_conversion_ref',
+        'basename': 'pianoroll_conversion_ref',
         'name': piece_id, 
-        'file_dep': [ref_path, exec_pianoroll, __file__],
-        'targets': [ref_pianoroll, ref_midi],
+        'file_dep': [ref_path, ref_midi, exec_pianoroll, __file__],
+        'targets': [ref_pianoroll],
         'actions': [
-            (shutil.copy,[ref_path.replace('.mscz', '.mid'), ref_midi],),
             string_escape_concat([exec_pianoroll, str(0), ref_copy_noext])
         ],
         'clean': True
     }
     yield {
-        'basename': '_pianoroll_conversion_perf',
+        'basename': 'pianoroll_conversion_perf',
         'name': piece_id, 
         'file_dep': [perf_path, exec_pianoroll, __file__],
         'targets': [perf_pianoroll, perf_copy_noext+'.mid'],
@@ -169,7 +168,7 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
         'clean': True
     }
     yield {
-        'basename': '_FMT3X_conversion',
+        'basename': 'FMT3X_conversion',
         'name': piece_id, 
         'file_dep': [ref_pianoroll, exec_fmt3x, __file__],
         'targets': [ref_FMT3X],
@@ -177,7 +176,7 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
         'clean': True
     }
     yield {
-        'basename': '_HMM_conversion',
+        'basename': 'HMM_conversion',
         'name': piece_id, 
         'file_dep': [ref_FMT3X, exec_hmm, __file__],
         'targets': [ref_HMM],
@@ -185,7 +184,7 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
         'clean': True
     }
     yield {
-        'basename': '_prealignment',
+        'basename': 'prealignment',
         'name': piece_id, 
         'file_dep': [ref_HMM, perf_pianoroll, exec_prealignment, __file__],
         'targets': [perf_prematch],
@@ -193,7 +192,7 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
         'clean': True
     }
     yield {
-        'basename': '_error_detection',
+        'basename': 'error_detection',
         'name': piece_id, 
         'file_dep': [ref_FMT3X, ref_HMM, perf_prematch, exec_errmatch, __file__],
         'targets': [perf_errmatch],
@@ -201,7 +200,7 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
         'clean': True
     }
     yield {
-        'basename': '_realignment',
+        'basename': 'realignment',
         'name': piece_id, 
         'file_dep': [ref_FMT3X, ref_HMM, perf_errmatch, __file__],
         'targets': [perf_realigned],
