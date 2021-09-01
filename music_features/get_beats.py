@@ -44,9 +44,10 @@ def get_beat_reference_pm(ref_filename):
     return np.array([pretty.time_to_tick(beat_time) for beat_time in pretty.get_beats()])
 
 
-def get_beats(alignment, reference_beats, *, max_tries=3):
+def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
     """Extract beats timing from an alignment of the notes."""
     # beats = None # for scope
+    ignored = []
     for _ in range(max_tries):
         # Find outliers and prefilter data
         ticks, times = preprocess(alignment)
@@ -63,36 +64,30 @@ def get_beats(alignment, reference_beats, *, max_tries=3):
 
         anomalies = find_outliers(beats)
         if anomalies == []:
-            return beats
+            return beats, ignored if return_ignored else beats
         else:
-            alignment = attempt_correction(beats, alignment, reference_beats, anomalies)
+            alignment, new_ignored = attempt_correction(beats, alignment, reference_beats, anomalies)
+            ignored.extend(new_ignored)
 
     warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
-    return beats
-
+    return beats, ignored if return_ignored else beats
+    
 
 def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=True):
     """Attempt to correct the beat extraction by removing the values causing outliers."""
+    filtered_all = []
     for index_before, index_after in anomalies:
-        # Convert indices to ticks
-        tick_before = reference_beats[index_before]
-        tick_after = reference_beats[index_after]
-        # Remove the alignment entries with these ticks (should interpolate on the next run)
+        #Find range to erase
+        range_start = [item.tatum for item in alignment if item.tatum <= reference_beats[index_before]][-1]
+        range_end = [item.tatum for item in alignment if item.tatum >= reference_beats[index_after]][0]
+        
+        filtered = [item for item in alignment if range_start <= item.tatum <= range_end]
         if verbose:
-            [print(f"Removing {item} in correction attempt") for item in alignment if item.tatum in (tick_before, tick_after)]
-        alignment = [item for item in alignment if item.tatum not in (tick_before, tick_after)]
-        # If the beat is already interpolated, remove the closest value
-        if beats[index_before]['interpolated']:
-            closest = np.min(np.abs(np.array([item.tatum for item in alignment])-tick_before))
-            if verbose:
-                [print(f"Removing {item} in correction attempt") for item in alignment if item.tatum - tick_before == closest]
-            alignment = [item for item in alignment if item.tatum - tick_before != closest]
-        if beats[index_after]['interpolated']:
-            closest = np.min(np.abs(np.array([item.tatum for item in alignment])-tick_after))
-            if verbose:
-                [print(f"Removing {item} in correction attempt") for item in alignment if item.tatum - tick_after == closest]
-            alignment = [item for item in alignment if item.tatum - tick_after != closest]
-    return alignment
+            [print(f"Removing {item} in correction attempt") for item in filtered]
+        alignment = [item for item in alignment if not(range_start <= item.tatum <= range_end)]
+        filtered_all.extend(filtered)
+
+    return alignment, filtered_all
 
 def preprocess(alignment):
     # Find outliers and prefilter data
