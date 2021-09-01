@@ -57,6 +57,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
             warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
         return files[0]
     grouped_files = [(folder, *(find_ext(folder, ext) for ext in ('.mscz', '.mid', '.wav'))) for folder in piece_folders]
+    grouped_files = [(folder, *files) for folder, *files in grouped_files if None not in files]
     return grouped_files
 
 
