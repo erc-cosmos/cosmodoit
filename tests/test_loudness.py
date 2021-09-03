@@ -2,7 +2,8 @@ import os
 import pytest
 import numpy as np
 
-from helpers import *
+import helpers
+from helpers import clean_dir  # Fixtures need to be imported into the namespace
 
 import get_loudness
 
@@ -34,7 +35,7 @@ def test_read_write_identity(_, old_path, clean_dir):
     new_path = os.path.join(clean_dir, "idem.csv")
     get_loudness.write_loudness(data, new_path)
 
-    assert_numeric_equiv_csv(old_path, new_path)
+    helpers.assert_numeric_equiv_csv(old_path, new_path)
 
 
 @pytest.mark.parametrize('_, old_file', loudness_old_pairs())
