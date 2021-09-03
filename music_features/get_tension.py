@@ -125,12 +125,24 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
 
 
 def gen_tasks(piece_id, ref_score, perf_path, working_folder="tmp"):
-    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+    if ref_score is None:
+        return
+    
     ref_targets = ref_targets = targets_factory(ref_score, working_folder=working_folder)
-
     ref_midi = ref_targets("_ref.mid")
-    perf_tension = perf_targets("_tension.csv")
-    perf_beats = perf_targets("_beats.csv")
+    
+
+    # Attempt using manual annotations
+    perf_beats = ref_score.replace(".mscz", "_beats_manual.csv")
+    perf_tension = ref_targets("_tension.csv")
+    if not os.path.isfile(perf_beats):
+        if perf_path is None:
+            return
+        else:
+            perf_targets = targets_factory(perf_path, working_folder=working_folder)
+            perf_tension = perf_targets("_tension.csv")
+            perf_beats = perf_targets("_beats.csv")
+    
 
     def caller(perf_tension, ref_midi, perf_beats, **kwargs):
         args = {

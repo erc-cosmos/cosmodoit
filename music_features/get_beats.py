@@ -178,6 +178,8 @@ def find_outliers(beats, *, factor=3, verbose=True):
 
 
 def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
+    if(ref_path is None or perf_path is None):
+        return
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
     perf_targets = targets_factory(perf_path, working_folder=working_folder)
 

@@ -20,6 +20,8 @@ def is_note_event(event):
 
 
 def gen_tasks(piece_id, perf_path, working_folder):
+    if perf_path is None:
+        return
     perf_targets = targets_factory(perf_path, working_folder)
     perf_velocity = perf_targets("_velocity.csv")
     def runner(perf_filename, perf_velocity):

@@ -211,7 +211,11 @@ def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
 
 def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
     """Generate doit tasks to call Nakamura's midi to midi alignment software."""
+    if ref_path is None:
+        return
     yield from gen_subtasks_midi(piece_id, ref_path, working_folder=working_folder)
+    if perf_path is None:
+        return
     yield from gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder)
     
 

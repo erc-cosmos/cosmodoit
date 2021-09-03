@@ -139,6 +139,8 @@ def read_loudness(path):
 
 
 def gen_tasks(piece_id, perf_wav, working_folder="tmp"):
+    if perf_wav is None:
+        return
     perf_targets = targets_factory(perf_wav, working_folder=working_folder)
 
     perf_loudness = perf_targets("_loudness.csv")

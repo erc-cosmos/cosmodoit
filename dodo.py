@@ -12,7 +12,7 @@ import get_alignment
 import get_loudness
 from genericpath import isdir
 import warnings
-
+from util import run_doit
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
@@ -73,24 +73,22 @@ def task_generator():
     paths = discover_files()
     os.makedirs(working_folder, exist_ok=True)
     for (piece_id, ref_path, perf_path, audio_path) in paths:
-        if audio_path:
-            yield from get_loudness.gen_tasks(piece_id, audio_path, working_folder=working_folder)
-        if perf_path:
-            yield from get_onset_velocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
-            yield from get_sustain.gen_tasks(piece_id, perf_path, working_folder=working_folder)
-            if ref_path:
-                yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
-                yield from get_beats.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
-                yield from get_alignment.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+        yield from get_loudness.gen_tasks(piece_id, audio_path, working_folder=working_folder)
+        yield from get_onset_velocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
+        yield from get_sustain.gen_tasks(piece_id, perf_path, working_folder=working_folder)
+        yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+        yield from get_beats.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+        yield from get_alignment.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', required=False)
     parser.add_argument('--perf', required=False)
+    parser.add_argument('--wav', required=False)
 
     args = parser.parse_args()
 
     if args.ref and args.perf:
-        globals['discover_files'] = lambda: [(args.ref, args.perf)]
+        globals['discover_files'] = lambda: [(args.ref, args.perf, args.wav)]
     run_doit(globals)
