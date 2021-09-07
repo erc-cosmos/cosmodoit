@@ -79,7 +79,7 @@ def read_alignment_file(file_path):
                 ]
 
 
-def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp"):
+def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore", working_folder="tmp", strip_direction=False):
     """Generate doit tasks for the midi conversion and preprocessing."""
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
     
@@ -92,33 +92,45 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
     ref_nodir = ref_targets("_nodir.xml")
     ref_mid = ref_targets("_ref.mid")
 
-    yield {
-        'basename': 'XML_Conversion',
-        'name': piece_id, 
-        'file_dep': [ref_path, __file__, musescore_exec],
-        'targets': [ref_xml],
-        'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_xml])],
-        'clean': True,
-        'verbosity': 0
-    }
-    yield {
-        'basename': 'strip_direction',
-        'name': piece_id, 
-        'file_dep': [ref_xml, __file__],
-        'targets': [ref_nodir],
-        'actions': [(_remove_directions, [ref_xml, ref_nodir])],
-        'clean': True
-    }
-    yield {
-        'basename': 'MIDI_Conversion',
-        'name': piece_id, 
-        'doc': "Converts a Musescore file to a stripped down midi",
-        'file_dep': [ref_nodir, __file__, musescore_exec],
-        'targets': [ref_mid],
-        'actions': [string_escape_concat([musescore_exec, ref_nodir, "--export-to", ref_mid])],
-        'clean': True,
-        'verbosity': 0
-    }
+    if strip_direction:
+        yield {
+            'basename': 'XML_Conversion',
+            'name': piece_id, 
+            'file_dep': [ref_path, __file__, musescore_exec],
+            'targets': [ref_xml],
+            'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_xml])],
+            'clean': True,
+            'verbosity': 0
+        }
+        yield {
+            'basename': 'strip_direction',
+            'name': piece_id, 
+            'file_dep': [ref_xml, __file__],
+            'targets': [ref_nodir],
+            'actions': [(_remove_directions, [ref_xml, ref_nodir])],
+            'clean': True
+        }
+        yield {
+            'basename': 'MIDI_Conversion',
+            'name': piece_id, 
+            'doc': "Converts a Musescore file to a stripped down midi",
+            'file_dep': [ref_nodir, __file__, musescore_exec],
+            'targets': [ref_mid],
+            'actions': [string_escape_concat([musescore_exec, ref_nodir, "--export-to", ref_mid])],
+            'clean': True,
+            'verbosity': 0
+        }
+    else:
+        yield {
+            'basename': 'MIDI_Conversion',
+            'name': piece_id, 
+            'doc': "Converts a Musescore file to a stripped down midi",
+            'file_dep': [ref_path, __file__, musescore_exec],
+            'targets': [ref_mid],
+            'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_mid])],
+            'clean': True,
+            'verbosity': 0
+        }
 
 def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
     """Generate doit tasks for the alignment."""
