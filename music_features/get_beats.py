@@ -47,7 +47,6 @@ def get_beat_reference_pm(ref_filename):
 
 def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
     """Extract beats timing from an alignment of the notes."""
-    # beats = None # for scope
     ignored = []
     for _ in range(max_tries):
         # Find outliers and prefilter data
@@ -79,8 +78,13 @@ def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=
     filtered_all = []
     for index_before, index_after in anomalies:
         #Find range to erase
-        range_start = [item.tatum for item in alignment if item.tatum <= reference_beats[index_before]][-1]
-        range_end = [item.tatum for item in alignment if item.tatum >= reference_beats[index_after]][0]
+        range_start = next((item.tatum for item in reversed(alignment) if item.tatum <= reference_beats[index_before]),
+                           reference_beats[index_before])    
+        range_end = next([item.tatum for item in alignment if item.tatum >= reference_beats[index_after]],
+                          reference_beats[index_after])
+        # Protect the first and last beats
+        range_start = (range_start + 1) if range_start == alignment[0].tatum else range_start
+        range_end = (range_end - 1) if range_end == alignment[-1].tatum else range_end
         
         filtered = [item for item in alignment if range_start <= item.tatum <= range_end]
         if verbose:
