@@ -10,7 +10,6 @@ import get_beats
 import get_sustain
 import get_alignment
 import get_loudness
-from genericpath import isdir
 import warnings
 from util import run_doit
 
@@ -73,7 +72,7 @@ def task_generator():
     paths = discover_files()
     os.makedirs(working_folder, exist_ok=True)
     for (piece_id, ref_path, perf_path, audio_path) in paths:
-        yield from get_loudness.gen_tasks(piece_id, audio_path, working_folder=working_folder)
+        yield from get_loudness.gen_tasks(piece_id, audio_path, ref_score=ref_path, perf_midi=perf_path, working_folder=working_folder)
         yield from get_onset_velocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
         yield from get_sustain.gen_tasks(piece_id, perf_path, working_folder=working_folder)
         yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)

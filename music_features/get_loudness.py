@@ -125,6 +125,15 @@ def peak_envelope(data, min_separation):
     return spline(range(len(data)))
 
 
+def resample(loud_path, beat_path, out_path):
+    data = read_loudness(loud_path)
+    beats = pd.read_csv(beat_path)
+    spline = scipy.interpolate.InterpolatedUnivariateSpline(data.Time, data.Loudness_smooth)
+    interp = spline(beats.time)
+    frame = pd.DataFrame({'Time':beats.time, 'Loudness_resampled':interp})
+    frame.to_csv(out_path)
+
+
 def write_loudness(data, path):
     data.to_csv(path, index=False)
 
@@ -138,7 +147,7 @@ def read_loudness(path):
     return df
 
 
-def gen_tasks(piece_id, perf_wav, working_folder="tmp"):
+def gen_tasks(piece_id, perf_wav, working_folder="tmp", ref_score=None, perf_midi=None):
     if perf_wav is None:
         return
     perf_targets = targets_factory(perf_wav, working_folder=working_folder)
@@ -155,4 +164,22 @@ def gen_tasks(piece_id, perf_wav, working_folder="tmp"):
         'doc': "Compute loudness using a port of the MA matlab toolbox",
         'targets': [perf_loudness],
         'actions': [(caller, [perf_wav, perf_loudness])]
+    }
+
+    perf_beats = perf_wav.replace(".wav", "_beats_manual.csv")
+    if not os.path.isfile(perf_beats):
+        if ref_score is None or perf_midi is None:
+            return
+        else:
+            perf_beats = perf_targets("_beats.csv")
+
+
+    perf_resampled_loudness = perf_targets("_loudness_resampled.csv")
+    yield {
+        'basename': "loudness_resample",
+        'file_dep': [perf_loudness, perf_beats, __file__],
+        'name': piece_id,
+        'doc': "Resample loudness at the time of the beats",
+        'targets': [perf_resampled_loudness],
+        'actions': [(resample, [perf_loudness, perf_beats, perf_resampled_loudness])]
     }
