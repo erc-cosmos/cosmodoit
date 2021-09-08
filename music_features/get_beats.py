@@ -9,6 +9,7 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 import pretty_midi as pm
+import pandas as pd
 from util import write_file, targets_factory
 
 import get_alignment
@@ -187,25 +188,44 @@ def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
         return
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
     perf_targets = targets_factory(perf_path, working_folder=working_folder)
-
     ref_midi = ref_targets("_ref.mid")
     perf_match = perf_targets("_match.txt")
-    perf_beats = perf_targets("_beats.csv")
 
-    def caller(perf_match, ref_midi, perf_beats, **kwargs):
-        alignment = get_alignment.read_alignment_file(perf_match)
-        beat_reference = get_beat_reference_pm(ref_midi)
-        beats = get_beats(alignment, beat_reference)
-        write_file(perf_beats, beats)
-        return True
+    # Attempt using manual annotations
+    perf_beats = ref_path.replace(".mscz", "_beats_manual.csv")
+    if not os.path.isfile(perf_beats):
+        perf_targets = targets_factory(perf_path, working_folder=working_folder)
+        perf_beats = perf_targets("_beats.csv")
+
+        def caller(perf_match, ref_midi, perf_beats, **kwargs):
+            alignment = get_alignment.read_alignment_file(perf_match)
+            beat_reference = get_beat_reference_pm(ref_midi)
+            beats = get_beats(alignment, beat_reference)
+            write_file(perf_beats, beats)
+            return True
+        yield {
+            'basename': "beats",
+            'file_dep': [perf_match, ref_midi, __file__],
+            'name': piece_id,
+            'doc': "Find beats' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
+            'targets': [perf_beats],
+            'actions': [(caller, [perf_match, ref_midi, perf_beats])]
+        }
+    
+    perf_tempo = perf_targets("_tempo.csv")
+    def caller2(perf_beats, perf_tempo):
+        data = pd.read_csv(perf_beats)
+        tempo_frame = pd.DataFrame({'time':data.time[1:], 'tempo':60/np.diff(data.time)})
+        tempo_frame.to_csv(perf_tempo, index=False)
+        
     yield {
-        'basename': "beats",
-        'file_dep': [perf_match, ref_midi, __file__],
-        'name': piece_id,
-        'doc': "Find beats' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
-        'targets': [perf_beats],
-        'actions': [(caller, [perf_match, ref_midi, perf_beats])]
-    }
+            'basename': "tempo",
+            'file_dep': [perf_beats, __file__],
+            'name': piece_id,
+            'doc': "Derive tempo from manual or inferred beats",
+            'targets': [perf_tempo],
+            'actions': [(caller2, [perf_beats, perf_tempo])]
+        }
 
 
 if __name__ == "__main__":
