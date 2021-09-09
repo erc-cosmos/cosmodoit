@@ -171,7 +171,7 @@ def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, fo
     return BeatParams(quarter_length, anacrusis_offset)
 
 
-def find_outliers(beats, *, factor=3, verbose=True):
+def find_outliers(beats, *, factor=4, verbose=True):
     """Perform an automated check for outliers."""
     beats = [beat["time"] for beat in beats]
     inter_beat_intervals = np.diff(beats)
