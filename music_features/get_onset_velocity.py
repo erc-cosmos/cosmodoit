@@ -19,13 +19,13 @@ def is_note_event(event):
     return event['Type'] == 'note_on'
 
 
-def gen_tasks(piece_id, perf_path, working_folder):
-    if perf_path is None:
+def gen_tasks(piece_id, paths, working_folder):
+    if paths.perfmidi is None:
         return
-    perf_targets = targets_factory(perf_path, working_folder)
+    perf_targets = targets_factory(paths.perfmidi, working_folder)
     perf_velocity = perf_targets("_velocity.csv")
     def runner(perf_filename, perf_velocity):
-        velocities = get_onset_velocity(perf_path)
+        velocities = get_onset_velocity(paths.perfmidi)
         if velocities == []:
             warnings.warn("Warning: no note on event detected in " + perf_filename)
         else:
@@ -35,9 +35,9 @@ def gen_tasks(piece_id, perf_path, working_folder):
         'basename': 'velocities',
         'name': piece_id, 
         'doc': "Extract onset velocities from a midi file.",
-        'file_dep': [perf_path, __file__],
+        'file_dep': [paths.perfmidi, __file__],
         'targets': [perf_velocity],
-        'actions': [(runner, [perf_path, perf_velocity])]
+        'actions': [(runner, [paths.perfmidi, perf_velocity])]
     }
 
 

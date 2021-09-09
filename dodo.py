@@ -11,6 +11,7 @@ import get_sustain
 import get_alignment
 import get_loudness
 import warnings
+from collections import namedtuple
 from util import run_doit
 
 
@@ -22,6 +23,7 @@ default_working_folder = 'tmp'
 
 def discover_files_by_type(base_folder="tests/test_data"):
     """Find targets in a feature-type first directory structure."""
+    ### Outdated output format
     scores = [os.path.join(base_folder, "scores", f)
               for f in sorted(os.listdir(os.path.join(base_folder, "scores")))
               if '.mscz' in f]
@@ -48,15 +50,20 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
                      for folder in os.listdir(base_folder)
                      if os.path.isdir(os.path.join(base_folder, folder)) and folder != 'tmp']
 
-    def find_ext(path, ext):
+    def find_ext(path, ext, required=True):
         files = [os.path.join(path, f) for f in os.listdir(path) if ext in f]
         if len(files) == 0:
-            warnings.warn(f"Found no file with extension {ext} in {path}")
+            if required:
+                warnings.warn(f"Found no file with extension {ext} in {path}")
             return None
         if len(files) > 1:
             warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
         return files[0]
-    grouped_files = [(folder, *(find_ext(folder, ext) for ext in ('.mscz', '.mid', '.wav')))
+    FileSet = namedtuple('FileSet', ['score', 'perfmidi', 'perfaudio', 'manual_beats'])
+    file_types = (('.mscz', True), ('.mid', True), ('.wav', True), ('_beats_manual.csv', False))
+    grouped_files = [(os.path.basename(folder), FileSet(*(find_ext(folder, ext, optional)
+                                                        for (ext, optional)
+                                                        in file_types)))
                      for folder in piece_folders]
     return grouped_files
 
@@ -69,15 +76,15 @@ discover_files = discover_files_by_piece
 def task_generator():
     # """Generates tasks for all files."""
     working_folder = default_working_folder
-    paths = discover_files()
+    filesets = discover_files()
     os.makedirs(working_folder, exist_ok=True)
-    for (piece_id, ref_path, perf_path, audio_path) in paths:
-        yield from get_loudness.gen_tasks(piece_id, audio_path, ref_score=ref_path, perf_midi=perf_path, working_folder=working_folder)
-        yield from get_onset_velocity.gen_tasks(piece_id, perf_path, working_folder=working_folder)
-        yield from get_sustain.gen_tasks(piece_id, perf_path, working_folder=working_folder)
-        yield from get_tension.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
-        yield from get_beats.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
-        yield from get_alignment.gen_tasks(piece_id, ref_path, perf_path, working_folder=working_folder)
+    for (piece_id, paths) in filesets:
+        yield from get_loudness.gen_tasks(piece_id, paths, working_folder=working_folder)
+        yield from get_onset_velocity.gen_tasks(piece_id, paths, working_folder=working_folder)
+        yield from get_sustain.gen_tasks(piece_id, paths, working_folder=working_folder)
+        yield from get_tension.gen_tasks(piece_id, paths, working_folder=working_folder)
+        yield from get_beats.gen_tasks(piece_id, paths, working_folder=working_folder)
+        yield from get_alignment.gen_tasks(piece_id, paths, working_folder=working_folder)
 
 
 if __name__ == "__main__":

@@ -19,10 +19,10 @@ def is_sustain_event(event):
     return event['Type'] == 'control_change' and event['Control']==64
 
 
-def gen_tasks(piece_id, perf_path, working_folder):
-    if perf_path is None:
+def gen_tasks(piece_id, paths, working_folder):
+    if paths.perfmidi is None:
         return
-    perf_targets = targets_factory(perf_path, working_folder)
+    perf_targets = targets_factory(paths.perfmidi, working_folder)
     perf_sustain = perf_targets("_sustain.csv")
     def runner(perf_path, perf_sustain):
         sustain = get_sustain(perf_path)
@@ -32,9 +32,9 @@ def gen_tasks(piece_id, perf_path, working_folder):
             'basename': 'sustain',
             'name': piece_id, 
             'doc': "Extract sustain pedal information from a midi file.",
-            'file_dep': [perf_path, __file__],
+            'file_dep': [paths.perfmidi, __file__],
             'targets': [perf_sustain],
-            'actions': [(runner, [perf_path, perf_sustain])]
+            'actions': [(runner, [paths.perfmidi, perf_sustain])]
         }
 
 if __name__ == "__main__":

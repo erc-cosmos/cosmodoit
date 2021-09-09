@@ -183,18 +183,18 @@ def find_outliers(beats, *, factor=4, verbose=True):
     return anomaly_indices
 
 
-def gen_tasks(piece_id, ref_path, perf_path, working_folder="tmp"):
-    if(ref_path is None or perf_path is None):
+def gen_tasks(piece_id, paths, working_folder="tmp"):
+    if(paths.score is None or paths.refmidi is None):
         return
-    ref_targets = targets_factory(ref_path, working_folder=working_folder)
-    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+    ref_targets = targets_factory(paths.score, working_folder=working_folder)
+    perf_targets = targets_factory(paths.refmidi, working_folder=working_folder)
     ref_midi = ref_targets("_ref.mid")
     perf_match = perf_targets("_match.txt")
 
     # Attempt using manual annotations
-    perf_beats = ref_path.replace(".mscz", "_beats_manual.csv")
+    perf_beats = paths.score.replace(".mscz", "_beats_manual.csv")
     if not os.path.isfile(perf_beats):
-        perf_targets = targets_factory(perf_path, working_folder=working_folder)
+        perf_targets = targets_factory(paths.refmidi, working_folder=working_folder)
         perf_beats = perf_targets("_beats.csv")
 
         def caller(perf_match, ref_midi, perf_beats, **kwargs):

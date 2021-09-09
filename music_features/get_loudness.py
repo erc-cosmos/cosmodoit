@@ -147,10 +147,10 @@ def read_loudness(path):
     return df
 
 
-def gen_tasks(piece_id, perf_wav, working_folder="tmp", ref_score=None, perf_midi=None):
-    if perf_wav is None:
+def gen_tasks(piece_id, paths, working_folder="tmp"):
+    if paths.perfaudio is None:
         return
-    perf_targets = targets_factory(perf_wav, working_folder=working_folder)
+    perf_targets = targets_factory(paths.perfaudio, working_folder=working_folder)
 
     perf_loudness = perf_targets("_loudness.csv")
 
@@ -159,16 +159,16 @@ def gen_tasks(piece_id, perf_wav, working_folder="tmp", ref_score=None, perf_mid
         return True
     yield {
         'basename': "loudness",
-        'file_dep': [perf_wav, __file__],
+        'file_dep': [paths.perfaudio, __file__],
         'name': piece_id,
         'doc': "Compute loudness using a port of the MA matlab toolbox",
         'targets': [perf_loudness],
-        'actions': [(caller, [perf_wav, perf_loudness])]
+        'actions': [(caller, [paths.perfaudio, perf_loudness])]
     }
 
-    perf_beats = perf_wav.replace(".wav", "_beats_manual.csv")
+    perf_beats = paths.perfaudio.replace(".wav", "_beats_manual.csv")
     if not os.path.isfile(perf_beats):
-        if ref_score is None or perf_midi is None:
+        if paths.score is None or paths.perfmidi is None:
             return
         else:
             perf_beats = perf_targets("_beats.csv")
