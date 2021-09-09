@@ -11,6 +11,7 @@ import scipy.interpolate
 import pretty_midi as pm
 import pandas as pd
 from util import write_file, targets_factory
+import shutil
 
 import get_alignment
 
@@ -184,19 +185,27 @@ def find_outliers(beats, *, factor=4, verbose=True):
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
-    if(paths.score is None or paths.refmidi is None):
+    if(paths.score is None or paths.perfmidi is None):
         return
     ref_targets = targets_factory(paths.score, working_folder=working_folder)
-    perf_targets = targets_factory(paths.refmidi, working_folder=working_folder)
+    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder)
     ref_midi = ref_targets("_ref.mid")
     perf_match = perf_targets("_match.txt")
 
     # Attempt using manual annotations
-    perf_beats = paths.score.replace(".mscz", "_beats_manual.csv")
-    if not os.path.isfile(perf_beats):
-        perf_targets = targets_factory(paths.refmidi, working_folder=working_folder)
-        perf_beats = perf_targets("_beats.csv")
-
+    perf_beats = perf_targets("_beats.csv")
+    if paths.manual_beats is not None:
+        def caller(manual_beats, perf_beats):
+            shutil.copy(manual_beats, perf_beats)
+        yield {
+            'basename': "beats",
+            'file_dep': [paths.manual_beats, __file__],
+            'name': piece_id,
+            'doc': "Use authoritative beats annotation",
+            'targets': [perf_beats],
+            'actions': [(caller, [paths.manual_beats, perf_beats])]
+        }
+    else:
         def caller(perf_match, ref_midi, perf_beats, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
             beat_reference = get_beat_reference_pm(ref_midi)
