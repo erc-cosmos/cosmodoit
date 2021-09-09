@@ -81,8 +81,8 @@ def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=
         #Find range to erase
         range_start = next((item.tatum for item in reversed(alignment) if item.tatum <= reference_beats[index_before]),
                            reference_beats[index_before])    
-        range_end = next([item.tatum for item in alignment if item.tatum >= reference_beats[index_after]],
-                          reference_beats[index_after])
+        range_end = next((item.tatum for item in alignment if item.tatum >= reference_beats[index_after]),
+                          reference_beats[index_after]) # TODO: Add a test with coverage on this
         # Protect the first and last beats
         range_start = (range_start + 1) if range_start == alignment[0].tatum else range_start
         range_end = (range_end - 1) if range_end == alignment[-1].tatum else range_end
