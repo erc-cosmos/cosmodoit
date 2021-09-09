@@ -207,4 +207,4 @@ if __name__ == '__main__':
         columns = args.columns
     else:
         columns = 'all'
-    main(inputPath, args, plotTension=plotTension, exportTension=exportTension, columns=columns)
+    main(inputPath, vars(args), plotTension=plotTension, exportTension=exportTension, columns=columns)
