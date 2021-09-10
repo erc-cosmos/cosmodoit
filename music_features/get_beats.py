@@ -185,13 +185,10 @@ def find_outliers(beats, *, factor=4, verbose=True):
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
-    if(paths.score is None or paths.perfmidi is None):
-        return
-    ref_targets = targets_factory(paths.score, working_folder=working_folder)
-    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder)
-    ref_midi = ref_targets("_ref.mid")
-    perf_match = perf_targets("_match.txt")
-
+    backup_targets = targets_factory(piece_id, working_folder=working_folder)
+    ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
+    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
+    
     # Attempt using manual annotations
     perf_beats = perf_targets("_beats.csv")
     if paths.manual_beats is not None:
@@ -206,6 +203,11 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'actions': [(caller, [paths.manual_beats, perf_beats])]
         }
     else:
+        if(paths.score is None or paths.perfmidi is None):
+            return
+        ref_midi = ref_targets("_ref.mid")
+        perf_match = perf_targets("_match.txt")
+
         def caller(perf_match, ref_midi, perf_beats, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
             beat_reference = get_beat_reference_pm(ref_midi)

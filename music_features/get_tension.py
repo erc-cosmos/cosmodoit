@@ -128,21 +128,13 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     if paths.score is None:
         return
     
-    ref_targets = ref_targets = targets_factory(paths.score, working_folder=working_folder)
+    backup_targets = targets_factory(piece_id, working_folder=working_folder)
+    ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
+    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
+    
     ref_midi = ref_targets("_ref.mid")
-    
-
-    # Attempt using manual annotations
-    perf_beats = paths.score.replace(".mscz", "_beats_manual.csv")
-    perf_tension = ref_targets("_tension.csv")
-    if not os.path.isfile(perf_beats):
-        if paths.perfmidi is None:
-            return
-        else:
-            perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder)
-            perf_tension = perf_targets("_tension.csv")
-            perf_beats = perf_targets("_beats.csv")
-    
+    perf_beats = perf_targets("_beats.csv")
+    perf_tension = perf_targets("_tension.csv")
 
     def caller(perf_tension, ref_midi, perf_beats, **kwargs):
         args = {
