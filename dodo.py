@@ -59,8 +59,8 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
         if len(files) > 1:
             warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
         return files[0]
-    FileSet = namedtuple('FileSet', ['score', 'perfmidi', 'perfaudio', 'manual_beats'])
-    file_types = (('.mscz', True), ('.mid', True), ('.wav', True), ('_beats_manual.csv', False))
+    FileSet = namedtuple('FileSet', ['score', 'perfmidi', 'perfaudio', 'manual_beats', 'manual_bars'])
+    file_types = (('.mscz', True), ('.mid', True), ('.wav', True), ('_beats_manual.csv', False), ('_bars_manual.csv', False))
     grouped_files = [(os.path.basename(folder), FileSet(*(find_ext(folder, ext, optional)
                                                         for (ext, optional)
                                                         in file_types)))

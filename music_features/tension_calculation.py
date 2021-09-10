@@ -731,7 +731,7 @@ def extract_notes(file_name,track_num):
                 }
     except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
         exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
-        logger.info(exception_str)
+        # logger.info(exception_str)
         return None
 
     return [pm,piano_roll,beat_data]

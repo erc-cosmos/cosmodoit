@@ -125,7 +125,7 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
-    if paths.score is None or paths.manual_beats is None and paths.perfmidi is None:
+    if paths.score is None:
         return
     
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
@@ -134,7 +134,9 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     
     ref_midi = ref_targets("_ref.mid")
     perf_beats = perf_targets("_beats.csv")
+    perf_bars = perf_targets("_bars.csv")
     perf_tension = perf_targets("_tension.csv")
+    perf_tension_bar = perf_targets("_tension_bar.csv")
 
     def caller(perf_tension, ref_midi, perf_beats, measure_level=False, **kwargs):
         args = {
@@ -150,14 +152,25 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         tension['time'] = df_beats['time']
         tension.to_csv(perf_tension, sep=',', index=False)
         return True
-    yield {
-        'basename': "tension",
-        'file_dep': [ref_midi, perf_beats, __file__],
-        'name': piece_id,
-        'doc': "Compute the tension parameters —cloud momentum, tensile strain and cloud diameter— using midi-miner.",
-        'targets': [perf_tension],
-        'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
-    }
+
+    if paths.manual_beats is not None or paths.perfmidi is not None:
+        yield {
+            'basename': "tension",
+            'file_dep': [ref_midi, perf_beats, __file__],
+            'name': piece_id,
+            'doc': "Compute the tension parameters —cloud momentum, tensile strain and cloud diameter— using midi-miner.",
+            'targets': [perf_tension],
+            'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
+        }
+    if paths.manual_bars is not None or paths.perfmidi is not None:
+        yield {
+            'basename': "tension_bar",
+            'file_dep': [ref_midi, perf_bars, __file__],
+            'name': piece_id,
+            'doc': "Compute the tension parameters —cloud momentum, tensile strain and cloud diameter— using midi-miner (at the bar level).",
+            'targets': [perf_tension_bar],
+            'actions': [(caller, [perf_tension_bar, ref_midi, perf_bars, True])]
+        }
 
 
 if __name__ == '__main__':

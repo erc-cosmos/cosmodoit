@@ -47,6 +47,12 @@ def get_beat_reference_pm(ref_filename):
     # return np.array([pretty.time_to_tick(beat_time) for beat_time in pretty.get_beats()])
 
 
+def get_bar_reference_pm(ref_filename):
+    """Find the bar lines in the reference according to pretty-midi."""
+    pretty = pm.PrettyMIDI(ref_filename)
+    return np.array(pretty.get_downbeats()) * 1000  # seconds to milliseconds
+
+
 def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
     """Extract beats timing from an alignment of the notes."""
     ignored = []
@@ -60,7 +66,7 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
         tempos = [np.nan, *(60/np.diff(interpolation))]
         beats = [{'count': count,
                 'time': time,
-                'interpolated': tick not in ticks,
+                'interpolated': tick not in ticks,  # TODO: Fix rounding issues
                 'tempo': tempo}
                 for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
 
@@ -191,6 +197,8 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     
     # Attempt using manual annotations
     perf_beats = perf_targets("_beats.csv")
+    ref_midi = ref_targets("_ref.mid")
+    perf_match = perf_targets("_match.txt")
     if paths.manual_beats is not None:
         def caller(manual_beats, perf_beats):
             shutil.copy(manual_beats, perf_beats)
@@ -205,8 +213,6 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     else:
         if(paths.score is None or paths.perfmidi is None):
             return
-        ref_midi = ref_targets("_ref.mid")
-        perf_match = perf_targets("_match.txt")
 
         def caller(perf_match, ref_midi, perf_beats, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
@@ -223,6 +229,37 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'actions': [(caller, [perf_match, ref_midi, perf_beats])]
         }
     
+    perf_bars = perf_targets("_bars.csv")
+    if paths.manual_bars is not None:
+        def caller_bar(manual_beats, perf_beats):
+            shutil.copy(manual_beats, perf_beats)
+        yield {
+            'basename': "bars",
+            'file_dep': [paths.manual_bars, __file__],
+            'name': piece_id,
+            'doc': "Use authoritative bars annotation",
+            'targets': [perf_bars],
+            'actions': [(caller, [paths.manual_bars, perf_bars])]
+        }
+    else:
+        if(paths.score is None or paths.perfmidi is None):
+            return
+        def caller_bar(perf_match, ref_midi, perf_bars, **kwargs):
+            alignment = get_alignment.read_alignment_file(perf_match)
+            bar_reference = get_bar_reference_pm(ref_midi)
+            bars = get_beats(alignment, bar_reference)
+            write_file(perf_bars, bars)
+            return True
+        yield {
+            'basename': "bars",
+            'file_dep': [perf_match, ref_midi, __file__],
+            'name': piece_id,
+            'doc': "Find bars' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
+            'targets': [perf_bars],
+            'actions': [(caller_bar, [perf_match, ref_midi, perf_bars])]
+        }
+
+
     perf_tempo = perf_targets("_tempo.csv")
     def caller2(perf_beats, perf_tempo):
         data = pd.read_csv(perf_beats)
