@@ -125,7 +125,7 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
-    if paths.score is None:
+    if paths.score is None or paths.manual_beats is None and paths.perfmidi is None:
         return
     
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
@@ -136,9 +136,9 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     perf_beats = perf_targets("_beats.csv")
     perf_tension = perf_targets("_tension.csv")
 
-    def caller(perf_tension, ref_midi, perf_beats, **kwargs):
+    def caller(perf_tension, ref_midi, perf_beats, measure_level=False, **kwargs):
         args = {
-            'window_size':1,
+            'window_size':-1 if measure_level else 1,
             'key_name':'',
             'track_num': 3,
             'end_ratio':.5,
