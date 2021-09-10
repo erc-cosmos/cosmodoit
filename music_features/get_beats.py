@@ -186,7 +186,7 @@ def find_outliers(beats, *, factor=4, verbose=True):
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
                        if ibi * factor < mean_IBI] # Only check values too quick, slow values are likely valid
     if verbose:
-        [print(f"Anomaly between beats {i} and {j} detected") for i,j in anomaly_indices]
+        [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (max. {factor*mean_IBI}s)") for i,j in anomaly_indices]
     return anomaly_indices
 
 
