@@ -9,41 +9,6 @@ import xml.etree.ElementTree as ET
 
 from util import string_escape_concat, run_doit, targets_factory
 
-
-# def get_score_alignment(refFilename, perfFilename,
-#                         score2midiExecLocation="./MusicXMLToMIDIAlign.sh",
-#                         museScoreExec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
-#                         cleanup=True, recompute=False):
-#     """Call Nakamura's Score to Midi alignment software.
-
-#     Intermediate files will be removed if cleanup is True
-#     If recompute is False, existing intermediate files will be reused if present
-#     """
-#     # Crop .mid extension as the script doesn't want them
-#     refFilename, refType = os.path.splitext(refFilename)
-#     perfFilename, perfType = os.path.splitext(perfFilename)
-
-#     if refType not in [".xml"]:
-#         if refType in [".mscz", ".mxl"]:  # TODO: add other valid formats
-#             # Generate a midi from the score
-#             # TODO: check that musescore is correctly found
-#             # TODO: check if conversion is already done
-#             subprocess.run([museScoreExec, refFilename+refType, "--export-to", refFilename+".xml"],
-#                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-#         else:
-#             raise NotImplementedError
-
-#     # Run the alignment (only if needed or requested)
-#     outFile = perfFilename+"_match.txt"
-#     if recompute or not os.path.isfile(outFile):
-#         output = subprocess.run([score2midiExecLocation, refFilename, perfFilename])
-#     alignment = readAlignmentFile(outFile)
-
-#     if cleanup:
-#         clean_alignment_files(refFilename, perfFilename)
-#     return alignment
-
-
 def _remove_directions(filename, outfile=None):
     """Remove all directions from a musicxml file."""
     tree = ET.parse(filename)
@@ -53,8 +18,9 @@ def _remove_directions(filename, outfile=None):
 
 
 def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
+    paths = collections.namedtuple("Paths",["score","perfmidi"])(ref_path, perf_path)
     def task_wrapper():
-        yield from gen_tasks(os.path.basename(ref_path), ref_path, perf_path, working_folder)
+        yield from gen_tasks(os.path.basename(ref_path), paths, working_folder=working_folder)
     task_set = {'task_alignment': task_wrapper}
     run_doit(task_set)
     
