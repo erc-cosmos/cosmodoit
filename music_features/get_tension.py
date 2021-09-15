@@ -150,6 +150,8 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         tension = getTension(ref_midi, args=args, plotTension=False, exportTension=False, columns='time')
         df_beats = pd.read_csv(perf_beats).tail(-1) # Drop the first beat as tension is not computed there
         tension['time'] = df_beats['time']
+        tension['d_diameter'] = [np.nan, *np.diff(tension['diameter'])]
+        tension['d_strain'] = [np.nan, *np.diff(tension['strain'])]
         tension.to_csv(perf_tension, sep=',', index=False)
         return True
 
