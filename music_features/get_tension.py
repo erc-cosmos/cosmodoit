@@ -3,8 +3,8 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import tension_calculation as tc
-from util import targets_factory
+from . import tension_calculation as tc
+from .util import targets_factory
 
 
 def genBaseName(inputFile):

@@ -1,29 +1,28 @@
-import sys
+"""Main doit task definitions."""
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "music_features"))
 
 import doit
 import argparse
-import get_tension
-import get_onset_velocity
-import get_beats
-import get_sustain
-import get_alignment
-import get_loudness
 import warnings
 from collections import namedtuple
-from util import run_doit
+
+import music_features.get_tension as get_tension
+import music_features.get_onset_velocity as get_onset_velocity
+import music_features.get_beats as get_beats
+import music_features.get_sustain as get_sustain
+import music_features.get_alignment as get_alignment
+import music_features.get_loudness as get_loudness
+from music_features.util import run_doit
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
 
-# default_working_folder = os.path.join(doit.get_initial_workdir(), 'tmp')
 default_working_folder = 'tmp'
 
 
 def discover_files_by_type(base_folder="tests/test_data"):
     """Find targets in a feature-type first directory structure."""
-    ### Outdated output format
+    # Outdated output format
     scores = [os.path.join(base_folder, "scores", f)
               for f in sorted(os.listdir(os.path.join(base_folder, "scores")))
               if '.mscz' in f]
@@ -60,7 +59,8 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
             warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
         return files[0]
     FileSet = namedtuple('FileSet', ['score', 'perfmidi', 'perfaudio', 'manual_beats', 'manual_bars'])
-    file_types = (('.mscz', True), ('.mid', True), ('.wav', True), ('_beats_manual.csv', False), ('_bars_manual.csv', False))
+    file_types = (('.mscz', True), ('.mid', True), ('.wav', True),
+                  ('_beats_manual.csv', False), ('_bars_manual.csv', False))
     grouped_files = [(os.path.basename(folder), FileSet(*(find_ext(folder, ext, optional)
                                                         for (ext, optional)
                                                         in file_types)))

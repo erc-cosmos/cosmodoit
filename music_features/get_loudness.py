@@ -8,9 +8,9 @@ import pandas as pd
 import lowess
 import matplotlib.pyplot as plt
 
-import ma_sone
+from . import ma_sone
 
-from util import targets_factory, write_file
+from .util import targets_factory, write_file
 
 
 def get_loudness(input_path, *, export_dir=None, **kwargs):

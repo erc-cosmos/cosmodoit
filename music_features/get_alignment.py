@@ -7,7 +7,7 @@ import collections
 import shutil
 import xml.etree.ElementTree as ET
 
-from util import string_escape_concat, run_doit, targets_factory
+from .util import string_escape_concat, run_doit, targets_factory
 
 def _remove_directions(filename, outfile=None):
     """Remove all directions from a musicxml file."""

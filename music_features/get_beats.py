@@ -10,10 +10,10 @@ import scipy as sp
 import scipy.interpolate
 import pretty_midi as pm
 import pandas as pd
-from util import write_file, targets_factory
+from .util import write_file, targets_factory
 import shutil
 
-import get_alignment
+from . import get_alignment
 
 BeatParams = collections.namedtuple("BeatParams",
                                     ("PPQ",  # Pulse per quarter note

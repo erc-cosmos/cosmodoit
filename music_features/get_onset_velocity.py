@@ -2,8 +2,8 @@
 
 import argparse
 import warnings
-from get_midi_events import get_midi_events
-from util import targets_factory, write_file
+from .get_midi_events import get_midi_events
+from .util import targets_factory, write_file
 
 def get_onset_velocity(perfFilename):
     """Extract onset velocities from a midi file."""

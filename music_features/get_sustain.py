@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
-from get_midi_events import get_midi_events
-from util import targets_factory, write_file
+from .get_midi_events import get_midi_events
+from .util import targets_factory, write_file
 
 def get_sustain(perf_path):
     """Extract sustain pedal information from a midi file."""
