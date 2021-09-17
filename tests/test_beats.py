@@ -11,11 +11,11 @@ from util import targets_factory
 def test_sorted_beats(ref, perf):
     cache_folder = 'tmp'
     alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False, working_folder=cache_folder)
-    ref_midi = targets_factory(ref,working_folder=cache_folder)("_ref.mid")
+    ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
     beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
-    sorted(beats, key=lambda b:b['time']) == beats
+    sorted(beats, key=lambda b: b['time']) == beats
 
 
 @pytest.mark.parametrize("ref, perf", helpers.test_files())
@@ -30,7 +30,7 @@ def test_sorted_ref_beats_manual(ref, perf):
 def test_sorted_ref_beats_prettymidi(ref, perf):
     cache_folder = 'tmp'
     _ = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False, working_folder=cache_folder)
-    ref_midi = targets_factory(ref,working_folder=cache_folder)("_ref.mid")
+    ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
     sorted(reference_beats) == reference_beats
@@ -40,7 +40,7 @@ def test_sorted_ref_beats_prettymidi(ref, perf):
 def test_no_outliers(ref, perf):
     cache_folder = 'tmp'
     alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False, working_folder=cache_folder)
-    ref_midi = targets_factory(ref,working_folder=cache_folder)("_ref.mid")
+    ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
     beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
@@ -54,7 +54,7 @@ def test_reasonable_removal(ref, perf):
 
     cache_folder = 'tmp'
     alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False, working_folder=cache_folder)
-    ref_midi = targets_factory(ref,working_folder=cache_folder)("_ref.mid")
+    ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
     _, removed = get_beats.get_beats(alignment, reference_beats=reference_beats, return_ignored=True)

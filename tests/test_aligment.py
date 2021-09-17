@@ -5,6 +5,7 @@ import pytest
 from get_alignment import get_alignment
 from helpers import clean_dir
 
+
 @pytest.fixture
 def prepared_dir(clean_dir):
     reference, performance = ('tests/test_data/scores/Mazurka 33-4, Pachmann DA.mscz',

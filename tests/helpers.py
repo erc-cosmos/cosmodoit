@@ -4,6 +4,7 @@ import shutil
 import uuid
 import csv
 
+
 @pytest.fixture
 def clean_dir():
     new_dir = "testDir"+uuid.uuid4().hex
@@ -13,14 +14,14 @@ def clean_dir():
 
 
 def test_files():
-    scores = [os.path.join("tests", "test_data", "scores", f) 
-        for f in sorted(os.listdir(os.path.join("tests", "test_data", "scores"))) 
-        if '.mscz' in f]
-    perfs = [os.path.join("tests", "test_data", "perfs", f) 
-        for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs"))) 
-        if '.mid' in f]
+    scores = [os.path.join("tests", "test_data", "scores", f)
+              for f in sorted(os.listdir(os.path.join("tests", "test_data", "scores")))
+              if '.mscz' in f]
+    perfs = [os.path.join("tests", "test_data", "perfs", f)
+             for f in sorted(os.listdir(os.path.join("tests", "test_data", "perfs")))
+             if '.mid' in f]
     assert len(scores) == len(perfs)
-    return tuple(zip(scores,perfs))
+    return tuple(zip(scores, perfs))
 
 
 def assert_numeric_equiv_csv(path_a, path_b):

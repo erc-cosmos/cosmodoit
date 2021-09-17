@@ -22,12 +22,12 @@ def loudness_old_pairs():
 @pytest.mark.parametrize('wav_path, old_path', loudness_old_pairs())
 def test_raw_same_as_matlab(wav_path, old_path):
     loudnessTable = get_loudness.read_loudness(old_path)
-    
+
     time, raw_loudness = get_loudness.compute_raw_loudness(wav_path)
 
-    np.testing.assert_allclose(time, loudnessTable.Time, atol = 1e-3)
+    np.testing.assert_allclose(time, loudnessTable.Time, atol=1e-3)
     np.testing.assert_allclose(raw_loudness, loudnessTable.Loudness, atol=0.01)
-    
+
 
 @pytest.mark.parametrize('_, old_path', loudness_old_pairs())
 def test_read_write_identity(_, old_path, clean_dir):
@@ -99,6 +99,7 @@ def test_enveloppe_keeps_size(_, old_file):
 
     assert len(new_envelope) == len(loudnessTable.Loudness_envelope)
 
+
 @pytest.mark.skip(reason="Known boundary effects")
 @pytest.mark.parametrize('_, old_file', loudness_old_pairs())
 def test_smoothing_same_as_matlab(_, old_file):
@@ -108,7 +109,8 @@ def test_smoothing_same_as_matlab(_, old_file):
     smoothed = get_loudness.clipNegative(get_loudness.smooth(loudnessTable.Loudness_norm, span))
     halfspan = int(np.floor(np.floor(len(loudnessTable.Loudness_norm)*span)/2))
 
-    np.testing.assert_allclose(smoothed[halfspan:-halfspan], loudnessTable.Loudness_smooth[halfspan:-halfspan], atol=1e-3)
+    np.testing.assert_allclose(smoothed[halfspan:-halfspan],
+                               loudnessTable.Loudness_smooth[halfspan:-halfspan], atol=1e-3)
 
 
 @pytest.mark.parametrize('_, old_file', loudness_old_pairs())

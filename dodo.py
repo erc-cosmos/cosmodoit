@@ -42,7 +42,6 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     """Find targets in a piece first directory structure.
 
     This expects pieces to be in one folder each"""
-
     if doit.get_initial_workdir() != os.getcwd():
         base_folder = os.getcwd()
     piece_folders = [os.path.join(base_folder, folder)

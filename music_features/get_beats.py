@@ -44,7 +44,6 @@ def get_beat_reference_pm(ref_filename):
     """Find the beats in the reference according to pretty-midi."""
     pretty = pm.PrettyMIDI(ref_filename)
     return np.array(pretty.get_beats()) * 1000  # seconds to milliseconds
-    # return np.array([pretty.time_to_tick(beat_time) for beat_time in pretty.get_beats()])
 
 
 def get_bar_reference_pm(ref_filename):
@@ -62,13 +61,13 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
 
         spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
         interpolation = spline(reference_beats)
-        interpolation[(reference_beats<ticks.min()) | (reference_beats>ticks.max())] = np.nan
+        interpolation[(reference_beats < ticks.min()) | (reference_beats > ticks.max())] = np.nan
         tempos = [np.nan, *(60/np.diff(interpolation))]
         beats = [{'count': count,
-                'time': time,
-                'interpolated': tick not in ticks,  # TODO: Fix rounding issues
-                'tempo': tempo}
-                for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
+                  'time': time,
+                  'interpolated': tick not in ticks,  # TODO: Fix rounding issues
+                  'tempo': tempo}
+                 for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
 
         anomalies = find_outliers(beats)
         if anomalies == []:
@@ -79,21 +78,21 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
 
     warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
     return (beats, ignored) if return_ignored else beats
-    
+
 
 def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=True):
     """Attempt to correct the beat extraction by removing the values causing outliers."""
     filtered_all = []
     for index_before, index_after in anomalies:
-        #Find range to erase
+        # Find range to erase
         range_start = next((item.tatum for item in reversed(alignment) if item.tatum <= reference_beats[index_before]),
-                           reference_beats[index_before])    
+                           reference_beats[index_before])
         range_end = next((item.tatum for item in alignment if item.tatum >= reference_beats[index_after]),
-                          reference_beats[index_after]) # TODO: Add a test with coverage on this
+                         reference_beats[index_after])  # TODO: Add a test with coverage on this
         # Protect the first and last beats
         range_start = (range_start + 1) if range_start == alignment[0].tatum else range_start
         range_end = (range_end - 1) if range_end == alignment[-1].tatum else range_end
-        
+
         filtered = [item for item in alignment if range_start <= item.tatum <= range_end]
         if verbose:
             [print(f"Removing {item} in correction attempt") for item in filtered]
@@ -102,8 +101,9 @@ def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=
 
     return alignment, filtered_all
 
+
 def preprocess(alignment):
-    # Find outliers and prefilter data
+    """Find outliers and prefilter data."""
     times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
     ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]
 
@@ -152,13 +152,8 @@ def plot_beat_ratios(ticks, quarter_length, times, spline):
     plt.show(block=True)
 
 
-# def plot_beats(beats, ticks, quarter_length, times):
 def plot_beats(beats):
-    """ Plots score time against real time and tempo against score time
-    """
-    #plt.plot(np.array([beat['count'] for beat in beats])[1:],60/np.diff(interpolation),label="IOI")
-    # plt.plot([beat['count'] for beat in beats], interpolation)
-    # plt.scatter(ticks/quarter_length, times)
+    """Plot score time against real time and tempo against score time."""
     plt.show(block=True)
     plt.plot(60/np.diff([beat['time'] for beat in beats]))
     plt.show(block=True)
@@ -184,9 +179,10 @@ def find_outliers(beats, *, factor=4, verbose=True):
     inter_beat_intervals = np.diff(beats)
     mean_IBI = np.mean(inter_beat_intervals)
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
-                       if ibi * factor < mean_IBI] # Only check values too quick, slow values are likely valid
+                       if ibi * factor < mean_IBI]  # Only check values too quick, slow values are likely valid
     if verbose:
-        [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (max. {factor*mean_IBI}s)") for i,j in anomaly_indices]
+        [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (max. {factor*mean_IBI}s)")
+         for i, j in anomaly_indices]
     return anomaly_indices
 
 
@@ -194,7 +190,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
     ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
     perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
-    
+
     # Attempt using manual annotations
     perf_beats = perf_targets("_beats.csv")
     ref_midi = ref_targets("_ref.mid")
@@ -228,7 +224,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'targets': [perf_beats],
             'actions': [(caller, [perf_match, ref_midi, perf_beats])]
         }
-    
+
     perf_bars = perf_targets("_bars.csv")
     if paths.manual_bars is not None:
         def caller_bar(manual_beats, perf_beats):
@@ -244,6 +240,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     else:
         if(paths.score is None or paths.perfmidi is None):
             return
+
         def caller_bar(perf_match, ref_midi, perf_bars, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
@@ -259,21 +256,21 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'actions': [(caller_bar, [perf_match, ref_midi, perf_bars])]
         }
 
-
     perf_tempo = perf_targets("_tempo.csv")
+
     def caller2(perf_beats, perf_tempo):
         data = pd.read_csv(perf_beats)
-        tempo_frame = pd.DataFrame({'time':data.time[1:], 'tempo':60/np.diff(data.time)})
+        tempo_frame = pd.DataFrame({'time': data.time[1:], 'tempo': 60/np.diff(data.time)})
         tempo_frame.to_csv(perf_tempo, index=False)
-        
+
     yield {
-            'basename': "tempo",
-            'file_dep': [perf_beats, __file__],
-            'name': piece_id,
-            'doc': "Derive tempo from manual or inferred beats",
-            'targets': [perf_tempo],
-            'actions': [(caller2, [perf_beats, perf_tempo])]
-        }
+        'basename': "tempo",
+        'file_dep': [perf_beats, __file__],
+        'name': piece_id,
+        'doc': "Derive tempo from manual or inferred beats",
+        'targets': [perf_tempo],
+        'actions': [(caller2, [perf_beats, perf_tempo])]
+    }
 
 
 if __name__ == "__main__":

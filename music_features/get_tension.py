@@ -10,35 +10,40 @@ from .util import targets_factory
 def genBaseName(inputFile):
     """ Generate full path base name (without extension) from midi file """
 
-    baseName     = os.path.basename(inputFile)
-    baseName, _  = os.path.splitext(baseName)
-    dirName      = os.path.dirname(inputFile)
+    baseName = os.path.basename(inputFile)
+    baseName, _ = os.path.splitext(baseName)
+    dirName = os.path.dirname(inputFile)
     fullBaseName = os.path.join(dirName, baseName)
     return fullBaseName
 
+
 def createTensionDataFrame(time, momentum, diameter, strain):
     """ Create dataframe from results of midi-Miner """
-    
-    beat        = np.linspace(1,len(time),len(time), dtype=int)
-    tensionDict = {'beat':beat, 'time' : time, 'momentum' : momentum, 'diameter' : diameter, 'strain':strain}
-    df          = pd.DataFrame.from_dict(tensionDict)
+
+    beat = np.linspace(1, len(time), len(time), dtype=int)
+    tensionDict = {'beat': beat, 'time': time, 'momentum': momentum, 'diameter': diameter, 'strain': strain}
+    df = pd.DataFrame.from_dict(tensionDict)
     return df
+
 
 def computeTension(inputFile, args):
     """Use midi-miner to compute Harmonic Tension data"""
-    _, piano_roll,beat_data = tc.extract_notes(inputFile,args['track_num'])
+    _, piano_roll, beat_data = tc.extract_notes(inputFile, args['track_num'])
     if args['key_name'] == '':
         # key_name = get_key_name(inputFile)
         from tension_calculation import all_key_names
         key_name = all_key_names
-        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args['window_size'], key_name, generate_pickle=False)
+        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args,
+                                        args['window_size'], key_name, generate_pickle=False)
     else:
-        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args['window_size'],[args['key_name']], generate_pickle=False)
+        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args['window_size'], [
+                                        args['key_name']], generate_pickle=False)
 
     # tension_time, total_tension, diameters, centroid_diff, _, _, _, _ = tension_result
-    tension_time, total_tension, diameters,centroid_diff, key_name, key_change_time, key_change_bar,key_change_name, new_output_folder = tension_result
+    tension_time, total_tension, diameters, centroid_diff, key_name, key_change_time, key_change_bar, key_change_name, new_output_folder = tension_result
 
     return tension_time, total_tension, diameters, centroid_diff
+
 
 def getTension(inputFile, args, plotTension, exportTension, columns):
     """Compute Harmonic Tension using midi-miner
@@ -76,22 +81,24 @@ def getTension(inputFile, args, plotTension, exportTension, columns):
         exportTensionCSV(inputFile, df, columns)
     return df
 
-def plotTensionCurves(df, figSize=(16,10)):
+
+def plotTensionCurves(df, figSize=(16, 10)):
     """ Plot tension parameters in 3 rows"""
 
     _, ax = plt.subplots(nrows=3, ncols=1, figsize=figSize, sharex=True, sharey=False)
     parameters = ['diameter', 'momentum', 'strain']
-    colors     = ['orange', 'gold', 'red']
+    colors = ['orange', 'gold', 'red']
     for i, parameter in enumerate(parameters):
         ax[i].set_ylabel(parameter.upper(), fontweight='bold')
-        ax[i].plot(df['time'], df[parameter], color = colors[i], marker='.', markersize=9)
+        ax[i].plot(df['time'], df[parameter], color=colors[i], marker='.', markersize=9)
     plt.show()
     return
+
 
 def exportTensionCSV(inputFile, df, columns):
     """ Export dataframe as a csv file adding a suffix to the inputFile name """
 
-    if columns =='all':
+    if columns == 'all':
         fileSuffix = '_tension_all.csv'
     else:
         fileSuffix = '_tension.csv'
@@ -99,6 +106,7 @@ def exportTensionCSV(inputFile, df, columns):
     df.to_csv(exportName, sep=',', index=False)
     print('Exported to: {}'.format(exportName))
     return
+
 
 def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all'):
     """
@@ -114,24 +122,26 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
     """
 
     if os.path.isfile(inputPath):
-        tension = getTension(inputPath, args=args, plotTension=plotTension, exportTension=exportTension, columns=columns)
+        tension = getTension(inputPath, args=args, plotTension=plotTension,
+                             exportTension=exportTension, columns=columns)
         return tension
     if os.path.isdir(inputPath):
         import glob
         fileList = glob.glob(os.path.join(inputPath, '*.mid'))
         for inputFile in fileList:
-            tension = getTension(inputFile, args=args, plotTension=plotTension, exportTension=exportTension, columns=columns)
+            tension = getTension(inputFile, args=args, plotTension=plotTension,
+                                 exportTension=exportTension, columns=columns)
     return
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
     if paths.score is None:
         return
-    
+
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
     ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
     perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
-    
+
     ref_midi = ref_targets("_ref.mid")
     perf_beats = perf_targets("_beats.csv")
     perf_bars = perf_targets("_bars.csv")
@@ -140,15 +150,15 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
 
     def caller(perf_tension, ref_midi, perf_beats, measure_level=False, **kwargs):
         args = {
-            'window_size':-1 if measure_level else 1,
-            'key_name':'',
+            'window_size': -1 if measure_level else 1,
+            'key_name': '',
             'track_num': 3,
-            'end_ratio':.5,
-            'key_changed':False,
-            'vertical_step':0.4
+            'end_ratio': .5,
+            'key_changed': False,
+            'vertical_step': 0.4
         }
         tension = getTension(ref_midi, args=args, plotTension=False, exportTension=False, columns='time')
-        df_beats = pd.read_csv(perf_beats).tail(-1) # Drop the first beat as tension is not computed there
+        df_beats = pd.read_csv(perf_beats).tail(-1)  # Drop the first beat as tension is not computed there
         tension['time'] = df_beats['time']
         tension['d_diameter'] = [np.nan, *np.diff(tension['diameter'])]
         tension['d_strain'] = [np.nan, *np.diff(tension['strain'])]
@@ -181,7 +191,7 @@ if __name__ == '__main__':
                         help="input MIDI file name or folder path with .mid files")
     parser.add_argument('-i', '--input_folder', default='.', type=str,
                         help="MIDI file input folder")
-    parser.add_argument('-o', '--output_folder',default='.',type=str,
+    parser.add_argument('-o', '--output_folder', default='.', type=str,
                         help="MIDI file output folder")
     parser.add_argument('-w', '--window_size', default=1, type=int,
                         help="Tension calculation window size, 1 for a beat, 2 for 2 beat etc., -1 for a downbeat, default 1 beat")
@@ -199,13 +209,17 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--vertical_step', default=0.4, type=float,
                         help="the vertical step parameter in the spiral array,"
                              "which should be set between sqrt(2/15) and sqrt(0.2)")
-    parser.add_argument("-plot", "--plotTension", action='store_true', help="Plot tension curve, default False", default=False)
-    parser.add_argument("-noPlot", "--dontPlot", action='store_false', help="Do not plot tension curve", dest='plotTension')
-    parser.add_argument("-exp", "--exportTension", action='store_true', help="Export Tension as csv, default True", default=True)
-    parser.add_argument("-noExp", "--dontExport", action='store_false', help="Do not export Tension as csv", dest='exportTension')
+    parser.add_argument("-plot", "--plotTension", action='store_true',
+                        help="Plot tension curve, default False", default=False)
+    parser.add_argument("-noPlot", "--dontPlot", action='store_false',
+                        help="Do not plot tension curve", dest='plotTension')
+    parser.add_argument("-exp", "--exportTension", action='store_true',
+                        help="Export Tension as csv, default True", default=True)
+    parser.add_argument("-noExp", "--dontExport", action='store_false',
+                        help="Do not export Tension as csv", dest='exportTension')
     parser.add_argument("-cols", "--columns", type=str,
                         help="Columns to export, all:Beats,Time,Tension - time=Time,Tension - beats:Beats,Tension")
-    
+
     args = parser.parse_args()
     inputPath = args.file_name
     plotTension = args.plotTension

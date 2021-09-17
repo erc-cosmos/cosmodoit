@@ -12,16 +12,16 @@ def get_midi_events(perfFilename, verbose=False):
     Meta events are read and optionally logged, but not returned
     """
     midi = mido.MidiFile(perfFilename)
-    
+
     # Default value for tempo; might be set by a value for set_tempo later
     tempo = 500000
 
     # Use default for pulses per quarter note if its not set
     ppq = midi.ticks_per_beat or 96
-    
+
     # For storing the elapsed time for MIDI events in seconds
     event_list = []
-    
+
     for track in midi.tracks:
         event_time = 0
         unmatched_note_on = []
@@ -32,16 +32,18 @@ def get_midi_events(perfFilename, verbose=False):
                 event_time += mido.tick2second(message.time, ppq, tempo)
                 if is_note_off(message):
                     # Pair the note off to the first matching note on without an end time
-                    if any(message.note == (match_:=event)['Note'] for event in unmatched_note_on):
+                    if any(message.note == (match_ := event)['Note'] for event in unmatched_note_on):
                         match_['EndTime'] = event_time
                         unmatched_note_on.remove(match_)
                     else:
                         warnings.warn(f"Found unbalanced note off {message}")
                 elif is_note_on(message):
-                    event_list.append(event:={'StartTime': event_time, 'EndTime': None, 'Type': message.type, 'Note': message.note, 'Velocity': message.velocity})
+                    event_list.append(event := {'StartTime': event_time, 'EndTime': None,
+                                      'Type': message.type, 'Note': message.note, 'Velocity': message.velocity})
                     unmatched_note_on.append(event)
                 elif message.type == 'control_change':
-                    event_list.append({'Time': event_time, 'Type': message.type, 'Control': message.control, 'Value': message.value})
+                    event_list.append({'Time': event_time, 'Type': message.type,
+                                      'Control': message.control, 'Value': message.value})
         # Warn if not all note ons have been matched
         if unmatched_note_on:
             warnings.warn(f"Found unbalanced note ons: {unmatched_note_on}")
@@ -55,7 +57,7 @@ def is_note_on(message):
 
 def is_note_off(message):
     """Test if the message is a note off event."""
-    return message.type == 'note_off' or message.type =='note_on' and message.velocity == 0
+    return message.type == 'note_off' or message.type == 'note_on' and message.velocity == 0
 
 
 def print_message(message):
@@ -79,6 +81,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--perf')
     args = parser.parse_args()
-    
+
     events = get_midi_events(args.perf)
     print(events)

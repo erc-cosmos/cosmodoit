@@ -2,6 +2,7 @@ import csv
 import os
 import functools
 
+
 def string_escape_concat(strings, sep=' '):
     """Concatenate strings after wrapping them in quotes."""
     return sep.join(f'"{s}"' for s in strings)
@@ -14,7 +15,7 @@ def run_doit(task_set, commands=None):
     doit.doit_cmd.DoitMain(doit.cmd_base.ModuleTaskLoader(task_set)).run(commands)
 
 
-def write_file(filename,data):
+def write_file(filename, data):
     """Write a list of dictionaries with identical keys to disk."""
     fields = data[0].keys()
     with open(filename, mode='w') as csvFile:
