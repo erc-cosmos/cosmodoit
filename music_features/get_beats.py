@@ -1,19 +1,20 @@
+"""Module to extract beat timings from a midi interpretation and corresponding score."""
 import argparse
-import os
-import sys
 import collections
+import os
+import shutil
+import sys
 import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import pretty_midi as pm
 import scipy as sp
 import scipy.interpolate
-import pretty_midi as pm
-import pandas as pd
-from .util import write_file, targets_factory
-import shutil
 
 from . import get_alignment
+from .util import targets_factory, write_file
 
 BeatParams = collections.namedtuple("BeatParams",
                                     ("PPQ",  # Pulse per quarter note
@@ -187,6 +188,8 @@ def find_outliers(beats, *, factor=4, verbose=True):
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
+    """Generate beat-related tasks."""
+    # TODO: Split up operations
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
     ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
     perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets

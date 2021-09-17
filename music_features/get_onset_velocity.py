@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
+"""Module to extract velocity information from a midi file."""
 
 import argparse
 import warnings
+
 from .get_midi_events import get_midi_events
 from .util import targets_factory, write_file
 
@@ -21,6 +22,7 @@ def is_note_event(event):
 
 
 def gen_tasks(piece_id, paths, working_folder):
+    """Generate velocity-related tasks."""
     if paths.perfmidi is None:
         return
     perf_targets = targets_factory(paths.perfmidi, working_folder)

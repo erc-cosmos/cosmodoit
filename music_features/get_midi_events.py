@@ -1,8 +1,8 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+"""Module to extract midi events in a more convenient format."""
 import argparse
-import mido
 import warnings
+
+import mido
 
 
 def get_midi_events(perfFilename, verbose=False):
@@ -32,11 +32,13 @@ def get_midi_events(perfFilename, verbose=False):
                 event_time += mido.tick2second(message.time, ppq, tempo)
                 if is_note_off(message):
                     # Pair the note off to the first matching note on without an end time
-                    if any(message.note == (match_ := event)['Note'] for event in unmatched_note_on):
+                    try:
+                        match_ = next(event for event in unmatched_note_on if message.note == event['Note'])
+                    except StopIteration:
+                        warnings.warn(f"Found unbalanced note off {message}")
+                    else:
                         match_['EndTime'] = event_time
                         unmatched_note_on.remove(match_)
-                    else:
-                        warnings.warn(f"Found unbalanced note off {message}")
                 elif is_note_on(message):
                     event_list.append(event := {'StartTime': event_time, 'EndTime': None,
                                       'Type': message.type, 'Note': message.note, 'Velocity': message.velocity})

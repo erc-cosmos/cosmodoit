@@ -1,6 +1,7 @@
+"""Miscellaneous functions for music_features."""
 import csv
-import os
 import functools
+import os
 
 
 def string_escape_concat(strings, sep=' '):

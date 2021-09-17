@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
+"""Module for extracting sustain out of a midi file."""
 import argparse
+
 from .get_midi_events import get_midi_events
 from .util import targets_factory, write_file
 
@@ -21,6 +22,7 @@ def is_sustain_event(event):
 
 
 def gen_tasks(piece_id, paths, working_folder):
+    """Generate sustain-related tasks."""
     if paths.perfmidi is None:
         return
     perf_targets = targets_factory(paths.perfmidi, working_folder)
