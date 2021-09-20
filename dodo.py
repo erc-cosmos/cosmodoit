@@ -78,19 +78,19 @@ def task_generator():
                   get_beats, get_alignment)
     for module in submodules:
         try:
+            docs = module.task_docs
+        except AttributeError:
+            warnings.warn(f"No docs for submodule {module.__name__}")
+        else:
+            yield from gen_default_tasks(docs)
+
+        try:
             task_gen = module.gen_tasks
         except AttributeError:
             warnings.warn(f"Missing task generator in submodule {module.__name__}")
         else:
             for (piece_id, paths) in filesets:
                 yield from task_gen(piece_id, paths, working_folder=working_folder)
-
-        try:
-            docs = module.task_docs
-        except AttributeError:
-            warnings.warn(f"No docs for submodule {module.__name__}")
-        else:
-            yield from gen_default_tasks(docs)
 
 
 if __name__ == "__main__":
