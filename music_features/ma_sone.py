@@ -1,11 +1,10 @@
-# Compute loudness matrix and total loudness using Stevens method from the MA Toolbox
-#
-# http://www.ofai.at/~elias.pampalk/ma/documentation.html#ma_sone
-# Created by Elias Pampalk, ported by Daniel Bedoya 2020-06-28
+"""Compute loudness matrix and total loudness using Stevens method from the MA Toolbox.
 
-import os
+http://www.ofai.at/~elias.pampalk/ma/documentation.html#ma_sone
+Created by Elias Pampalk, ported by Daniel Bedoya 2020-06-28
+"""
+
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
@@ -20,7 +19,7 @@ def maSone(wav, *,
            doSpread=True,
            doSone=True,
            plotLoudness=False):
-
+    """Compute the loudness of an audio file."""
     # frequency of fft bins
     fft_freq = np.arange(0, (fftSize/2)+1)/fftSize*2*fs/2
 
@@ -61,7 +60,7 @@ def maSone(wav, *,
 
 
 def array2dB(vector):
-    """ Replace with 1 values < 1 and convert array to dB """
+    """Replace with 1 values < 1 and convert array to dB."""
     linearVector = np.copy(vector)
     linearVector[linearVector < 1] = 1  # avoid negative values
     dB = 10*np.log10(linearVector)
@@ -69,7 +68,7 @@ def array2dB(vector):
 
 
 def isNumeric(x):
-    """ Verify if an input is numeric, raise an error otherwise """
+    """Verify if an input is numeric, raise an error otherwise."""
     try:
         float(x)
         return True
@@ -78,10 +77,11 @@ def isNumeric(x):
 
 
 def computeBarkScale(bark_type, fs):
-    """ Generate bark scale according to model
-    input can be a string 'table' or a list with
-    lowear freq, highest freq, and number of values """
+    """
+    Generate bark scale according to model.
 
+    input can be a string 'table' or a list with lowear freq, highest freq, and number of values
+    """
     if bark_type == 'table':
         # zwicker & fastl: psychoacoustics 1999, page 159
         bark_upper = np.array([10, 20, 30, 40, 51, 63, 77, 92, 108, 127, 148, 172, 200, 232,
@@ -112,9 +112,12 @@ def computeBarkScale(bark_type, fs):
 
 
 def computeSpreading(cb, outerear, fft_freq):
-    """ spreading function: schroeder et al., 1979, JASA,
-    Optimizing digital speech coders by exploiting masking properties of the human ear """
+    """
+    Compute spreading function.
 
+    schroeder et al., 1979, JASA,
+    Optimizing digital speech coders by exploiting masking properties of the human ear.
+    """
     spread = np.zeros((cb, cb))
     cbV = np.linspace(1, cb, cb, dtype=int)
     for i in range(1, cb+1):
@@ -125,7 +128,7 @@ def computeSpreading(cb, outerear, fft_freq):
 
 
 def outerEarCases(outerear, fft_freq):
-    """Compute model according to case"""
+    """Compute model according to case."""
     N = len(fft_freq)
     w_Adb = np.ones((1, len(fft_freq)), dtype=float)
     if outerear == 'terhardt':  # terhardt 1979 (calculating virtual pitch, hearing research #1, pp 155-182)
@@ -149,18 +152,13 @@ def outerEarCases(outerear, fft_freq):
 
 
 def getFrames(wav, fftSize, hopSize):
-    """ Figure out number of fft frames """
-    # frames = 0
-    # idx = fftSize
-    # while idx <= len(wav):
-    #     frames = frames + 1;
-    #     idx    = idx + hopSize
+    """Figure out number of fft frames."""
     frames = (len(wav) - fftSize) // hopSize + 1
     return frames
 
 
 def getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb):
-    """ Compute normalized powerspectrum """
+    """Compute normalized powerspectrum."""
     half_window_size = fftSize//2+1
     dlinear = np.zeros((half_window_size, frames))  # data from fft (linear freq scale)
     w = np.hanning(fftSize)
@@ -173,7 +171,7 @@ def getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb):
 
 
 def computeSone(cb, frames, fft_freq, bark_upper, dlinear):
-    """ Compute sone matrix from critical band scale and powerspectrum """
+    """Compute sone matrix from critical band scale and powerspectrum."""
     sone = np.zeros((cb, frames))
     k = 0
     for i in range(0, cb):  # group into bark bands
@@ -185,8 +183,11 @@ def computeSone(cb, frames, fft_freq, bark_upper, dlinear):
 
 
 def phon2Sone(sone_dB):
-    """ Convert from phons to sones 
-    bladon and lindblom, 1981, JASA, modelling the judment of vowel quality differences"""
+    """
+    Convert from phons to sones.
+
+    Bladon and Lindblom, 1981, JASA, modelling the judment of vowel quality differences
+    """
     idx = sone_dB >= 40
     sone_dB[idx] = 2**((sone_dB[idx]-40)/10)
     sone_dB[~idx] = (sone_dB[~idx]/40)**2.642
@@ -194,28 +195,23 @@ def phon2Sone(sone_dB):
 
 
 def computeTotalLoudness(sone_dB, frames, hopSize, fs):
-    """ Compute total loudness as a vector with timestamps 
-        stevens method, see 'Signal sound and sensation' p73, Hartmann """
+    """
+    Compute total loudness as a vector with timestamps.
+
+    Stevens' method, see 'Signal sound and sensation' p73, Hartmann
+    """
     totLoudness = np.zeros((sone_dB.shape[1], 2))
     F = 0.15  # Masking factor
     totLoudness[:, 1] = (1-F) * np.max(sone_dB, 0) + F * np.sum(sone_dB, 0)
-    # notIdx = np.full((1,sone_dB.shape[0]),True)[0]
-    # maximums = np.max(sone_dB, 0)
-    # for i, maxi in enumerate(maximums):
-    #     idx  = np.nonzero(sone_dB[:,i]==maxi)[0]
-    #     notIdx[idx] = False
-    #     totLoudness[i,1]   = maxi + 0.15*np.sum(sone_dB[notIdx,i])
+
     for frame in range(frames):
         totLoudness[frame, 0] = frame * (hopSize/fs)  # time vector in sec
     return totLoudness
 
 
-def plotFigure(wav, cb, bark_center, fft_freq, w_Adb, dlinear, dlinearOuterEar, soneNoSpread_dB, soneMasking_dB, sone_dB, totLoudness):
-    """ Plot all visualizations """
-
-    cbW_T = (-3.64*(bark_center/1000)**-0.8
-             + 6.5 * np.exp(-0.6 * (bark_center/1000 - 3.3)**2)
-             - 0.001*(bark_center/1000)**4)
+def plotFigure(wav, cb, bark_center, fft_freq, w_Adb, dlinear, dlinearOuterEar,
+               soneNoSpread_dB, soneMasking_dB, sone_dB, totLoudness):
+    """Plot all visualizations."""
     L = len(fft_freq)
     wAdbT = np.zeros((L, 1))
     wAdbT[1:L, 0] = 10**((-3.64*(fft_freq[1:L]/1000)**-0.8 + 6.5 * np.exp(-0.6 *
