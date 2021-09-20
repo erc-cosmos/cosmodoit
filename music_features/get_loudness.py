@@ -1,3 +1,4 @@
+"""Module wrapping a port of MA toolbox's loudness computation."""
 import os
 import numpy as np
 import scipy
@@ -41,11 +42,13 @@ def get_loudness(input_path, *, export_dir=None, **kwargs):
 
 
 def clipNegative(x_array):
+    """Set negative values to zero."""
     return [0 if x < 0 else x for x in x_array]
 
 
 def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, export_path=None,
                      smoothSpan=0.03, no_negative=True):
+    """Compute the raw loudness and its post-processed versions."""
     time, raw_loudness = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
@@ -71,6 +74,7 @@ def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=
 
 
 def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_loudness, *, show=True):
+    """Display a pyplot graph of the loudness."""
     fig, ax1 = plt.subplots()
     ax1.set_ylabel('Loudness (sone)', fontsize=14)
     ax1.set_xlabel('Time (s)', fontsize=14)
@@ -109,6 +113,7 @@ def rescale(data):
 
 
 def smooth(data, span):
+    """Use lowess regression to smooth loudness."""
     # NYI
     if 0 < span < 1:  # span is given as a ratio
         span = np.floor(len(data)*span)
@@ -118,6 +123,7 @@ def smooth(data, span):
 
 
 def peak_envelope(data, min_separation):
+    """Find the peak envelope of loudness."""
     peaks_idx, _ = scipy.signal.find_peaks(data, distance=min_separation+1)  # +1 for consistency with matlab
     peaks_y = data[peaks_idx]
     spline = scipy.interpolate.InterpolatedUnivariateSpline(peaks_idx, peaks_y)
@@ -125,6 +131,7 @@ def peak_envelope(data, min_separation):
 
 
 def resample(loud_path, beat_path, out_path):
+    """Interpolate the loudness at the position of beats."""
     data = read_loudness(loud_path)
     beats = pd.read_csv(beat_path)
     spline = scipy.interpolate.InterpolatedUnivariateSpline(data.Time, data.Loudness_smooth)
@@ -134,6 +141,7 @@ def resample(loud_path, beat_path, out_path):
 
 
 def write_loudness(data, path):
+    """Write loudness data to a file."""
     data.to_csv(path, index=False)
 
 

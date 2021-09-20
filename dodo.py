@@ -70,7 +70,7 @@ discover_files = discover_files_by_piece
 
 
 def task_generator():
-    # """Generate tasks for all files."""
+    """Generate tasks for all files."""
     working_folder = default_working_folder
     filesets = discover_files()
     os.makedirs(working_folder, exist_ok=True)
