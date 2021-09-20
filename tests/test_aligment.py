@@ -2,7 +2,7 @@ import os
 import shutil
 
 import pytest
-from get_alignment import get_alignment
+from music_features.get_alignment import get_alignment
 from helpers import clean_dir
 
 

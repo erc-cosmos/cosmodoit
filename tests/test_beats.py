@@ -1,10 +1,8 @@
-import get_beats
-import get_alignment
+from music_features import get_beats, get_alignment
 import pytest
-import os
 
 import helpers
-from util import targets_factory
+from music_features.util import targets_factory
 
 
 @pytest.mark.parametrize("ref, perf", helpers.test_files())

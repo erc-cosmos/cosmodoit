@@ -5,7 +5,7 @@ import numpy as np
 import helpers
 from helpers import clean_dir  # Fixtures need to be imported into the namespace
 
-import get_loudness
+from music_features import get_loudness
 
 
 def loudness_old_pairs():
