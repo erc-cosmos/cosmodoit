@@ -21,6 +21,11 @@ def is_sustain_event(event):
     return event['Type'] == 'control_change' and event['Control'] == 64
 
 
+task_docs = {
+    "sustain": "Extract sustain pedal information from a midi file."
+}
+
+
 def gen_tasks(piece_id, paths, working_folder):
     """Generate sustain-related tasks."""
     if paths.perfmidi is None:
@@ -35,7 +40,7 @@ def gen_tasks(piece_id, paths, working_folder):
     yield {
         'basename': 'sustain',
         'name': piece_id,
-        'doc': "Extract sustain pedal information from a midi file.",
+        'doc': task_docs["sustain"],
         'file_dep': [paths.perfmidi, __file__],
         'targets': [perf_sustain],
         'actions': [(runner, [paths.perfmidi, perf_sustain])]

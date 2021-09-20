@@ -130,6 +130,12 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
     return
 
 
+task_docs = {
+    "tension": "Compute the tension parameters using midi-miner",
+    "tension_bar": "Compute the tension parameters at the bar level"
+}
+
+
 def gen_tasks(piece_id, paths, working_folder="tmp"):
     """Generate tension-related tasks."""
     if paths.score is None:
@@ -167,7 +173,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'basename': "tension",
             'file_dep': [ref_midi, perf_beats, __file__],
             'name': piece_id,
-            'doc': "Compute the tension parameters —cloud momentum, tensile strain and cloud diameter— using midi-miner.",
+            'doc': task_docs["tension"],
             'targets': [perf_tension],
             'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
         }
@@ -176,7 +182,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'basename': "tension_bar",
             'file_dep': [ref_midi, perf_bars, __file__],
             'name': piece_id,
-            'doc': "Compute the tension parameters —cloud momentum, tensile strain and cloud diameter— using midi-miner (at the bar level).",
+            'doc': task_docs["tension_bar"],
             'targets': [perf_tension_bar],
             'actions': [(caller, [perf_tension_bar, ref_midi, perf_bars, True])]
         }

@@ -187,6 +187,13 @@ def find_outliers(beats, *, factor=4, verbose=True):
     return anomaly_indices
 
 
+task_docs = {
+    "beats": "Find beats' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
+    "bars": "Find bars' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
+    "tempo": "Derive tempo from manual or inferred beats"
+}
+
+
 def gen_tasks(piece_id, paths, working_folder="tmp"):
     """Generate beat-related tasks."""
     # TODO: Split up operations
@@ -223,7 +230,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'basename': "beats",
             'file_dep': [perf_match, ref_midi, __file__],
             'name': piece_id,
-            'doc': "Find beats' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
+            'doc': task_docs["beats"],
             'targets': [perf_beats],
             'actions': [(caller, [perf_match, ref_midi, perf_beats])]
         }
@@ -254,7 +261,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'basename': "bars",
             'file_dep': [perf_match, ref_midi, __file__],
             'name': piece_id,
-            'doc': "Find bars' positions using Nakamura's HMM alignment and pretty-midi's beat inference",
+            'doc': task_docs["bars"],
             'targets': [perf_bars],
             'actions': [(caller_bar, [perf_match, ref_midi, perf_bars])]
         }
@@ -270,7 +277,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         'basename': "tempo",
         'file_dep': [perf_beats, __file__],
         'name': piece_id,
-        'doc': "Derive tempo from manual or inferred beats",
+        'doc': task_docs["tempo"],
         'targets': [perf_tempo],
         'actions': [(caller2, [perf_beats, perf_tempo])]
     }

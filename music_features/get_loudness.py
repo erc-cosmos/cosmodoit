@@ -52,10 +52,6 @@ def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=
     min_separation = len(time) // time[-1]
     envelope_loudness = peak_envelope(norm_loudness, min_separation)
     # TODO: Separate exporting entirely
-    # [~, L, ~]  = ma_sone(audio, p);
-    # norm_loudness     = normalize(L(:,2), 'range');          % Normalized data with range [0 1]
-    # smooth_loudness     = smooth(norm_loudness, smoothSpan, 'loess'); % 2nd degree polynomial smooth
-    # [envelope_loudness,~] = envelope(norm_loudness,floor(length(time)/L(end,1)),'peak'); % upper peak envelope
 
     # Remove values below zero
     if no_negative:
@@ -150,7 +146,14 @@ def read_loudness(path):
     return df
 
 
+task_docs = {
+    "loudness": "Compute loudness using a port of the MA matlab toolbox",
+    "loudness_resample": "Resample loudness at the time of the beats"
+}
+
+
 def gen_tasks(piece_id, paths, working_folder="tmp"):
+    """Generate loudness-based tasks."""
     if paths.perfaudio is None:
         return
     perf_targets = targets_factory(paths.perfaudio, working_folder=working_folder)
@@ -164,7 +167,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         'basename': "loudness",
         'file_dep': [paths.perfaudio, __file__],
         'name': piece_id,
-        'doc': "Compute loudness using a port of the MA matlab toolbox",
+        'doc': task_docs["loudness"],
         'targets': [perf_loudness],
         'actions': [(caller, [paths.perfaudio, perf_loudness])]
     }
@@ -181,7 +184,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         'basename': "loudness_resample",
         'file_dep': [perf_loudness, perf_beats, __file__],
         'name': piece_id,
-        'doc': "Resample loudness at the time of the beats",
+        'doc': task_docs["loudness_resample"],
         'targets': [perf_resampled_loudness],
         'actions': [(resample, [perf_loudness, perf_beats, perf_resampled_loudness])]
     }

@@ -34,3 +34,13 @@ def generate_target_path(original_path, working_folder, extension):
 def targets_factory(original_path, working_folder):
     """Create a target path factory for a given original and working folder."""
     return functools.partial(generate_target_path, original_path, working_folder) if original_path is not None else None
+
+
+def gen_default_tasks(task_docs):
+    """Generate default tasks for docs."""
+    for task, doc in task_docs.items():
+        yield {
+            'basename': task,
+            'doc': doc,
+            'name': None
+        }

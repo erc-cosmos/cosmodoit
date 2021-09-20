@@ -21,6 +21,11 @@ def is_note_event(event):
     return event['Type'] == 'note_on'
 
 
+task_docs = {
+    "velocities": "Extract onset velocities from a midi file"
+}
+
+
 def gen_tasks(piece_id, paths, working_folder):
     """Generate velocity-related tasks."""
     if paths.perfmidi is None:
@@ -38,7 +43,7 @@ def gen_tasks(piece_id, paths, working_folder):
     yield {
         'basename': 'velocities',
         'name': piece_id,
-        'doc': "Extract onset velocities from a midi file.",
+        'doc': task_docs["velocities"],
         'file_dep': [paths.perfmidi, __file__],
         'targets': [perf_velocity],
         'actions': [(runner, [paths.perfmidi, perf_velocity])]

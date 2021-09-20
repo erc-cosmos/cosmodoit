@@ -6,13 +6,8 @@ import argparse
 import warnings
 from collections import namedtuple
 
-import music_features.get_tension as get_tension
-import music_features.get_onset_velocity as get_onset_velocity
-import music_features.get_beats as get_beats
-import music_features.get_sustain as get_sustain
-import music_features.get_alignment as get_alignment
-import music_features.get_loudness as get_loudness
-from music_features.util import run_doit
+from music_features import get_alignment, get_beats, get_loudness, get_onset_velocity, get_sustain, get_tension
+from music_features.util import run_doit, gen_default_tasks
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
@@ -39,9 +34,11 @@ def discover_files_by_type(base_folder="tests/test_data"):
 
 
 def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structure'):
-    """Find targets in a piece first directory structure.
+    """
+    Find targets in a piece first directory structure.
 
-    This expects pieces to be in one folder each"""
+    This expects pieces to be in one folder each
+    """
     if doit.get_initial_workdir() != os.getcwd():
         base_folder = os.getcwd()
     piece_folders = [os.path.join(base_folder, folder)
@@ -73,17 +70,27 @@ discover_files = discover_files_by_piece
 
 
 def task_generator():
-    # """Generates tasks for all files."""
+    # """Generate tasks for all files."""
     working_folder = default_working_folder
     filesets = discover_files()
     os.makedirs(working_folder, exist_ok=True)
-    for (piece_id, paths) in filesets:
-        yield from get_loudness.gen_tasks(piece_id, paths, working_folder=working_folder)
-        yield from get_onset_velocity.gen_tasks(piece_id, paths, working_folder=working_folder)
-        yield from get_sustain.gen_tasks(piece_id, paths, working_folder=working_folder)
-        yield from get_tension.gen_tasks(piece_id, paths, working_folder=working_folder)
-        yield from get_beats.gen_tasks(piece_id, paths, working_folder=working_folder)
-        yield from get_alignment.gen_tasks(piece_id, paths, working_folder=working_folder)
+    submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
+                  get_beats, get_alignment)
+    for module in submodules:
+        try:
+            task_gen = module.gen_tasks
+        except AttributeError:
+            warnings.warn(f"Missing task generator in submodule {module.__name__}")
+        else:
+            for (piece_id, paths) in filesets:
+                yield from task_gen(piece_id, paths, working_folder=working_folder)
+
+        try:
+            docs = module.task_docs
+        except AttributeError:
+            warnings.warn(f"No docs for submodule {module.__name__}")
+        else:
+            yield from gen_default_tasks(docs)
 
 
 if __name__ == "__main__":
