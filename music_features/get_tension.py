@@ -1,3 +1,4 @@
+"""Wrapping module for Midi-miner's spiral array tension functions."""
 import os
 import argparse
 import numpy as np
@@ -8,8 +9,7 @@ from .util import targets_factory
 
 
 def genBaseName(inputFile):
-    """ Generate full path base name (without extension) from midi file """
-
+    """Generate full path base name (without extension) from midi file."""
     baseName = os.path.basename(inputFile)
     baseName, _ = os.path.splitext(baseName)
     dirName = os.path.dirname(inputFile)
@@ -18,8 +18,7 @@ def genBaseName(inputFile):
 
 
 def createTensionDataFrame(time, momentum, diameter, strain):
-    """ Create dataframe from results of midi-Miner """
-
+    """Create dataframe from results of midi-Miner."""
     beat = np.linspace(1, len(time), len(time), dtype=int)
     tensionDict = {'beat': beat, 'time': time, 'momentum': momentum, 'diameter': diameter, 'strain': strain}
     df = pd.DataFrame.from_dict(tensionDict)
@@ -27,7 +26,7 @@ def createTensionDataFrame(time, momentum, diameter, strain):
 
 
 def computeTension(inputFile, args):
-    """Use midi-miner to compute Harmonic Tension data"""
+    """Use midi-miner to compute Harmonic Tension data."""
     _, piano_roll, beat_data = tc.extract_notes(inputFile, args['track_num'])
     if args['key_name'] == '':
         # key_name = get_key_name(inputFile)
@@ -40,15 +39,16 @@ def computeTension(inputFile, args):
                                         args['key_name']], generate_pickle=False)
 
     # tension_time, total_tension, diameters, centroid_diff, _, _, _, _ = tension_result
-    tension_time, total_tension, diameters, centroid_diff, key_name, key_change_time, key_change_bar, key_change_name, new_output_folder = tension_result
+    (tension_time, total_tension, diameters, centroid_diff, key_name,
+     _key_change_time, _key_change_bar, _key_change_name, _new_output_folder) = tension_result
 
     return tension_time, total_tension, diameters, centroid_diff
 
 
 def getTension(inputFile, args, plotTension, exportTension, columns):
-    """Compute Harmonic Tension using midi-miner
-    Creates a pandas DataFrame and deletes additional files
+    """Compute Harmonic Tension using midi-miner.
 
+    Creates a pandas DataFrame and deletes additional files.
     Parameters
     ----------
     inputFile : str
@@ -67,7 +67,6 @@ def getTension(inputFile, args, plotTension, exportTension, columns):
     dataframe
         Pandas dataframe of the harmonic tension
     """
-
     time, strain, diameter, momentum = computeTension(inputFile, args)
     df = createTensionDataFrame(time, momentum, diameter, strain)
 
@@ -83,8 +82,7 @@ def getTension(inputFile, args, plotTension, exportTension, columns):
 
 
 def plotTensionCurves(df, figSize=(16, 10)):
-    """ Plot tension parameters in 3 rows"""
-
+    """Plot tension parameters in 3 rows."""
     _, ax = plt.subplots(nrows=3, ncols=1, figsize=figSize, sharex=True, sharey=False)
     parameters = ['diameter', 'momentum', 'strain']
     colors = ['orange', 'gold', 'red']
@@ -96,8 +94,7 @@ def plotTensionCurves(df, figSize=(16, 10)):
 
 
 def exportTensionCSV(inputFile, df, columns):
-    """ Export dataframe as a csv file adding a suffix to the inputFile name """
-
+    """Export dataframe as a csv file adding a suffix to the inputFile name."""
     if columns == 'all':
         fileSuffix = '_tension_all.csv'
     else:
@@ -110,7 +107,7 @@ def exportTensionCSV(inputFile, df, columns):
 
 def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all'):
     """
-    Compute Harmonic Tension from a MIDI file
+    Compute Harmonic Tension from a MIDI file.
 
      -inputPath,--var <arg>   Input path: .mid file or folder
      -w, windowSize. Integer number of beats or -1 for backbeat
@@ -120,7 +117,6 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
      -exportTension,--var <arg>   bool, default True
      -columns,--var <arg>   str, columns to export (all, time, beats)
     """
-
     if os.path.isfile(inputPath):
         tension = getTension(inputPath, args=args, plotTension=plotTension,
                              exportTension=exportTension, columns=columns)
@@ -135,6 +131,7 @@ def main(inputPath, args, *, plotTension=False, exportTension=True, columns='all
 
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
+    """Generate tension-related tasks."""
     if paths.score is None:
         return
 
@@ -194,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_folder', default='.', type=str,
                         help="MIDI file output folder")
     parser.add_argument('-w', '--window_size', default=1, type=int,
-                        help="Tension calculation window size, 1 for a beat, 2 for 2 beat etc., -1 for a downbeat, default 1 beat")
+                        help="Tension calculation window size in beats, or -1 for a downbeat. [1 beat]")
     parser.add_argument('-n', '--key_name', default='', type=str,
                         help="key name of the song, e.g. B- major, C# minor")
     parser.add_argument('-t', '--track_num', default=0, type=int,
