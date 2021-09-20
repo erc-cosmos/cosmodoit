@@ -44,13 +44,13 @@ def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None
 def get_beat_reference_pm(ref_filename):
     """Find the beats in the reference according to pretty-midi."""
     pretty = pm.PrettyMIDI(ref_filename)
-    return np.array(pretty.get_beats()) * 1000  # seconds to milliseconds
+    return np.round(np.array(pretty.get_beats()) * 1000)  # seconds to milliseconds
 
 
 def get_bar_reference_pm(ref_filename):
     """Find the bar lines in the reference according to pretty-midi."""
     pretty = pm.PrettyMIDI(ref_filename)
-    return np.array(pretty.get_downbeats()) * 1000  # seconds to milliseconds
+    return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
 def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
@@ -107,8 +107,6 @@ def preprocess(alignment):
     """Find outliers and prefilter data."""
     times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
     ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]
-
-    # TODO: In progress
 
     # TODO: determine better which note to use when notes share a tatum
     ticks, indices = np.unique(np.array([alignment_atom.tatum for alignment_atom in alignment]), return_index=True)
