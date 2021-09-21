@@ -3,7 +3,6 @@ import shutil
 
 import pytest
 from music_features.get_alignment import get_alignment
-from helpers import clean_dir
 
 
 @pytest.fixture

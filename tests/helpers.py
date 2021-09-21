@@ -1,16 +1,6 @@
 import pytest
 import os
-import shutil
-import uuid
 import csv
-
-
-@pytest.fixture
-def clean_dir():
-    new_dir = "testDir"+uuid.uuid4().hex
-    os.makedirs(new_dir)
-    yield new_dir
-    shutil.rmtree(new_dir)
 
 
 def test_files():
@@ -25,7 +15,7 @@ def test_files():
 
 
 def assert_numeric_equiv_csv(path_a, path_b):
-    """Compares 2 csv files as far as  is concerned."""
+    """Compare 2 csv files as far as import is concerned."""
     with open(path_a) as file_a:
         with open(path_b) as file_b:
             reader_a = csv.reader(file_a)

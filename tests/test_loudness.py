@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 
 import helpers
-from helpers import clean_dir  # Fixtures need to be imported into the namespace
 
 from music_features import get_loudness
 
