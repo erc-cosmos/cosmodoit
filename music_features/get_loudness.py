@@ -14,7 +14,7 @@ from . import ma_sone
 from .util import targets_factory
 
 
-def get_loudness(input_path, *, exportLoudness=False, export_dir=None, **kwargs):
+def get_loudness(input_path, *, exportLoudness=True, export_dir=None, **kwargs):
     """
     Compute Global Loudness of Audio Files.
 
