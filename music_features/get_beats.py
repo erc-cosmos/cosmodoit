@@ -43,7 +43,9 @@ def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None
 
 def get_beat_reference_pm(ref_filename):
     """Find the beats in the reference according to pretty-midi."""
-    pretty = pm.PrettyMIDI(ref_filename)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        pretty = pm.PrettyMIDI(ref_filename)
     return np.round(np.array(pretty.get_beats()) * 1000)  # seconds to milliseconds
 
 
