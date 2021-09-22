@@ -1,18 +1,17 @@
 """Module for extracting sustain out of a midi file."""
-import argparse
+import pandas as pd
 
-from .get_midi_events import get_midi_events
-from .util import targets_factory, write_file
+from music_features.get_midi_events import get_midi_events
+from music_features.util import targets_factory
 
 
-def get_sustain(perf_path):
+def get_sustain(perf_path, *, binary=False):
     """Extract sustain pedal information from a midi file."""
-    # TODO: add flag for binary output
-    sustain = [{'Time': event['Time'], 'Sustain':event['Value']}
-               for event in get_midi_events(perf_path)
-               if is_sustain_event(event)]
-    # TODO: Switch to pandas dataframes rather than this fallback
-    return sustain or [{'Time': None, 'Sustain': None}]
+    sustain = pd.DataFrame(((event['Time'], (event['Value'] >= 64 if binary else event['Value']))
+                            for event in get_midi_events(perf_path)
+                            if is_sustain_event(event)),
+                           columns=('Time', 'Sustain'))
+    return sustain
 
 
 def is_sustain_event(event):
@@ -35,7 +34,7 @@ def gen_tasks(piece_id, paths, working_folder):
 
     def runner(perf_path, perf_sustain):
         sustain = get_sustain(perf_path)
-        write_file(perf_sustain, sustain)
+        sustain.to_csv(perf_sustain, index=False)
         return None
     yield {
         'basename': 'sustain',
@@ -45,12 +44,3 @@ def gen_tasks(piece_id, paths, working_folder):
         'targets': [perf_sustain],
         'actions': [(runner, [paths.perfmidi, perf_sustain])]
     }
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--perf', default='music_features/test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
-    args = parser.parse_args()
-
-    sustain = get_sustain(args.perf)
-    print(sustain)

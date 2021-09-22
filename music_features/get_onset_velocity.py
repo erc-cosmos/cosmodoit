@@ -3,17 +3,19 @@
 import argparse
 import warnings
 
-from .get_midi_events import get_midi_events
-from .util import targets_factory, write_file
+import pandas as pd
+
+from music_features.get_midi_events import get_midi_events
+from music_features.util import targets_factory
 
 
 def get_onset_velocity(perfFilename):
     """Extract onset velocities from a midi file."""
-    velocities = [{'Time': event['StartTime'], 'Velocity':event['Velocity']}
-                  for event in get_midi_events(perfFilename)
-                  if is_note_event(event)]
-    # TODO: Switch to pandas dataframes rather than this fallback
-    return velocities or [{'Time': None, 'Velocity': None}]
+    velocities = pd.DataFrame(((event['StartTime'], event['Velocity'])
+                               for event in get_midi_events(perfFilename)
+                               if is_note_event(event)),
+                              columns=('Time', 'Velocity'))
+    return velocities
 
 
 def is_note_event(event):
@@ -35,10 +37,10 @@ def gen_tasks(piece_id, paths, working_folder):
 
     def runner(perf_filename, perf_velocity):
         velocities = get_onset_velocity(paths.perfmidi)
-        if velocities == []:
+        if velocities.size() == 0:
             warnings.warn("Warning: no note on event detected in " + perf_filename)
         else:
-            write_file(perf_velocity, velocities)
+            velocities.to_csv(perf_velocity, index=False)
         return None
     yield {
         'basename': 'velocities',

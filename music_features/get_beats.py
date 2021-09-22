@@ -13,8 +13,8 @@ import pretty_midi as pm
 import scipy as sp
 import scipy.interpolate
 
-from . import get_alignment
-from .util import targets_factory, write_file
+from music_features import get_alignment
+from music_features.util import targets_factory
 
 BeatParams = collections.namedtuple("BeatParams",
                                     ("PPQ",  # Pulse per quarter note
@@ -63,13 +63,18 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
         spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
         interpolation = spline(reference_beats)
         interpolation[(reference_beats < ticks.min()) | (reference_beats > ticks.max())] = np.nan
-        tempos = [np.nan, *(60/np.diff(interpolation))]
-        beats = [{'count': count,
-                  'time': time,
-                  'interpolated': tick not in ticks,  # TODO: Fix rounding issues
-                  'tempo': tempo}
-                 for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
+        # tempos = [np.nan, *(60/np.diff(interpolation))]
+        # beats = [{'count': count,
+        #           'time': time,
+        #           'interpolated':  # TODO: Fix rounding issues
+        #           'tempo': tempo}
+        #  for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
+        
+        # beats = pd.DataFrame(((count, time, tick not in ticks)
+        #                       for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))),
+        #                      columns=("count", "time", "interpolated"))
 
+        beats = pd.DataFrame({"time": interpolation, "interpolated": [tick not in ticks for tick in reference_beats]})
         anomalies = find_outliers(beats)
         if anomalies == []:
             return (beats, ignored) if return_ignored else beats
@@ -81,7 +86,7 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
     return (beats, ignored) if return_ignored else beats
 
 
-def attempt_correction(beats, alignment, reference_beats, anomalies, *, verbose=True):
+def attempt_correction(_beats, alignment, reference_beats, anomalies, *, verbose=True):
     """Attempt to correct the beat extraction by removing the values causing outliers."""
     filtered_all = []
     for index_before, index_after in anomalies:
@@ -174,7 +179,7 @@ def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, fo
 
 def find_outliers(beats, *, factor=4, verbose=True):
     """Perform an automated check for outliers."""
-    beats = [beat["time"] for beat in beats]
+    beats = beats.time
     inter_beat_intervals = np.diff(beats)
     mean_IBI = np.mean(inter_beat_intervals)
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
@@ -222,7 +227,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             alignment = get_alignment.read_alignment_file(perf_match)
             beat_reference = get_beat_reference_pm(ref_midi)
             beats = get_beats(alignment, beat_reference)
-            write_file(perf_beats, beats)
+            beats.to_csv(perf_beats, index_label="count")
             return True
         yield {
             'basename': "beats",
@@ -253,7 +258,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             alignment = get_alignment.read_alignment_file(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
             bars = get_beats(alignment, bar_reference)
-            write_file(perf_bars, bars)
+            bars.to_csv(perf_bars, index_label="count")
             return True
         yield {
             'basename': "bars",
