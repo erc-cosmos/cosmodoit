@@ -37,7 +37,7 @@ def gen_tasks(piece_id, paths, working_folder):
 
     def runner(perf_filename, perf_velocity):
         velocities = get_onset_velocity(paths.perfmidi)
-        if velocities.size() == 0:
+        if velocities.size == 0:
             warnings.warn("Warning: no note on event detected in " + perf_filename)
         else:
             velocities.to_csv(perf_velocity, index=False)
