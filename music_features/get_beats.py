@@ -55,7 +55,7 @@ def get_bar_reference_pm(ref_filename):
     return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
-def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
+def get_beats(alignment, reference_beats, *, max_tries=5, return_ignored=False):
     """Extract beats timing from an alignment of the notes."""
     ignored = []
     for _ in range(max_tries):
@@ -65,16 +65,6 @@ def get_beats(alignment, reference_beats, *, max_tries=3, return_ignored=False):
         spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
         interpolation = spline(reference_beats)
         interpolation[(reference_beats < ticks.min()) | (reference_beats > ticks.max())] = np.nan
-        # tempos = [np.nan, *(60/np.diff(interpolation))]
-        # beats = [{'count': count,
-        #           'time': time,
-        #           'interpolated':  # TODO: Fix rounding issues
-        #           'tempo': tempo}
-        #  for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))]
-        
-        # beats = pd.DataFrame(((count, time, tick not in ticks)
-        #                       for count, (tick, time, tempo) in enumerate(zip(reference_beats, interpolation, tempos))),
-        #                      columns=("count", "time", "interpolated"))
 
         beats = pd.DataFrame({"time": interpolation, "interpolated": [tick not in ticks for tick in reference_beats]})
         anomalies = find_outliers(beats)
@@ -185,7 +175,7 @@ def find_outliers(beats, *, factor=4, verbose=True):
     inter_beat_intervals = np.diff(beats)
     mean_IBI = np.mean(inter_beat_intervals)
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
-                       if ibi * factor < mean_IBI]  # Only check values too quick, slow values are likely valid
+                       if ibi * factor < mean_IBI or ibi <= 0]  # Only check values too quick, slow values are likely valid
     if verbose:
         [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (max. {factor*mean_IBI}s)")
          for i, j in anomaly_indices]
