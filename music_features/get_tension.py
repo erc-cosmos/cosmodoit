@@ -4,8 +4,8 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from . import tension_calculation as tc
-from .util import targets_factory
+from music_features import tension_calculation as tc
+from music_features.util import targets_factory
 
 
 def genBaseName(inputFile):
@@ -30,8 +30,8 @@ def computeTension(inputFile, args):
     _, piano_roll, beat_data = tc.extract_notes(inputFile, args['track_num'])
     if args['key_name'] == '':
         # key_name = get_key_name(inputFile)
-        from tension_calculation import all_key_names
-        key_name = all_key_names
+        # from tension_calculation import all_key_names
+        key_name = tc.all_key_names
         tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args,
                                         args['window_size'], key_name, generate_pickle=False)
     else:
