@@ -14,8 +14,9 @@ from . import ma_sone
 from .util import targets_factory
 
 
-def get_loudness(input_path, *, export_dir=None, **kwargs):
-    """Compute Global Loudness of Audio Files.
+def get_loudness(input_path, *, exportLoudness=False, export_dir=None, **kwargs):
+    """
+    Compute Global Loudness of Audio Files.
 
     input_path    : string; folder path or wav audio file path
     columns       : string; which column - 'all' (default), 'raw', 'norm', 'smooth', 'envelope'
@@ -27,9 +28,6 @@ def get_loudness(input_path, *, export_dir=None, **kwargs):
 
     returns       :  array; Time (:,1) Loudness (:,2), Scaled (:,3), Scaled-smoothed (:,4), Scaled-envelope (:,5)
     """
-    if export_dir is None:
-        export_dir = os.path.dirname(input_path)
-
     # Dispatch between single or batch run based on path type
     if os.path.isfile(input_path):  # Single run
         files_list = [input_path]
@@ -38,7 +36,13 @@ def get_loudness(input_path, *, export_dir=None, **kwargs):
     else:
         raise ValueError(f"Invalid path: {input_path}")
 
-    return [compute_loudness(audio_file, export_dir=export_dir, **kwargs) for audio_file in files_list]
+    loudness_all = [compute_loudness(audio_file, export_dir=export_dir, **kwargs) for audio_file in files_list]
+    if exportLoudness:
+        if export_dir is None:
+            export_dir = os.path.dirname(input_path)
+        for loud, infile in zip(loudness_all, files_list):
+            export_loudness(loud, audio_path=infile, **kwargs)
+    return loudness_all
 
 
 def clipNegative(x_array):
@@ -46,31 +50,33 @@ def clipNegative(x_array):
     return [0 if x < 0 else x for x in x_array]
 
 
-def compute_loudness(audio_path, columns='all', exportLoudness=True, export_dir=None, export_path=None,
-                     smoothSpan=0.03, no_negative=True):
+def compute_loudness(audio_path, smoothSpan=0.03, no_negative=True, **_kwargs):
     """Compute the raw loudness and its post-processed versions."""
     time, raw_loudness = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smoothSpan)
     min_separation = len(time) // time[-1]
     envelope_loudness = peak_envelope(norm_loudness, min_separation)
-    # TODO: Separate exporting entirely
 
     # Remove values below zero
     if no_negative:
         smooth_loudness = clipNegative(smooth_loudness)
         envelope_loudness = clipNegative(envelope_loudness)
 
-    if exportLoudness:
-        df = pd.DataFrame({'Time': time,
-                           'Loudness': raw_loudness,
-                           'Loudness_norm': norm_loudness,
-                           'Loudness_smooth': smooth_loudness,
-                           'Loudness_envelope': envelope_loudness})
-        if export_path is None:
-            export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
-        write_loudness(df, export_path)
-        print(f"Exported {columns} to: {export_path}")
+    df = pd.DataFrame({'Time': time,
+                       'Loudness': raw_loudness,
+                       'Loudness_norm': norm_loudness,
+                       'Loudness_smooth': smooth_loudness,
+                       'Loudness_envelope': envelope_loudness})
+    return df
+
+
+def export_loudness(data, columns='all', export_dir=None, export_path=None, audio_path=None, **_kwargs):
+    """Export loudness data to disk."""
+    if export_path is None:
+        export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
+    data.to_csv(export_path, index=False)
+    print(f"Exported {columns} to: {export_path}")
 
 
 def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_loudness, *, show=True):
@@ -138,11 +144,6 @@ def resample(loud_path, beat_path, out_path):
     interp = spline(beats.time)
     frame = pd.DataFrame({'Time': beats.time, 'Loudness_resampled': interp})
     frame.to_csv(out_path)
-
-
-def write_loudness(data, path):
-    """Write loudness data to a file."""
-    data.to_csv(path, index=False)
 
 
 def read_loudness(path):
