@@ -41,7 +41,7 @@ def get_loudness(input_path, *, exportLoudness=True, export_dir=None, **kwargs):
         if export_dir is None:
             export_dir = os.path.dirname(input_path)
         for loud, infile in zip(loudness_all, files_list):
-            export_loudness(loud, audio_path=infile, **kwargs)
+            export_loudness(loud, audio_path=infile, export_dir=export_dir, **kwargs)
     return loudness_all
 
 
@@ -170,7 +170,8 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     perf_loudness = perf_targets("_loudness.csv")
 
     def caller(perf_path, perf_loudness, **kwargs):
-        _ = compute_loudness(perf_path, exportLoudness=True, export_path=perf_loudness, **kwargs)
+        loudness = compute_loudness(perf_path, **kwargs)
+        export_loudness(loudness, export_path=perf_loudness)
         return True
     yield {
         'basename': "loudness",
