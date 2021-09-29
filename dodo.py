@@ -11,7 +11,7 @@ from music_features.util import run_doit, gen_default_tasks
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
-
+INPLACE_WRITE = True
 default_working_folder = 'tmp'
 
 
@@ -57,9 +57,9 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     FileSet = namedtuple('FileSet', ['score', 'perfmidi', 'perfaudio', 'manual_beats', 'manual_bars'])
     file_types = (('.mscz', True), ('.mid', True), ('.wav', True),
                   ('_beats_manual.csv', False), ('_bars_manual.csv', False))
-    grouped_files = [(os.path.basename(folder), FileSet(*(find_ext(folder, ext, optional)
-                                                        for (ext, optional)
-                                                        in file_types)))
+    grouped_files = [(folder, FileSet(*(find_ext(folder, ext, optional)
+                                        for (ext, optional)
+                                        in file_types)))
                      for folder in piece_folders]
     return grouped_files
 
@@ -71,9 +71,10 @@ discover_files = discover_files_by_piece
 
 def task_generator():
     """Generate tasks for all files."""
-    working_folder = default_working_folder
+    if not INPLACE_WRITE:
+        working_folder = default_working_folder
+        os.makedirs(working_folder, exist_ok=True)
     filesets = discover_files()
-    os.makedirs(working_folder, exist_ok=True)
     submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
                   get_beats, get_alignment)
     for module in submodules:
@@ -89,7 +90,10 @@ def task_generator():
         except AttributeError:
             warnings.warn(f"Missing task generator in submodule {module.__name__}")
         else:
-            for (piece_id, paths) in filesets:
+            for (folder, paths) in filesets:
+                piece_id = os.path.basename(folder)
+                if INPLACE_WRITE:
+                    working_folder = folder
                 yield from task_gen(piece_id, paths, working_folder=working_folder)
 
 
