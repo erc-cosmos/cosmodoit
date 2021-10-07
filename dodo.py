@@ -40,7 +40,9 @@ def find_ext(path: os.PathLike, file_descriptor: FileDescriptor):
     """Scan a directory for a file type."""
     filetype, patterns, antipatterns, required = file_descriptor
     files = [os.path.join(path, f) for f in os.listdir(path)
-             if any(ext in f for ext in patterns) and not (any(ext in f for ext in antipatterns))]
+             if any(ext in f for ext in patterns)
+             and not (any(ext in f for ext in antipatterns))
+             and not f.startswith('.')]
     if len(files) == 0:
         if required:
             warnings.warn(f"Found no file of type {filetype} in {path} (expected extensions {patterns})")
