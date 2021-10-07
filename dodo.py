@@ -33,33 +33,44 @@ def discover_files_by_type(base_folder="tests/test_data"):
     return tuple(zip(piece_ids, scores, perfs, wavs))
 
 
+FileDescriptor = namedtuple('FileDescriptor', ('filetype', 'patterns', 'antipatterns', 'optional'))
+
+
+def find_ext(path: os.PathLike, file_descriptor: FileDescriptor):
+    """Scan a directory for a file type."""
+    filetype, patterns, antipatterns, required = file_descriptor
+    files = [os.path.join(path, f) for f in os.listdir(path)
+             if any(ext in f for ext in patterns) and not (any(ext in f for ext in antipatterns))]
+    if len(files) == 0:
+        if required:
+            warnings.warn(f"Found no file of type {filetype} in {path} (expected extensions {patterns})")
+        return None
+    elif len(files) > 1:
+        warnings.warn(f"Found more than one file of type {filetype} in {path} (using {files[0]})")
+    return files[0]
+
+
 def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structure'):
     """
     Find targets in a piece first directory structure.
 
     This expects pieces to be in one folder each
     """
+    file_types = (
+        FileDescriptor('score', ('.mscz',), (), True),
+        FileDescriptor('perfmidi', ('.mid',), ('_ref.mid', '_perf.mid'), True),
+        FileDescriptor('perfaudio', ('.wav',), (), True),
+        FileDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
+        FileDescriptor('manual_bars', ('_bars_manual.csv',), (), False)
+    )
     if doit.get_initial_workdir() != os.getcwd():
         base_folder = os.getcwd()
     piece_folders = [os.path.join(base_folder, folder)
                      for folder in os.listdir(base_folder)
                      if os.path.isdir(os.path.join(base_folder, folder)) and folder != 'tmp']
 
-    def find_ext(path, ext, required=True):
-        files = [os.path.join(path, f) for f in os.listdir(path) if ext in f]
-        if len(files) == 0:
-            if required:
-                warnings.warn(f"Found no file with extension {ext} in {path}")
-            return None
-        if len(files) > 1:
-            warnings.warn(f"Found more than one file matching extension {ext} in {path} (using {files[0]})")
-        return files[0]
-    FileSet = namedtuple('FileSet', ['score', 'perfmidi', 'perfaudio', 'manual_beats', 'manual_bars'])
-    file_types = (('.mscz', True), ('.mid', True), ('.wav', True),
-                  ('_beats_manual.csv', False), ('_bars_manual.csv', False))
-    grouped_files = [(folder, FileSet(*(find_ext(folder, ext, optional)
-                                        for (ext, optional)
-                                        in file_types)))
+    FileSet = namedtuple('FileSet', (descriptor.filetype for descriptor in file_types))
+    grouped_files = [(folder, FileSet(*(find_ext(folder, file_descriptor) for file_descriptor in file_types)))
                      for folder in piece_folders]
     return grouped_files
 
