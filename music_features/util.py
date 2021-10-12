@@ -2,6 +2,31 @@
 import csv
 import functools
 import os
+import json
+
+def readJson(filePath):
+	with open(filePath, 'r') as openfile:
+		json_object = json.load(openfile)
+	return json_object
+
+def writeJson(jsonObject, filePath):
+	with open(filePath, "w") as outfile:
+		outfile.write(jsonObject)
+		return
+
+def modifyJson(jsonObject, fileName):
+	for i in jsonObject:
+		i['file'] = fileName
+		if 'linkedData' in i:
+			i['linkedData'][0]['file'] = fileName
+	return json.dumps(jsonObject, indent = 4)
+
+def createTensionJson(tensionFile):
+	jsonObject = readJson('tension_template.json')
+	exportName = tensionFile.replace(".csv", ".json")
+	newObject = modifyJson(jsonObject, tensionFile)
+	writeJson(newObject, exportName)
+	return
 
 
 def string_escape_concat(strings, sep=' '):

@@ -1,0 +1,56 @@
+[
+  {
+    "type": "tension",
+    "name": "Cloud Momentum",
+    "color": "red",
+    "width": "2px",
+    "style": "solid",
+    "file": "",
+    "timeOffset": 0,
+    "valueColumn": 1
+  },
+  {
+    "type": "tension",
+    "name": "Cloud Diameter",
+    "color": "green",
+    "width": "2px",
+    "style": "solid",
+    "file": "",
+    "timeOffset": 0,
+    "valueColumn": 2,
+    "linkedData": [
+      {
+        "type": "tension",
+        "name": "Delta Cloud Diameter",
+        "color": "green",
+        "width": "2px",
+        "style": "dash",
+        "file": "",
+        "timeOffset": 0,
+        "valueColumn": 4
+      }
+    ]
+  },
+  {
+    "type": "tension",
+    "name": "Tensile Strain",
+    "color": "blue",
+    "width": "2px",
+    "style": "solid",
+    "file": "",
+    "timeOffset": 0,
+    "valueColumn": 3,
+    "linkedData": [
+      {
+        "type": "tension",
+        "name": "Delta Tensile Strain",
+        "color": "blue",
+        "width": "2px",
+        "style": "dash",
+        "file": "",
+        "timeOffset": 0,
+        "valueColumn": 5
+      }
+    ]
+  }
+]

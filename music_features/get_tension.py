@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from music_features import tension_calculation as tc
 from music_features.util import targets_factory
+from music_features.util import createTensionJson
 
 
 def genBaseName(inputFile):
@@ -102,6 +103,7 @@ def exportTensionCSV(inputFile, df, columns):
     exportName = genBaseName(inputFile) + fileSuffix
     df.to_csv(exportName, sep=',', index=False)
     print('Exported to: {}'.format(exportName))
+    createTensionJson(exportName)
     return
 
 
