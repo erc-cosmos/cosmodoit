@@ -24,7 +24,7 @@ def modifyJson(jsonObject, fileName):
 def createTensionJson(tensionFile):
 	jsonObject = readJson('tension_template.json')
 	exportName = tensionFile.replace(".csv", ".json")
-	newObject = modifyJson(jsonObject, tensionFile)
+	newObject = modifyJson(jsonObject, os.path.basename(tensionFile))
 	writeJson(newObject, exportName)
 	return
 
