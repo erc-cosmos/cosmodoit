@@ -65,5 +65,6 @@ music_features/test_midi/Chopin_Ballade_No._2_Piano_solo.mid
 .vscode/settings.json
 music_features/.doit.db.db
 .doit.db.db
+__pycache__/
 music_features/__pycache__/
 .vscode/launch.json
