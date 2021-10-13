@@ -20,13 +20,15 @@ def _remove_directions(filename, outfile=None):
 def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
     """Run the alignment and return it."""
     paths = collections.namedtuple("Paths", ["score", "perfmidi"])(ref_path, perf_path)
-
+    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+    
     def task_wrapper():
         yield from gen_tasks(os.path.basename(ref_path), paths, working_folder=working_folder)
     task_set = {'task_alignment': task_wrapper}
     run_doit(task_set)
 
     outFile = os.path.join(working_folder, os.path.basename(perf_path).replace('.mid', "_match.txt"))
+    outFile = perf_targets("_match.txt")
     alignment = read_alignment_file(outFile)
 
     if cleanup:

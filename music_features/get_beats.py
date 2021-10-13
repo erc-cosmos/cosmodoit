@@ -174,8 +174,9 @@ def find_outliers(beats, *, factor=4, verbose=True):
     beats = beats.time
     inter_beat_intervals = np.diff(beats)
     mean_IBI = np.mean(inter_beat_intervals)
+    # Only check values too quick, slow values are likely valid
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
-                       if ibi * factor < mean_IBI or ibi <= 0]  # Only check values too quick, slow values are likely valid
+                       if ibi * factor < mean_IBI or ibi <= 0]
     if verbose:
         [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (max. {factor*mean_IBI}s)")
          for i, j in anomaly_indices]
