@@ -68,3 +68,4 @@ music_features/.doit.db.db
 __pycache__/
 music_features/__pycache__/
 .vscode/launch.json
+tests/test_data/piece_directory_structure/*
