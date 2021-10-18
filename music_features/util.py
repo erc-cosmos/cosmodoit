@@ -4,29 +4,34 @@ import functools
 import os
 import json
 
+
 def readJson(filePath):
-	with open(filePath, 'r') as openfile:
-		json_object = json.load(openfile)
-	return json_object
+    with open(filePath, 'r') as openfile:
+        json_object = json.load(openfile)
+    return json_object
+
 
 def writeJson(jsonObject, filePath):
-	with open(filePath, "w") as outfile:
-		outfile.write(jsonObject)
-		return
+    with open(filePath, "w") as outfile:
+        outfile.write(jsonObject)
+        return
+
 
 def modifyJson(jsonObject, fileName):
-	for i in jsonObject:
-		i['file'] = fileName
-		if 'linkedData' in i:
-			i['linkedData'][0]['file'] = fileName
-	return json.dumps(jsonObject, indent = 4)
+    for i in jsonObject:
+        i['file'] = fileName
+        if 'linkedData' in i:
+            i['linkedData'][0]['file'] = fileName
+    return json.dumps(jsonObject, indent=4)
+
 
 def createTensionJson(tensionFile):
-	jsonObject = readJson('tension_template.json')
-	exportName = tensionFile.replace(".csv", ".json")
-	newObject = modifyJson(jsonObject, os.path.basename(tensionFile))
-	writeJson(newObject, exportName)
-	return
+    source_dir = os.path.dirname(__file__)
+    jsonObject = readJson(os.path.join(source_dir, 'tension_template.json'))
+    exportName = tensionFile.replace(".csv", ".json")
+    newObject = modifyJson(jsonObject, os.path.basename(tensionFile))
+    writeJson(newObject, exportName)
+    return
 
 
 def string_escape_concat(strings, sep=' '):

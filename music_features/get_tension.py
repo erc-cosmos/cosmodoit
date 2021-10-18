@@ -152,6 +152,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     perf_bars = perf_targets("_bars.csv")
     perf_tension = perf_targets("_tension.csv")
     perf_tension_bar = perf_targets("_tension_bar.csv")
+    perf_tension_json = perf_targets("_tension.json")
 
     def caller(perf_tension, ref_midi, perf_beats, measure_level=False, **kwargs):
         args = {
@@ -168,6 +169,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         tension['d_diameter'] = [np.nan, *np.diff(tension['diameter'])]
         tension['d_strain'] = [np.nan, *np.diff(tension['strain'])]
         tension.to_csv(perf_tension, sep=',', index=False)
+        createTensionJson(perf_tension)
         return True
 
     if paths.manual_beats is not None or paths.perfmidi is not None:
@@ -176,7 +178,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'file_dep': [ref_midi, perf_beats, __file__],
             'name': piece_id,
             'doc': task_docs["tension"],
-            'targets': [perf_tension],
+            'targets': [perf_tension, perf_tension_json],
             'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
         }
     if paths.manual_bars is not None or paths.perfmidi is not None:
