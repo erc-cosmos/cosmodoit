@@ -243,10 +243,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'targets': [perf_bars],
             'actions': [(caller, [paths.manual_bars, perf_bars])]
         }
-    else:
-        if(paths.score is None or paths.perfmidi is None):
-            return
-
+    elif not (paths.score is None or paths.perfmidi is None):
         def caller_bar(perf_match, ref_midi, perf_bars, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
@@ -262,21 +259,22 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'actions': [(caller_bar, [perf_match, ref_midi, perf_bars])]
         }
 
-    perf_tempo = perf_targets("_tempo.csv")
+    if not (paths.score is None or paths.perfmidi is None) or paths.manual_beats is not None:
+        perf_tempo = perf_targets("_tempo.csv")
 
-    def caller2(perf_beats, perf_tempo):
-        data = pd.read_csv(perf_beats)
-        tempo_frame = pd.DataFrame({'time': data.time[1:], 'tempo': 60/np.diff(data.time)})
-        tempo_frame.to_csv(perf_tempo, index=False)
+        def caller2(perf_beats, perf_tempo):
+            data = pd.read_csv(perf_beats)
+            tempo_frame = pd.DataFrame({'time': data.time[1:], 'tempo': 60/np.diff(data.time)})
+            tempo_frame.to_csv(perf_tempo, index=False)
 
-    yield {
-        'basename': "tempo",
-        'file_dep': [perf_beats, __file__],
-        'name': piece_id,
-        'doc': task_docs["tempo"],
-        'targets': [perf_tempo],
-        'actions': [(caller2, [perf_beats, perf_tempo])]
-    }
+        yield {
+            'basename': "tempo",
+            'file_dep': [perf_beats, __file__],
+            'name': piece_id,
+            'doc': task_docs["tempo"],
+            'targets': [perf_tempo],
+            'actions': [(caller2, [perf_beats, perf_tempo])]
+        }
 
 
 if __name__ == "__main__":
