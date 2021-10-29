@@ -32,7 +32,7 @@ def test_raw_same_as_matlab(wav_path, old_path):
 def test_read_write_identity(_, old_path, clean_dir):
     data = get_loudness.read_loudness(old_path)
     new_path = os.path.join(clean_dir, "idem.csv")
-    get_loudness.write_loudness(data, new_path)
+    get_loudness.export_loudness(data, export_path=new_path)
 
     helpers.assert_numeric_equiv_csv(old_path, new_path)
 
@@ -43,7 +43,7 @@ def test_read_write_read_is_read(_, old_file, clean_dir):
     data_before = get_loudness.read_loudness(old_file)
 
     new_path = os.path.join(clean_dir, "idem.csv")
-    get_loudness.write_loudness(data_before, new_path)
+    get_loudness.export_loudness(data_before, export_path=new_path)
     data_after = get_loudness.read_loudness(new_path)
 
     assert (data_after == data_before).all().all()
