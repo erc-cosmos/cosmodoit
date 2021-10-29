@@ -1,12 +1,14 @@
 """Wrapping module for Midi-miner's spiral array tension functions."""
-import os
 import argparse
+import os
+from typing import Union
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from music_features import tension_calculation as tc
-from music_features.util import targets_factory
-from music_features.util import createTensionJson
+
+from . import tension_calculation as tc
+from .util import read_json, set_json_file, targets_factory, write_json
 
 
 def genBaseName(inputFile):
@@ -16,6 +18,20 @@ def genBaseName(inputFile):
     dirName = os.path.dirname(inputFile)
     fullBaseName = os.path.join(dirName, baseName)
     return fullBaseName
+
+
+def create_tension_json(tension_file: Union[str, os.PathLike]) -> None:
+    """Create a metadata file for tension from a template.
+
+    Args:
+        tension_file (Union[str, os.PathLike]): path to the main tension file
+    """
+    source_dir = os.path.dirname(__file__)
+    jsonObject = read_json(os.path.join(source_dir, 'tension_template.json'))
+    exportName = tension_file.replace(".csv", ".json")
+    newObject = set_json_file(jsonObject, os.path.basename(tension_file))
+    write_json(newObject, exportName)
+    return
 
 
 def createTensionDataFrame(time, momentum, diameter, strain):
@@ -103,7 +119,7 @@ def exportTensionCSV(inputFile, df, columns):
     exportName = genBaseName(inputFile) + fileSuffix
     df.to_csv(exportName, sep=',', index=False)
     print('Exported to: {}'.format(exportName))
-    createTensionJson(exportName)
+    create_tension_json(exportName)
     return
 
 
@@ -169,7 +185,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         tension['d_diameter'] = [np.nan, *np.diff(tension['diameter'])]
         tension['d_strain'] = [np.nan, *np.diff(tension['strain'])]
         tension.to_csv(perf_tension, sep=',', index=False)
-        createTensionJson(perf_tension)
+        create_tension_json(perf_tension)
         return True
 
     if paths.manual_beats is not None or paths.perfmidi is not None:

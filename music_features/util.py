@@ -3,35 +3,43 @@ import csv
 import functools
 import os
 import json
+from typing import Any
 
 
-def readJson(filePath):
+def read_json(filePath):
+    """Read a json file."""
     with open(filePath, 'r') as openfile:
         json_object = json.load(openfile)
     return json_object
 
 
-def writeJson(jsonObject, filePath):
-    with open(filePath, "w") as outfile:
-        outfile.write(jsonObject)
+def write_json(json_object, file_path):
+    """Write a json object to disk.
+
+    Args:
+        json_object (json Object): The object to save
+        filePath (str | pathLike): Path at which to save
+    """
+    with open(file_path, "w") as outfile:
+        outfile.write(json_object)
         return
 
 
-def modifyJson(jsonObject, fileName):
-    for i in jsonObject:
-        i['file'] = fileName
+def set_json_file(json_object: Any, file_name: str) -> str:
+    """Set the 'file' items in a json-serializable to file_name.
+
+    Args:
+        json_object (Any): JSON-Serializable object to set
+        file_name (str): Value to set
+
+    Returns:
+        str: Updated and serialized object
+    """
+    for i in json_object:
+        i['file'] = file_name
         if 'linkedData' in i:
-            i['linkedData'][0]['file'] = fileName
-    return json.dumps(jsonObject, indent=4)
-
-
-def createTensionJson(tensionFile):
-    source_dir = os.path.dirname(__file__)
-    jsonObject = readJson(os.path.join(source_dir, 'tension_template.json'))
-    exportName = tensionFile.replace(".csv", ".json")
-    newObject = modifyJson(jsonObject, os.path.basename(tensionFile))
-    writeJson(newObject, exportName)
-    return
+            i['linkedData'][0]['file'] = file_name
+    return json.dumps(json_object, indent=4)
 
 
 def string_escape_concat(strings, sep=' '):
