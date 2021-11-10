@@ -2,7 +2,7 @@
   {
     "type": "tension",
     "name": "Cloud Momentum",
-    "color": "red",
+    "color": "#fe9929",
     "width": "2px",
     "style": "solid",
     "file": "",
@@ -12,7 +12,7 @@
   {
     "type": "tension",
     "name": "Cloud Diameter",
-    "color": "green",
+    "color": "#d95f0e",
     "width": "2px",
     "style": "solid",
     "file": "",
@@ -22,7 +22,7 @@
       {
         "type": "tension",
         "name": "Delta Cloud Diameter",
-        "color": "green",
+        "color": "#d95f0e",
         "width": "2px",
         "style": "dash",
         "file": "",
@@ -34,7 +34,7 @@
   {
     "type": "tension",
     "name": "Tensile Strain",
-    "color": "blue",
+    "color": "#993404",
     "width": "2px",
     "style": "solid",
     "file": "",
@@ -44,7 +44,7 @@
       {
         "type": "tension",
         "name": "Delta Tensile Strain",
-        "color": "blue",
+        "color": "#993404",
         "width": "2px",
         "style": "dash",
         "file": "",
