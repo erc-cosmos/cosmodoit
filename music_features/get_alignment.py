@@ -1,27 +1,17 @@
 """Module for wrapping Eita Nakamura's alignment software."""
+import collections
 import csv
 import os
-import argparse
-import collections
 import shutil
-import xml.etree.ElementTree as ET
 
-from .util import string_escape_concat, run_doit, targets_factory
-
-
-def _remove_directions(filename, outfile=None):
-    """Remove all directions from a musicxml file."""
-    tree = ET.parse(filename)
-    for elem in tree.findall(".//direction"):
-        elem.clear()  # TODO: actually remove it instad of clearing (causes warnings)
-    tree.write(outfile if outfile is not None else filename)
+from .util import run_doit, string_escape_concat, targets_factory
 
 
 def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
     """Run the alignment and return it."""
     paths = collections.namedtuple("Paths", ["score", "perfmidi"])(ref_path, perf_path)
     perf_targets = targets_factory(perf_path, working_folder=working_folder)
-    
+
     def task_wrapper():
         yield from gen_tasks(os.path.basename(ref_path), paths, working_folder=working_folder)
     task_set = {'task_alignment': task_wrapper}
@@ -59,54 +49,23 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
     """Generate doit tasks for the midi conversion and preprocessing."""
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
 
-    ref_name, ref_ext = os.path.splitext(ref_path)
+    _ref_name, ref_ext = os.path.splitext(ref_path)
 
     if ref_ext not in [".mxl", ".xml", ".mscz"]:
         raise NotImplementedError(f"Unsupported format {ref_ext}")
 
-    ref_xml = ref_targets(".xml")
-    ref_nodir = ref_targets("_nodir.xml")
     ref_mid = ref_targets("_ref.mid")
 
-    if strip_direction:
-        yield {
-            'basename': '_XML_Conversion',
-            'name': piece_id,
-            'file_dep': [ref_path, __file__, musescore_exec],
-            'targets': [ref_xml],
-            'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_xml])],
-            'clean': True,
-            'verbosity': 0
-        }
-        yield {
-            'basename': '_strip_direction',
-            'name': piece_id,
-            'file_dep': [ref_xml, __file__],
-            'targets': [ref_nodir],
-            'actions': [(_remove_directions, [ref_xml, ref_nodir])],
-            'clean': True
-        }
-        yield {
-            'basename': 'MIDI_Conversion',
-            'name': piece_id,
-            'doc': task_docs["MIDI_Conversion"],
-            'file_dep': [ref_nodir, __file__, musescore_exec],
-            'targets': [ref_mid],
-            'actions': [string_escape_concat([musescore_exec, ref_nodir, "--export-to", ref_mid])],
-            'clean': True,
-            'verbosity': 0
-        }
-    else:
-        yield {
-            'basename': 'MIDI_Conversion',
-            'name': piece_id,
-            'doc': task_docs["MIDI_Conversion"],
-            'file_dep': [ref_path, __file__, musescore_exec],
-            'targets': [ref_mid],
-            'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_mid])],
-            'clean': True,
-            'verbosity': 0
-        }
+    yield {
+        'basename': 'MIDI_Conversion',
+        'name': piece_id,
+        'doc': task_docs["MIDI_Conversion"],
+        'file_dep': [ref_path, __file__, musescore_exec],
+        'targets': [ref_mid],
+        'actions': [string_escape_concat([musescore_exec, ref_path, "--export-to", ref_mid])],
+        'clean': True,
+        'verbosity': 0
+    }
 
 
 def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
@@ -207,21 +166,3 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     if paths.perfmidi is None:
         return
     yield from gen_subtasks_Nakamura(piece_id, paths.score, paths.perfmidi, working_folder)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', required=True)
-    parser.add_argument('--perf', required=True)
-    args = parser.parse_args()
-
-    # # Ensure execution directory
-    # script_location = os.path.dirname(__file__)
-    # if script_location != '':
-    #     os.chdir(script_location)
-
-    ref_path = args.ref
-    perf_path = args.perf
-
-    alignment = get_alignment(ref_path=ref_path, perf_path=perf_path, cleanup=False)
-    print(alignment)
