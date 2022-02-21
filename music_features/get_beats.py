@@ -1,9 +1,6 @@
 """Module to extract beat timings from a midi interpretation and corresponding score."""
-import argparse
 import collections
-import os
 import shutil
-import sys
 import warnings
 
 import matplotlib.pyplot as plt
@@ -275,25 +272,3 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'targets': [perf_tempo],
             'actions': [(caller2, [perf_beats, perf_tempo])]
         }
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', default='test_midi/Chopin_Ballade_No._2_Piano_solo.mid')
-    parser.add_argument('--perf', default='test_midi/2020-03-12_EC_Chopin_Ballade_N2_Take_2.mid')
-    parser.add_argument('--quarter', default=None)
-    parser.add_argument('--offset', default=None)
-    args = parser.parse_args()
-
-    # Ensure execution directory
-    scriptLocation = os.path.dirname(sys.argv[0])
-    if scriptLocation != '':
-        os.chdir(scriptLocation)
-
-    alignment = get_alignment.get_alignment(ref_path=args.ref, perf_path=args.perf, cleanup=False)
-
-    reference_beats = make_beat_reference(alignment, guess=True)
-
-    beats = get_beats(alignment, reference_beats)
-    plot_beats(beats)
-    print(beats)
