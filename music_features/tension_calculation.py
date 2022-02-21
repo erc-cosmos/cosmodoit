@@ -1,3 +1,9 @@
+"""
+Compute tension using the spiral array model.
+
+Original code by R. Guo. Modified by D. Bedoya and C. Guichaoua.
+"""
+
 import _pickle as pickle
 
 import os
@@ -349,7 +355,8 @@ def moving_average(tension, window=4):
     return np.array(outputs)
 
 
-def cal_tension(file_name, piano_roll, beat_data, args, window_size=1, key_name='', generate_pickle=True, generate_plots=False):
+def cal_tension(file_name, piano_roll, beat_data, args,
+                window_size=1, key_name='', generate_pickle=True, generate_plots=False):
 
     # try:
     # all the major key pos is C major pos, all the minor key pos is a minor pos
@@ -384,7 +391,8 @@ def cal_tension(file_name, piano_roll, beat_data, args, window_size=1, key_name=
     if generate_plots:
         export_plots(new_output_folder, file_name, total_tension, diameters, centroid_diff)
 
-    return [tension_time, total_tension, diameters, centroid_diff, key_name, kc['change_time'], kc['key_change_bar'], kc['changed_key_name'], new_output_folder]
+    return [tension_time, total_tension, diameters, centroid_diff, key_name,
+            kc['change_time'], kc['key_change_bar'], kc['changed_key_name'], new_output_folder]
 
     # except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
     #     exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
@@ -585,8 +593,9 @@ def detect_key_change(key_diff, diameter, start_ratio=0.5):
 
     # 8 bar window
     key_diff_ratios = []
-    diameter_ratios = []
+    # diameter_ratios = []
     fill_one = False
+    steps = 0
     for i in range(8, key_diff.shape[0]-8):
         if fill_one and steps > 0:
             key_diff_ratios.append(1)
@@ -628,7 +637,9 @@ def detect_key_change(key_diff, diameter, start_ratio=0.5):
     # else:
     #     diameter_change_bar = -1
 
-    # return key_diff_change_bar + int(diameter.shape[0] * start_ratio) if key_diff_change_bar < diameter_change_bar and key_diff_change_bar > 0 else diameter_change_bar + int(diameter.shape[0] * start_ratio)
+    # return key_diff_change_bar + int(diameter.shape[0] * start_ratio) \
+    #       if key_diff_change_bar < diameter_change_bar and key_diff_change_bar > 0 \
+    #       else diameter_change_bar + int(diameter.shape[0] * start_ratio)
     return key_diff_change_bar + 12 if key_diff_change_bar != -1 else key_diff_change_bar
 
 
@@ -717,8 +728,8 @@ def extract_notes(file_name, track_num):
                      'beat_indices': beat_indices,
                      'down_beat_indices': down_beat_indices
                      }
-    except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
-        exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
+    except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError):
+        # exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
         # logger.info(exception_str)
         return None
 
@@ -832,7 +843,8 @@ def key_to_key_pos(key_indices, key_pos):
 #                 file_name, piano_roll, beat_time, beat_indices, down_beat_time, down_beat_indices, args.output_folder,
 #                 args.window_size, [args.key_name])
 #
-#         total_tension, diameters, centroid_diff, key_name, key_change_time, key_change_bar, key_change_name, new_output_foler = result
+#         (total_tension, diameters, centroid_diff, key_name,
+#          key_change_time, key_change_bar, key_change_name, new_output_foler) = result
 #
 #         if np.count_nonzero(total_tension) == 0:
 #             logger.info(f"tensile 0 skip {file_name}")
@@ -895,7 +907,8 @@ if __name__ == "__main__":
     files_result = {}
 
     # test purpose
-    # note_to_note_diff = note_to_note_pos([0,1,2,3,4,5,6,7,8,9,10,11],pitch_index_to_position(note_index_to_pitch_index[0]))
+    # note_to_note_diff = note_to_note_pos([0,1,2,3,4,5,6,7,8,9,10,11],
+    #                                      pitch_index_to_position(note_index_to_pitch_index[0]))
     # note_to_key_diff = note_to_key_pos([0,1,2,3,4,5,6,7,8,9,10,11],major_key_position(0))
     # chord_to_key_diff = chord_to_key_pos([0,1,2,3,4,5,6,7,8,9,10,11],major_key_position(0))
     # key_to_key_diff = key_to_key_pos([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], major_key_position(0))
@@ -928,7 +941,8 @@ if __name__ == "__main__":
             else:
                 tension_result = cal_tension(file_name, piano_roll, beat_data, args, args.window_size, [args.key_name])
 
-            window_time, total_tension, diameters, centroid_diff, key_name, key_change_time, key_change_bar, key_change_name, new_output_folder = tension_result
+            (window_time, total_tension, diameters, centroid_diff,
+             key_name, key_change_time, key_change_bar, key_change_name, new_output_folder) = tension_result
 
             if np.count_nonzero(total_tension) == 0:
                 logger.info(f"tensile 0 skip {file_name}")

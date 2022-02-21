@@ -10,6 +10,7 @@ import lowess
 import matplotlib.pyplot as plt
 
 from . import ma_sone
+from typing import Iterable, List
 
 from .util import targets_factory
 
@@ -45,7 +46,7 @@ def get_loudness(input_path, *, exportLoudness=True, export_dir=None, **kwargs):
     return loudness_all
 
 
-def clipNegative(x_array):
+def clipNegative(x_array: Iterable[float]) -> List[float]:
     """Set negative values to zero."""
     return [0 if x < 0 else x for x in x_array]
 
