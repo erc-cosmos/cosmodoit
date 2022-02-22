@@ -1,7 +1,6 @@
 """Wrapping module for Midi-miner's spiral array tension functions."""
 import argparse
 import os
-from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,7 +19,7 @@ def genBaseName(inputFile):
     return fullBaseName
 
 
-def create_tension_json(tension_file: Union[str, os.PathLike]) -> None:
+def create_tension_json(tension_file: str) -> None:
     """Create a metadata file for tension from a template.
 
     Args:

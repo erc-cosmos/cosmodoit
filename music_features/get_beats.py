@@ -1,5 +1,4 @@
 """Module to extract beat timings from a midi interpretation and corresponding score."""
-import collections
 import shutil
 import warnings
 
@@ -13,10 +12,14 @@ import scipy.interpolate
 from music_features import get_alignment
 from music_features.util import targets_factory
 
-BeatParams = collections.namedtuple("BeatParams",
-                                    ("PPQ",  # Pulse per quarter note
-                                     "offset"  # Offset of the first beat
-                                     ))
+from typing import NamedTuple, List
+
+
+class BeatParams(NamedTuple):
+    """Named tuple for beat reference parameters."""
+
+    PPQ: int  # Pulse per quarter note
+    offset: int  # Offset of the first beat
 
 
 def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None, guess=False):
@@ -29,7 +32,7 @@ def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None
     """
     max_tatum = alignment[-1].tatum
 
-    ticks, _ = preprocess(alignment)
+    ticks, _ = remove_outliers_and_duplicates(alignment)
     # Obtain the beat parameters if not provided already
     if guess:
         quarter_length, anacrusis_offset = guess_beat_params(ticks)
@@ -52,7 +55,7 @@ def get_bar_reference_pm(ref_filename):
     return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
-def get_beats(alignment, reference_beats, *, max_tries=5, return_ignored=False):
+def get_beats(alignment, reference_beats, *, max_tries: int = 5, return_ignored: bool = False):
     """Extract beats timing from an alignment of the notes."""
     ignored = []
     beats = interpolate_beats(alignment, reference_beats)
@@ -114,7 +117,7 @@ def attempt_correction(_beats, alignment, reference_beats, anomalies, *, verbose
     return alignment, filtered_all
 
 
-def preprocess(alignment):
+def remove_outliers_and_duplicates(alignment):
     """Find outliers and prefilter data."""
     times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
     ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]

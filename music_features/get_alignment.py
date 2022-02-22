@@ -4,10 +4,18 @@ import csv
 import os
 import shutil
 
+from typing import NamedTuple
+
 from .util import run_doit, string_escape_concat, targets_factory
 
+class AlignmentAtom(NamedTuple):
+    """Named tuple for alignment elements."""
 
-def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
+    tatum : int
+    time : float
+
+
+def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cleanup: bool = True):
     """Run the alignment and return it."""
     paths = collections.namedtuple("Paths", ["score", "perfmidi"])(ref_path, perf_path)
     perf_targets = targets_factory(perf_path, working_folder=working_folder)
@@ -27,9 +35,8 @@ def get_alignment(ref_path, perf_path, working_folder='tmp', cleanup=True):
     return alignment
 
 
-def read_alignment_file(file_path):
+def read_alignment_file(file_path: str):
     """Read the output of Nakamura's software and extracts relevant information."""
-    AlignmentAtom = collections.namedtuple("AlignmentAtom", ('tatum', 'time'))
     with open(file_path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
         # Extract relevant columns
@@ -43,9 +50,7 @@ task_docs = {
     "MIDI_Conversion": "Convert a Musescore file to a stripped down midi"
 }
 
-
-def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScore 3.app/Contents/MacOS/mscore",
-                      working_folder="tmp", strip_direction=False):
+def gen_subtasks_midi(piece_id: str, ref_path: str, working_folder: str="tmp"):
     """Generate doit tasks for the midi conversion and preprocessing."""
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
 
