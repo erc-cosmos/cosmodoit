@@ -208,7 +208,13 @@ task_docs = {
 
 def gen_tasks(piece_id, paths, working_folder="tmp"):
     """Generate beat-related tasks."""
-    # TODO: Split up operations
+    yield from gen_task_beats(piece_id, paths, working_folder)
+    yield from gen_task_bars(piece_id, paths, working_folder)
+    yield from gen_task_tempo(piece_id, paths, working_folder)
+
+
+def gen_task_beats(piece_id, paths, working_folder):
+    """Generate tasks for bars."""
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
     ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
     perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
@@ -218,21 +224,19 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
     ref_midi = ref_targets("_ref.mid")
     perf_match = perf_targets("_match.txt")
     if paths.manual_beats is not None:
-        def caller(manual_beats, perf_beats):
-            shutil.copy(manual_beats, perf_beats)
         yield {
             'basename': "beats",
             'file_dep': [paths.manual_beats, __file__],
             'name': piece_id,
             'doc': "Use authoritative beats annotation",
             'targets': [perf_beats],
-            'actions': [(caller, [paths.manual_beats, perf_beats])]
+            'actions': [(shutil.copy, [paths.manual_beats, perf_beats])]
         }
     else:
         if(paths.score is None or paths.perfmidi is None):
             return
 
-        def caller(perf_match, ref_midi, perf_beats, **kwargs):
+        def caller(perf_match, ref_midi, perf_beats):
             alignment = get_alignment.read_alignment_file(perf_match)
             beat_reference = get_beat_reference_pm(ref_midi)
             beats, _ = get_beats(alignment, beat_reference)
@@ -247,20 +251,27 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'actions': [(caller, [perf_match, ref_midi, perf_beats])]
         }
 
+
+def gen_task_bars(piece_id, paths, working_folder):
+    """Generate tasks for bars."""
+    backup_targets = targets_factory(piece_id, working_folder=working_folder)
+    ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
+    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
     perf_bars = perf_targets("_bars.csv")
+    ref_midi = ref_targets("_ref.mid")
+    perf_match = perf_targets("_match.txt")
+
     if paths.manual_bars is not None:
-        def caller_bar(manual_beats, perf_beats):
-            shutil.copy(manual_beats, perf_beats)
         yield {
             'basename': "bars",
             'file_dep': [paths.manual_bars, __file__],
             'name': piece_id,
             'doc': "Use authoritative bars annotation",
             'targets': [perf_bars],
-            'actions': [(caller, [paths.manual_bars, perf_bars])]
+            'actions': [(shutil.copy, [paths.manual_bars, perf_bars])]
         }
     elif not (paths.score is None or paths.perfmidi is None):
-        def caller_bar(perf_match, ref_midi, perf_bars, **kwargs):
+        def caller_bar(perf_match, ref_midi, perf_bars):
             alignment = get_alignment.read_alignment_file(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
             bars, _ = get_beats(alignment, bar_reference)
@@ -275,10 +286,19 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'actions': [(caller_bar, [perf_match, ref_midi, perf_bars])]
         }
 
+
+def gen_task_tempo(piece_id, paths, working_folder):
+    """Generate tempo tasks."""
+    backup_targets = targets_factory(piece_id, working_folder=working_folder)
+    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
+
+    # Attempt using manual annotations
+    perf_beats = perf_targets("_beats.csv")
+
     if not (paths.score is None or paths.perfmidi is None) or paths.manual_beats is not None:
         perf_tempo = perf_targets("_tempo.csv")
 
-        def caller2(perf_beats, perf_tempo):
+        def caller(perf_beats, perf_tempo):
             data = pd.read_csv(perf_beats)
             tempo_frame = pd.DataFrame({'time': data.time[1:], 'tempo': 60/np.diff(data.time)})
             tempo_frame.to_csv(perf_tempo, index=False)
@@ -289,5 +309,5 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'name': piece_id,
             'doc': task_docs["tempo"],
             'targets': [perf_tempo],
-            'actions': [(caller2, [perf_beats, perf_tempo])]
+            'actions': [(caller, [perf_beats, perf_tempo])]
         }
