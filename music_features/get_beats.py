@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pretty_midi as pm
-import scipy as sp
 import scipy.interpolate
 
 from music_features import get_alignment
@@ -22,7 +21,7 @@ class BeatParams(NamedTuple):
     offset: int  # Offset of the first beat
 
 
-def make_beat_reference(alignment, *, quarter_length=None, anacrusis_offset=None, guess=False):
+def make_beat_reference(alignment, *, quarter_length: int = None, anacrusis_offset: int = None, guess: bool = False):
     """
     Generate a simple beat reference based on a constant beat length.
 
@@ -55,7 +54,7 @@ def get_bar_reference_pm(ref_filename):
     return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
-def get_beats(alignment, reference_beats, *, max_tries: int = 5, return_ignored: bool = False):
+def get_beats(alignment, reference_beats, *, max_tries: int = 5):
     """Extract beats timing from an alignment of the notes."""
     ignored = []
     beats = interpolate_beats(alignment, reference_beats)
@@ -63,7 +62,7 @@ def get_beats(alignment, reference_beats, *, max_tries: int = 5, return_ignored:
         # Find outliers and prefilter data
         anomalies = find_outliers(beats)
         if anomalies == []:
-            return (beats, ignored) if return_ignored else beats
+            return (beats, ignored)
         else:
             alignment, new_ignored = attempt_correction(beats, alignment, reference_beats, anomalies)
             ignored.extend(new_ignored)
@@ -71,7 +70,7 @@ def get_beats(alignment, reference_beats, *, max_tries: int = 5, return_ignored:
 
     if find_outliers(beats) != []:
         warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
-    return (beats, ignored) if return_ignored else beats
+    return (beats, ignored)
 
 
 def interpolate_beats(alignment, reference_beats: List[int]):
@@ -236,7 +235,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         def caller(perf_match, ref_midi, perf_beats, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
             beat_reference = get_beat_reference_pm(ref_midi)
-            beats = get_beats(alignment, beat_reference)
+            beats, _ = get_beats(alignment, beat_reference)
             beats.to_csv(perf_beats, index_label="count")
             return True
         yield {
@@ -264,7 +263,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         def caller_bar(perf_match, ref_midi, perf_bars, **kwargs):
             alignment = get_alignment.read_alignment_file(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
-            bars = get_beats(alignment, bar_reference)
+            bars, _ = get_beats(alignment, bar_reference)
             bars.to_csv(perf_bars, index_label="count")
             return True
         yield {

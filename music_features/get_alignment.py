@@ -8,11 +8,12 @@ from typing import NamedTuple
 
 from .util import run_doit, string_escape_concat, targets_factory
 
+
 class AlignmentAtom(NamedTuple):
     """Named tuple for alignment elements."""
 
-    tatum : int
-    time : float
+    tatum: int
+    time: float
 
 
 def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cleanup: bool = True):
@@ -50,7 +51,8 @@ task_docs = {
     "MIDI_Conversion": "Convert a Musescore file to a stripped down midi"
 }
 
-def gen_subtasks_midi(piece_id: str, ref_path: str, working_folder: str="tmp"):
+
+def gen_subtasks_midi(piece_id: str, ref_path: str, working_folder: str = "tmp"):
     """Generate doit tasks for the midi conversion and preprocessing."""
     ref_targets = targets_factory(ref_path, working_folder=working_folder)
 
@@ -74,6 +76,7 @@ def gen_subtasks_midi(piece_id: str, ref_path: str, working_folder: str="tmp"):
         'verbosity': 0
     }
 
+
 def locate_musescore() -> str:
     """Locate the executable for Musescore.
 
@@ -85,12 +88,12 @@ def locate_musescore() -> str:
     for musescore_exec in ["/Applications/MuseScore 3.app/Contents/MacOS/mscore"]:
         if os.path.exists(musescore_exec):
             return musescore_exec
-    else: # Not found
-        return 'mscore' # Hope it is on the PATH
+    else:  # Not found
+        return 'mscore'  # Hope it is on the PATH
         # TODO test before returning
 
 
-def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
+def gen_subtasks_Nakamura(piece_id: str, ref_path: str, perf_path: str, working_folder: str = "tmp"):
     """Generate doit tasks for the alignment."""
     program_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
 

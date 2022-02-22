@@ -13,7 +13,7 @@ def test_sorted_beats(ref, perf):
     ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
-    beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
+    beats, _ = get_beats.get_beats(alignment, reference_beats=reference_beats)
     assert not (np.diff(beats.time) < 0).any()
 
 
@@ -42,7 +42,7 @@ def test_no_outliers(ref, perf):
     ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
-    beats = get_beats.get_beats(alignment, reference_beats=reference_beats)
+    beats, _ = get_beats.get_beats(alignment, reference_beats=reference_beats)
     outliers = get_beats.find_outliers(beats, verbose=True)
     assert outliers == []
 
@@ -55,6 +55,6 @@ def test_reasonable_removal(ref, perf):
     ref_midi = targets_factory(ref, working_folder=cache_folder)("_ref.mid")
     reference_beats = get_beats.get_beat_reference_pm(ref_midi)
 
-    _, removed = get_beats.get_beats(alignment, reference_beats=reference_beats, return_ignored=True)
+    _, removed = get_beats.get_beats(alignment, reference_beats=reference_beats)
 
     assert 20*len(removed) < len(alignment)
