@@ -84,9 +84,6 @@ discover_files = discover_files_by_piece
 
 def task_generator():
     """Generate tasks for all files."""
-    if not INPLACE_WRITE:
-        working_folder = default_working_folder
-        os.makedirs(working_folder, exist_ok=True)
     filesets = discover_files()
     submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
                   get_beats, get_alignment)
@@ -107,6 +104,9 @@ def task_generator():
                 piece_id = os.path.basename(folder)
                 if INPLACE_WRITE:
                     working_folder = folder
+                else:
+                    working_folder = default_working_folder
+                    os.makedirs(working_folder, exist_ok=True)
                 yield from task_gen(piece_id, paths, working_folder=working_folder)
 
 
@@ -119,5 +119,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.ref and args.perf:
+        # TODO: find another way, this doesn't work
         globals['discover_files'] = lambda: [(args.ref, args.perf, args.wav)]
     run_doit(globals)
