@@ -55,24 +55,41 @@ def get_bar_reference_pm(ref_filename):
 def get_beats(alignment, reference_beats, *, max_tries=5, return_ignored=False):
     """Extract beats timing from an alignment of the notes."""
     ignored = []
+    beats = interpolate_beats(alignment, reference_beats)
     for _ in range(max_tries):
         # Find outliers and prefilter data
-        ticks, times = preprocess(alignment)
-
-        spline = sp.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
-        interpolation = spline(reference_beats)
-        interpolation[(reference_beats < ticks.min()) | (reference_beats > ticks.max())] = np.nan
-
-        beats = pd.DataFrame({"time": interpolation, "interpolated": [tick not in ticks for tick in reference_beats]})
         anomalies = find_outliers(beats)
         if anomalies == []:
             return (beats, ignored) if return_ignored else beats
         else:
             alignment, new_ignored = attempt_correction(beats, alignment, reference_beats, anomalies)
             ignored.extend(new_ignored)
+            beats = interpolate_beats(alignment, reference_beats)
 
-    warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
+    if find_outliers(beats) != []:
+        warnings.warn(f"Outliers remain after {max_tries} tries to remove them. Giving up on correction.")
     return (beats, ignored) if return_ignored else beats
+
+
+def interpolate_beats(alignment, reference_beats: List[int]):
+    """Interpolate beats based on an alignment and a reference beat to ticks match.
+
+    Args:
+        alignment (List[AlignmentAtom]): The aligment to interpolate
+        reference_beats (List[int]): Ticks position of the reference beats 
+
+    Returns:
+        DataFrame: Two column dataframe with the interpolated beats' times and whether they were inferred or not.
+    """
+    ticks, times = remove_outliers_and_duplicates(alignment)
+
+    spline = scipy.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
+    interpolation = spline(reference_beats)
+    # Do not extrapolate with a spline!
+    interpolation[(reference_beats < ticks.min()) | (reference_beats > ticks.max())] = np.nan
+
+    beats = pd.DataFrame({"time": interpolation, "interpolated": [tick not in ticks for tick in reference_beats]})
+    return beats
 
 
 def attempt_correction(_beats, alignment, reference_beats, anomalies, *, verbose=True):
