@@ -81,7 +81,7 @@ def locate_musescore() -> str:
     """Locate the executable for Musescore.
 
     Returns:
-        str: Best guess of the path to Musescore
+        str: Best guess of the path to Musescore's executable
     """
     # TODO: Find a deployable way to search the mscore executable
     # Music21 does it for Lilypond with an 'environment' setting or a set of known possible paths

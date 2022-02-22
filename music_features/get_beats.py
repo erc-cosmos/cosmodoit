@@ -206,14 +206,14 @@ task_docs = {
 }
 
 
-def gen_tasks(piece_id, paths, working_folder="tmp"):
+def gen_tasks(piece_id: str, paths, working_folder: str = "tmp"):
     """Generate beat-related tasks."""
     yield from gen_task_beats(piece_id, paths, working_folder)
     yield from gen_task_bars(piece_id, paths, working_folder)
     yield from gen_task_tempo(piece_id, paths, working_folder)
 
 
-def gen_task_beats(piece_id, paths, working_folder):
+def gen_task_beats(piece_id: str, paths, working_folder: str):
     """Generate tasks for bars."""
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
     ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
@@ -252,7 +252,7 @@ def gen_task_beats(piece_id, paths, working_folder):
         }
 
 
-def gen_task_bars(piece_id, paths, working_folder):
+def gen_task_bars(piece_id: str, paths, working_folder: str):
     """Generate tasks for bars."""
     backup_targets = targets_factory(piece_id, working_folder=working_folder)
     ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
