@@ -56,6 +56,8 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
 
     ref_mid = ref_targets("_ref.mid")
 
+    musescore_exec = locate_musescore()
+
     yield {
         'basename': 'MIDI_Conversion',
         'name': piece_id,
@@ -66,6 +68,21 @@ def gen_subtasks_midi(piece_id, ref_path, musescore_exec="/Applications/MuseScor
         'clean': True,
         'verbosity': 0
     }
+
+def locate_musescore() -> str:
+    """Locate the executable for Musescore.
+
+    Returns:
+        str: Best guess of the path to Musescore
+    """
+    # TODO: Find a deployable way to search the mscore executable
+    # Music21 does it for Lilypond with an 'environment' setting or a set of known possible paths
+    for musescore_exec in ["/Applications/MuseScore 3.app/Contents/MacOS/mscore"]:
+        if os.path.exists(musescore_exec):
+            return musescore_exec
+    else: # Not found
+        return 'mscore' # Hope it is on the PATH
+        # TODO test before returning
 
 
 def gen_subtasks_Nakamura(piece_id, ref_path, perf_path, working_folder="tmp"):
