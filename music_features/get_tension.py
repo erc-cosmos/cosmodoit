@@ -153,21 +153,17 @@ task_docs = {
 }
 
 
-def gen_tasks(piece_id, paths, working_folder="tmp"):
+def gen_tasks(piece_id, targets):
     """Generate tension-related tasks."""
-    if paths.score is None:
+    if targets("score") is None:
         return
 
-    backup_targets = targets_factory(piece_id, working_folder=working_folder)
-    ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
-    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
-
-    ref_midi = ref_targets("_ref.mid")
-    perf_beats = perf_targets("_beats.csv")
-    perf_bars = perf_targets("_bars.csv")
-    perf_tension = perf_targets("_tension.csv")
-    perf_tension_bar = perf_targets("_tension_bar.csv")
-    perf_tension_json = perf_targets("_tension.json")
+    ref_midi = targets("ref_midi")
+    perf_beats = targets("beats")
+    perf_bars = targets("bars")
+    perf_tension = targets("tension")
+    perf_tension_bar = targets("tension_bar")
+    perf_tension_json = targets("tension_json")
 
     def caller(perf_tension, ref_midi, perf_beats, measure_level=False, **kwargs):
         args = {
@@ -187,7 +183,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         create_tension_json(perf_tension)
         return True
 
-    if paths.manual_beats is not None or paths.perfmidi is not None:
+    if targets("manual_beats") is not None or targets("perfmidi") is not None:
         yield {
             'basename': "tension",
             'file_dep': [ref_midi, perf_beats, __file__],
@@ -196,7 +192,7 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
             'targets': [perf_tension, perf_tension_json],
             'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
         }
-    if paths.manual_bars is not None or paths.perfmidi is not None:
+    if targets("manual_bars") is not None or targets("perfmidi") is not None:
         yield {
             'basename': "tension_bar",
             'file_dep': [ref_midi, perf_bars, __file__],

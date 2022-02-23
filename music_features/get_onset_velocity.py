@@ -11,9 +11,9 @@ from music_features.util import targets_factory
 
 def get_onset_velocity(perfFilename):
     """Extract onset velocities from a midi file."""
-    velocities = pd.DataFrame(((event['StartTime'], event['Velocity'])
+    velocities = pd.DataFrame([(event['StartTime'], event['Velocity'])
                                for event in get_midi_events(perfFilename)
-                               if is_note_event(event)),
+                               if is_note_event(event)],
                               columns=('Time', 'Velocity'))
     return velocities
 
@@ -28,15 +28,14 @@ task_docs = {
 }
 
 
-def gen_tasks(piece_id, paths, working_folder):
+def gen_tasks(piece_id, targets):
     """Generate velocity-related tasks."""
-    if paths.perfmidi is None:
+    if targets("perfmidi") is None:
         return
-    perf_targets = targets_factory(paths.perfmidi, working_folder)
-    perf_velocity = perf_targets("_velocity.csv")
+    perf_velocity = targets("velocity")
 
     def runner(perf_filename, perf_velocity):
-        velocities = get_onset_velocity(paths.perfmidi)
+        velocities = get_onset_velocity(targets("perfmidi"))
         if velocities.size == 0:
             warnings.warn("Warning: no note on event detected in " + perf_filename)
         else:
@@ -46,9 +45,9 @@ def gen_tasks(piece_id, paths, working_folder):
         'basename': 'velocities',
         'name': piece_id,
         'doc': task_docs["velocities"],
-        'file_dep': [paths.perfmidi, __file__],
+        'file_dep': [targets("perfmidi"), __file__],
         'targets': [perf_velocity],
-        'actions': [(runner, [paths.perfmidi, perf_velocity])]
+        'actions': [(runner, [targets("perfmidi"), perf_velocity])]
     }
 
 

@@ -162,13 +162,12 @@ task_docs = {
 }
 
 
-def gen_tasks(piece_id, paths, working_folder="tmp"):
+def gen_tasks(piece_id, targets):
     """Generate loudness-based tasks."""
-    if paths.perfaudio is None:
+    if targets("perfaudio") is None:
         return
-    perf_targets = targets_factory(paths.perfaudio, working_folder=working_folder)
-
-    perf_loudness = perf_targets("_loudness.csv")
+    
+    perf_loudness = targets("loudness")
 
     def caller(perf_path, perf_loudness, **kwargs):
         loudness = compute_loudness(perf_path, **kwargs)
@@ -176,21 +175,19 @@ def gen_tasks(piece_id, paths, working_folder="tmp"):
         return True
     yield {
         'basename': "loudness",
-        'file_dep': [paths.perfaudio, __file__],
+        'file_dep': [targets("perfaudio"), __file__],
         'name': piece_id,
         'doc': task_docs["loudness"],
         'targets': [perf_loudness],
-        'actions': [(caller, [paths.perfaudio, perf_loudness])]
+        'actions': [(caller, [targets("perfaudio"), perf_loudness])]
     }
 
-    perf_beats = paths.perfaudio.replace(".wav", "_beats_manual.csv")
-    if not os.path.isfile(perf_beats):
-        if paths.score is None or paths.perfmidi is None:
-            return
-        else:
-            perf_beats = perf_targets("_beats.csv")
+    if targets("manual_beats") is None and (targets("score") is None or targets("perfmidi") is None):
+        return
 
-    perf_resampled_loudness = perf_targets("_loudness_resampled.csv")
+    perf_beats = targets("beats")
+
+    perf_resampled_loudness = targets("loudness_resampled")
     yield {
         'basename': "loudness_resample",
         'file_dep': [perf_loudness, perf_beats, __file__],

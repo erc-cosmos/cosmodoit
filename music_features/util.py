@@ -63,16 +63,46 @@ def write_file(filename, data):
         writer.writerows(data)
 
 
-def generate_target_path(original_path, working_folder, extension):
+def generate_target_path(original_path: str, working_folder: str, extension: str):
     """Generate a target path."""
     path_noext, _ = os.path.splitext(os.path.basename(original_path))
     return os.path.join(working_folder, path_noext + extension)
+
+
+class NameSchemeError(LookupError):
+    """Exceptions related to the naming of files."""
+
+    pass
+
+
+def target_finder(name_scheme, piece_id, paths, working_folder, file_type):
+    """Find the correct path for a computed file."""
+    try:
+        # If the file type is an input file, return as is
+        return getattr(paths, file_type)
+    except:
+        pass
+    # Otherwise, use the naming scheme to generate the target
+    try:
+        original_type, extension = name_scheme[file_type]
+    except KeyError as e:
+        raise NameSchemeError("Attempt to use an unknown destination file type") from e
+    try:
+        original_path: str = getattr(paths, original_type) or piece_id
+    except AttributeError as e:
+        raise NameSchemeError("Attempt to use an unknown source file type") from e
+    return generate_target_path(original_path, working_folder, extension)
 
 
 def targets_factory(original_path, working_folder):
     """Create a target path factory for a given original and working folder."""
     # TODO Rework to ensure consistent naming scheme
     return functools.partial(generate_target_path, original_path, working_folder) if original_path is not None else None
+
+
+def targets_factory_new(name_scheme, piece_id, paths, working_folder):
+    """Create a target path factory for a given set of original paths, working folder and name_scheme."""
+    return functools.partial(target_finder, name_scheme, piece_id, paths, working_folder)
 
 
 def gen_default_tasks(task_docs):
@@ -83,3 +113,32 @@ def gen_default_tasks(task_docs):
             'doc': doc,
             'name': None
         }
+
+
+default_naming_scheme = {
+    # Structure: <type_id>: (<source>, <extension>)
+    "beats": ("perfmidi", "_beats.csv"),
+    "ref_midi": ("score", "_ref.mid"),
+    "match": ("perfmidi", "_match.txt"),
+    "bars": ("perfmidi", "_bars.csv"),
+    "loudness": ("perfmidi", "_loudness.csv"),
+    "loudness_resampled": ("perfmidi", "_loudness_resampled.csv"),
+    "velocity": ("perfmidi", "_velocity.csv"),
+    "sustain": ("perfmidi", "_sustain.csv"),
+    "tempo": ("perfmidi", "_tempo.csv"),
+    # Alignment related files
+    "ref_copy_noext": ("score", "_ref"),
+    "ref_midi": ("score", "_ref.mid"),
+    "ref_pianoroll": ("score", "_ref_spr.txt"),
+    "ref_HMM": ("score", "_hmm.txt"),
+    "ref_FMT3X": ("score", "_fmt3x.txt"),
+    "perf_copy_noext": ("perfmidi", "_perf"),
+    "perf_pianoroll": ("perfmidi", "_perf_spr.txt"),
+    "perf_prematch": ("perfmidi", "_pre_match.txt"),
+    "perf_errmatch": ("perfmidi", "_err_match.txt"),
+    "perf_realigned": ("perfmidi", "_match.txt"),
+    # Tension related files
+    "tension": ("perfmidi", "_tension.csv"),
+    "tension_bar": ("perfmidi", "_tension_bar.csv"),
+    "tension_json": ("perfmidi", "_tension.json")
+}

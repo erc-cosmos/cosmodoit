@@ -7,7 +7,7 @@ import warnings
 from collections import namedtuple
 
 from music_features import get_alignment, get_beats, get_loudness, get_onset_velocity, get_sustain, get_tension
-from music_features.util import run_doit, gen_default_tasks
+from music_features.util import run_doit, gen_default_tasks, targets_factory_new, default_naming_scheme
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
@@ -15,18 +15,19 @@ INPLACE_WRITE = True
 default_working_folder = 'tmp'
 
 
+
 def discover_files_by_type(base_folder="tests/test_data"):
     """Find targets in a feature-type first directory structure."""
     # Outdated output format
     scores = [os.path.join(base_folder, "scores", f)
               for f in sorted(os.listdir(os.path.join(base_folder, "scores")))
-              if '.mscz' in f]
+              if f.endswith('.mscz')]
     perfs = [os.path.join(base_folder, "perfs", f)
              for f in sorted(os.listdir(os.path.join(base_folder, "perfs")))
-             if '.mid' in f]
+             if f.endswith('.mid')]
     wavs = [os.path.join(base_folder, "perfs", f)
             for f in sorted(os.listdir(os.path.join(base_folder, "perfs")))
-            if '.wav' in f]
+            if f.endswith('.wav')]
     assert len(scores) == len(perfs)
     assert len(scores) == len(wavs)
     piece_ids = (os.path.splitext(perf)[0] for perf in perfs)
@@ -107,7 +108,8 @@ def task_generator():
                 else:
                     working_folder = default_working_folder
                     os.makedirs(working_folder, exist_ok=True)
-                yield from task_gen(piece_id, paths, working_folder=working_folder)
+                target_factory = targets_factory_new(default_naming_scheme, piece_id, paths, working_folder)
+                yield from task_gen(piece_id, target_factory)
 
 
 if __name__ == "__main__":

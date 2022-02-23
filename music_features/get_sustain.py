@@ -25,12 +25,11 @@ task_docs = {
 }
 
 
-def gen_tasks(piece_id, paths, working_folder):
+def gen_tasks(piece_id, targets):
     """Generate sustain-related tasks."""
-    if paths.perfmidi is None:
+    if targets("perfmidi") is None:
         return
-    perf_targets = targets_factory(paths.perfmidi, working_folder)
-    perf_sustain = perf_targets("_sustain.csv")
+    perf_sustain = targets("sustain")
 
     def caller(perf_path, perf_sustain):
         sustain = get_sustain(perf_path)
@@ -40,7 +39,7 @@ def gen_tasks(piece_id, paths, working_folder):
         'basename': 'sustain',
         'name': piece_id,
         'doc': task_docs["sustain"],
-        'file_dep': [paths.perfmidi, __file__],
+        'file_dep': [targets("perfmidi"), __file__],
         'targets': [perf_sustain],
-        'actions': [(caller, [paths.perfmidi, perf_sustain])]
+        'actions': [(caller, [targets("perfmidi"), perf_sustain])]
     }

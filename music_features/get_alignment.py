@@ -6,7 +6,7 @@ import shutil
 
 from typing import NamedTuple
 
-from .util import run_doit, string_escape_concat, targets_factory
+from .util import run_doit, string_escape_concat, default_naming_scheme, targets_factory_new
 
 
 class AlignmentAtom(NamedTuple):
@@ -19,16 +19,19 @@ class AlignmentAtom(NamedTuple):
 def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cleanup: bool = True):
     """Run the alignment and return it."""
     paths = collections.namedtuple("Paths", ["score", "perfmidi"])(ref_path, perf_path)
-    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+    piece_id = os.path.basename(ref_path)
+    targets = targets_factory_new(default_naming_scheme, piece_id, paths, working_folder)
+    # perf_targets = targets_factory(perf_path, working_folder=working_folder)
 
     def task_wrapper():
-        yield from gen_tasks(os.path.basename(ref_path), paths, working_folder=working_folder)
+        yield from gen_tasks(os.path.basename(ref_path), targets)
     task_set = {'task_alignment': task_wrapper}
     run_doit(task_set)
 
-    outFile = os.path.join(working_folder, os.path.basename(perf_path).replace('.mid', "_match.txt"))
-    outFile = perf_targets("_match.txt")
-    alignment = read_alignment_file(outFile)
+    # out_file = os.path.join(working_folder, os.path.basename(perf_path).replace('.mid', "_match.txt"))
+    # outFile = perf_targets("_match.txt")
+    out_file = targets("match")
+    alignment = read_alignment_file(out_file)
 
     if cleanup:
         commands = ['clean']
@@ -52,16 +55,16 @@ task_docs = {
 }
 
 
-def gen_subtasks_midi(piece_id: str, ref_path: str, working_folder: str = "tmp"):
+def gen_subtasks_midi(piece_id: str, targets):
     """Generate doit tasks for the midi conversion and preprocessing."""
-    ref_targets = targets_factory(ref_path, working_folder=working_folder)
-
+    # ref_targets = targets_factory(ref_path, working_folder=working_folder)
+    ref_path = targets("score")
     _ref_name, ref_ext = os.path.splitext(ref_path)
 
     if ref_ext not in [".mxl", ".xml", ".mscz"]:
         raise NotImplementedError(f"Unsupported format {ref_ext}")
 
-    ref_mid = ref_targets("_ref.mid")
+    ref_mid = targets("ref_midi")
 
     musescore_exec = locate_musescore()
 
@@ -93,24 +96,23 @@ def locate_musescore() -> str:
         # TODO test before returning
 
 
-def gen_subtasks_Nakamura(piece_id: str, ref_path: str, perf_path: str, working_folder: str = "tmp"):
+def gen_subtasks_Nakamura(piece_id: str, targets):
     """Generate doit tasks for the alignment."""
     program_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
 
-    ref_targets = targets_factory(ref_path, working_folder=working_folder)
-    perf_targets = targets_factory(perf_path, working_folder=working_folder)
+    ref_path = targets("score")
+    ref_copy_noext = targets("ref_copy_noext")
+    ref_midi = targets("ref_midi")
+    ref_pianoroll = targets("ref_pianoroll")
+    ref_HMM = targets("ref_HMM")
+    ref_FMT3X = targets("ref_FMT3X")
 
-    ref_copy_noext = ref_targets("_ref")
-    ref_midi = ref_targets("_ref.mid")
-    ref_pianoroll = ref_targets("_ref_spr.txt")
-    ref_HMM = ref_targets("_hmm.txt")
-    ref_FMT3X = ref_targets("_fmt3x.txt")
-
-    perf_copy_noext = perf_targets("_perf")
-    perf_pianoroll = perf_targets("_perf_spr.txt")
-    perf_prematch = perf_targets("_pre_match.txt")
-    perf_errmatch = perf_targets("_err_match.txt")
-    perf_realigned = perf_targets("_match.txt")
+    perf_path = targets("perfmidi")
+    perf_copy_noext = targets("perf_copy_noext")
+    perf_pianoroll = targets("perf_pianoroll")
+    perf_prematch = targets("perf_prematch")
+    perf_errmatch = targets("perf_errmatch")
+    perf_realigned = targets("perf_realigned")
 
     exe_pianoroll = os.path.join(program_folder, "midi2pianoroll")
     exe_fmt3x = os.path.join(program_folder, "SprToFmt3x")
@@ -183,11 +185,11 @@ def gen_subtasks_Nakamura(piece_id: str, ref_path: str, perf_path: str, working_
     }
 
 
-def gen_tasks(piece_id, paths, working_folder="tmp"):
+def gen_tasks(piece_id, targets):
     """Generate doit tasks to call Nakamura's midi to midi alignment software."""
-    if paths.score is None:
+    if targets("score") is None:
+        return 
+    yield from gen_subtasks_midi(piece_id, targets)
+    if targets("perfmidi") is None:
         return
-    yield from gen_subtasks_midi(piece_id, paths.score, working_folder=working_folder)
-    if paths.perfmidi is None:
-        return
-    yield from gen_subtasks_Nakamura(piece_id, paths.score, paths.perfmidi, working_folder)
+    yield from gen_subtasks_Nakamura(piece_id, targets)

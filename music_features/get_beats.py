@@ -206,34 +206,30 @@ task_docs = {
 }
 
 
-def gen_tasks(piece_id: str, paths, working_folder: str = "tmp"):
+def gen_tasks(piece_id: str, targets):
     """Generate beat-related tasks."""
-    yield from gen_task_beats(piece_id, paths, working_folder)
-    yield from gen_task_bars(piece_id, paths, working_folder)
-    yield from gen_task_tempo(piece_id, paths, working_folder)
+    yield from gen_task_beats(piece_id, targets)
+    yield from gen_task_bars(piece_id, targets)
+    yield from gen_task_tempo(piece_id, targets)
 
 
-def gen_task_beats(piece_id: str, paths, working_folder: str):
+def gen_task_beats(piece_id: str, targets):
     """Generate tasks for bars."""
-    backup_targets = targets_factory(piece_id, working_folder=working_folder)
-    ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
-    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
-
     # Attempt using manual annotations
-    perf_beats = perf_targets("_beats.csv")
-    ref_midi = ref_targets("_ref.mid")
-    perf_match = perf_targets("_match.txt")
-    if paths.manual_beats is not None:
+    perf_beats = targets("beats")
+    ref_midi = targets("ref_midi")
+    perf_match = targets("match")
+    if targets("manual_beats") is not None:
         yield {
             'basename': "beats",
-            'file_dep': [paths.manual_beats, __file__],
+            'file_dep': [targets("manual_beats"), __file__],
             'name': piece_id,
             'doc': "Use authoritative beats annotation",
             'targets': [perf_beats],
-            'actions': [(shutil.copy, [paths.manual_beats, perf_beats])]
+            'actions': [(shutil.copy, [targets("manual_beats"), perf_beats])]
         }
     else:
-        if(paths.score is None or paths.perfmidi is None):
+        if(targets("score") is None or targets("perfmidi") is None):
             return
 
         def caller(perf_match, ref_midi, perf_beats):
@@ -252,25 +248,22 @@ def gen_task_beats(piece_id: str, paths, working_folder: str):
         }
 
 
-def gen_task_bars(piece_id: str, paths, working_folder: str):
+def gen_task_bars(piece_id: str, targets):
     """Generate tasks for bars."""
-    backup_targets = targets_factory(piece_id, working_folder=working_folder)
-    ref_targets = targets_factory(paths.score, working_folder=working_folder) or backup_targets
-    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
-    perf_bars = perf_targets("_bars.csv")
-    ref_midi = ref_targets("_ref.mid")
-    perf_match = perf_targets("_match.txt")
+    perf_bars = targets("bars")
+    ref_midi = targets("ref_midi")
+    perf_match = targets("match")
 
-    if paths.manual_bars is not None:
+    if targets("manual_bars") is not None:
         yield {
             'basename': "bars",
-            'file_dep': [paths.manual_bars, __file__],
+            'file_dep': [targets("manual_bars"), __file__],
             'name': piece_id,
             'doc': "Use authoritative bars annotation",
             'targets': [perf_bars],
-            'actions': [(shutil.copy, [paths.manual_bars, perf_bars])]
+            'actions': [(shutil.copy, [targets("manual_bars"), perf_bars])]
         }
-    elif not (paths.score is None or paths.perfmidi is None):
+    elif not (targets("score") is None or targets("perfmidi") is None):
         def caller_bar(perf_match, ref_midi, perf_bars):
             alignment = get_alignment.read_alignment_file(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
@@ -287,16 +280,13 @@ def gen_task_bars(piece_id: str, paths, working_folder: str):
         }
 
 
-def gen_task_tempo(piece_id, paths, working_folder):
+def gen_task_tempo(piece_id: str, targets):
     """Generate tempo tasks."""
-    backup_targets = targets_factory(piece_id, working_folder=working_folder)
-    perf_targets = targets_factory(paths.perfmidi, working_folder=working_folder) or backup_targets
-
     # Attempt using manual annotations
-    perf_beats = perf_targets("_beats.csv")
+    perf_beats = targets("beats")
 
-    if not (paths.score is None or paths.perfmidi is None) or paths.manual_beats is not None:
-        perf_tempo = perf_targets("_tempo.csv")
+    if not (targets("score") is None or targets("perfmidi") is None) or targets("manual_beats") is not None:
+        perf_tempo = targets("tempo")
 
         def caller(perf_beats, perf_tempo):
             data = pd.read_csv(perf_beats)
