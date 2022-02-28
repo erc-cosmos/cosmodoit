@@ -3,6 +3,7 @@ import collections
 import csv
 import os
 import shutil
+import pandas as pd
 
 from typing import NamedTuple
 
@@ -16,7 +17,7 @@ class AlignmentAtom(NamedTuple):
     time: float
 
 
-def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cleanup: bool = True):
+def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cleanup: bool = True) -> pd.DataFrame:
     """Run the alignment and return it."""
     paths = collections.namedtuple("Paths", ["score", "perfmidi"])(ref_path, perf_path)
     piece_id = os.path.basename(ref_path)
@@ -39,15 +40,17 @@ def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cl
     return alignment
 
 
-def read_alignment_file(file_path: str):
+def read_alignment_file(file_path: str) -> pd.DataFrame:
     """Read the output of Nakamura's software and extracts relevant information."""
-    with open(file_path) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter='\t')
-        # Extract relevant columns
-        return [AlignmentAtom(tatum=int(row[8]), time=float(row[1]))
-                for row in csv_reader
-                if len(row) > 3 and row[8] != '-1' and row[9] != '*'  # Not a metaline and not a mismatch
-                ]
+    # From https://midialignment.github.io/MANUAL.pdf #4.4
+    # This included 1 column too many so offset velocity was dropped. 
+    # The superfluous column might be match status instead, in which case channel is wrong
+    col_names = ["index", "note_on", "note_off", "pitch_name", "pitch_midi", "velocity", "channel",
+                 "match_status", "score_time", "note_id", "error_index", "skip_index"]
+    df = pd.read_csv("tmp/Chopin_Nocturne-Op.37-No.2_Paderewski_match.txt", sep="\t", skiprows=4, index_col=0, names=col_names)
+    # Select relevant data
+    df = df.loc[(df['note_id'] != '*') & (df['score_time']>=0), ["score_time","note_on"]]
+    return df
 
 
 task_docs = {
@@ -188,7 +191,7 @@ def gen_subtasks_Nakamura(piece_id: str, targets):
 def gen_tasks(piece_id, targets):
     """Generate doit tasks to call Nakamura's midi to midi alignment software."""
     if targets("score") is None:
-        return 
+        return
     yield from gen_subtasks_midi(piece_id, targets)
     if targets("perfmidi") is None:
         return

@@ -1,4 +1,5 @@
 """Module to extract beat timings from a midi interpretation and corresponding score."""
+from ctypes import alignment
 import shutil
 import warnings
 
@@ -21,7 +22,7 @@ class BeatParams(NamedTuple):
     offset: int  # Offset of the first beat
 
 
-def make_beat_reference(alignment, *, quarter_length: int = None, anacrusis_offset: int = None, guess: bool = False):
+def make_beat_reference(new_alignment, *, quarter_length: int = None, anacrusis_offset: int = None, guess: bool = False):
     """
     Generate a simple beat reference based on a constant beat length.
 
@@ -29,6 +30,7 @@ def make_beat_reference(alignment, *, quarter_length: int = None, anacrusis_offs
     anacrusisOffset --- the offset of the first whole beat (not necessarily the first beat of the first bar)
     guess --- flag for whether to guess or ask the beat parameters (overrides the previous parameters if True)
     """
+    alignment = [get_alignment.AlignmentAtom(tatum, time) for _,(tatum,time) in new_alignment.iterrows()]
     max_tatum = alignment[-1].tatum
 
     ticks, _ = remove_outliers_and_duplicates(alignment)
@@ -54,8 +56,9 @@ def get_bar_reference_pm(ref_filename):
     return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
-def get_beats(alignment, reference_beats, *, max_tries: int = 5):
+def get_beats(new_alignment, reference_beats, *, max_tries: int = 5):
     """Extract beats timing from an alignment of the notes."""
+    alignment = [get_alignment.AlignmentAtom(tatum, time) for _,(tatum,time) in new_alignment.iterrows()]
     ignored = []
     beats = interpolate_beats(alignment, reference_beats)
     for _ in range(max_tries):
