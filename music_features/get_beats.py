@@ -1,5 +1,4 @@
 """Module to extract beat timings from a midi interpretation and corresponding score."""
-from ctypes import alignment
 import shutil
 import warnings
 
@@ -12,7 +11,7 @@ import scipy.interpolate
 from music_features import get_alignment
 from music_features.util import targets_factory
 
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Tuple
 
 
 class BeatParams(NamedTuple):
@@ -30,7 +29,7 @@ def make_beat_reference(new_alignment, *, quarter_length: int = None, anacrusis_
     anacrusisOffset --- the offset of the first whole beat (not necessarily the first beat of the first bar)
     guess --- flag for whether to guess or ask the beat parameters (overrides the previous parameters if True)
     """
-    alignment = [get_alignment.AlignmentAtom(tatum, time) for _,(tatum,time) in new_alignment.iterrows()]
+    alignment = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in new_alignment.iterrows()]
     max_tatum = alignment[-1].tatum
 
     ticks, _ = remove_outliers_and_duplicates(alignment)
@@ -56,9 +55,8 @@ def get_bar_reference_pm(ref_filename):
     return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
-def get_beats(new_alignment, reference_beats, *, max_tries: int = 5):
+def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5):
     """Extract beats timing from an alignment of the notes."""
-    alignment = [get_alignment.AlignmentAtom(tatum, time) for _,(tatum,time) in new_alignment.iterrows()]
     ignored = []
     beats = interpolate_beats(alignment, reference_beats)
     for _ in range(max_tries):
@@ -86,6 +84,8 @@ def interpolate_beats(alignment, reference_beats: List[int]):
     Returns:
         DataFrame: Two column dataframe with the interpolated beats' times and whether they were inferred or not.
     """
+    # Temporary: convert to old format
+    alignment = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in alignment.iterrows()]
     ticks, times = remove_outliers_and_duplicates(alignment)
 
     spline = scipy.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
@@ -97,26 +97,30 @@ def interpolate_beats(alignment, reference_beats: List[int]):
     return beats
 
 
-def attempt_correction(_beats, alignment, reference_beats, anomalies, *, verbose=True):
+def attempt_correction(_beats, alignment: pd.DataFrame, reference_beats: List[int], anomalies: List[Tuple[int, int]], *, verbose=True):
     """Attempt to correct the beat extraction by removing the values causing outliers."""
-    filtered_all = []
+    mask = alignment.score_time > 0
+
+    filtered = pd.DataFrame()
     for index_before, index_after in anomalies:
         # Find range to erase
-        range_start = next((item.tatum for item in reversed(alignment) if item.tatum <= reference_beats[index_before]),
-                           reference_beats[index_before])
-        range_end = next((item.tatum for item in alignment if item.tatum >= reference_beats[index_after]),
-                         reference_beats[index_after])  # TODO: Add a test with coverage on this
-        # Protect the first and last beats
-        range_start = (range_start + 1) if range_start == alignment[0].tatum else range_start
-        range_end = (range_end - 1) if range_end == alignment[-1].tatum else range_end
+        range_start = alignment[alignment.score_time <= reference_beats[index_before]].iloc[-1].score_time
+        range_end = alignment[alignment.score_time >= reference_beats[index_after]].iloc[0].score_time
 
-        filtered = [item for item in alignment if range_start <= item.tatum <= range_end]
-        if verbose:
-            [print(f"Removing {item} in correction attempt") for item in filtered]
-        alignment = [item for item in alignment if not(range_start <= item.tatum <= range_end)]
-        filtered_all.extend(filtered)
+        mask &= ((alignment.score_time < range_start) | (alignment.score_time > range_end))
+    # Ensure first and last are preserved
+    mask.iloc[0] = True
+    mask.iloc[-1] = True
 
-    return alignment, filtered_all
+    filtered = alignment[~mask]
+    alignment = alignment.loc[mask]
+
+    if verbose:
+        [print(f"Removing {item} in correction attempt") for item in filtered.iterrows()]
+
+    # Temporary: convert to old format
+    filtered_old = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in filtered.iterrows()]
+    return alignment, filtered_old
 
 
 def remove_outliers_and_duplicates(alignment):
