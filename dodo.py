@@ -4,7 +4,7 @@ import os
 import doit
 import argparse
 import warnings
-from collections import namedtuple
+from typing import Iterable, NamedTuple
 
 from music_features import get_alignment, get_beats, get_loudness, get_onset_velocity, get_sustain, get_tension
 from music_features.util import run_doit, gen_default_tasks, targets_factory_new, default_naming_scheme
@@ -34,15 +34,21 @@ def discover_files_by_type(base_folder="tests/test_data"):
     return tuple(zip(piece_ids, scores, perfs, wavs))
 
 
-FileDescriptor = namedtuple('FileDescriptor', ('filetype', 'patterns', 'antipatterns', 'optional'))
+class InputDescriptor(NamedTuple):
+    """Named tuple for describing input file types."""
+
+    filetype: str
+    patterns: Iterable[str]
+    antipatterns: Iterable[str]
+    expected: bool
 
 
-def find_ext(path: os.PathLike, file_descriptor: FileDescriptor):
+def find_ext(path: str, file_descriptor: InputDescriptor):
     """Scan a directory for a file type."""
     filetype, patterns, antipatterns, required = file_descriptor
     files = [os.path.join(path, f) for f in os.listdir(path)
-             if any(ext in f for ext in patterns)
-             and not (any(ext in f for ext in antipatterns))
+             if any(f.endswith(ext) for ext in patterns)
+             and not (any(f.endswith(ext) for ext in antipatterns))
              and not f.startswith('.')]
     if len(files) == 0:
         if required:
@@ -60,11 +66,11 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     This expects pieces to be in one folder each
     """
     file_types = (
-        FileDescriptor('score', ('.mscz',), (), True),
-        FileDescriptor('perfmidi', ('.mid',), ('_ref.mid', '_perf.mid'), True),
-        FileDescriptor('perfaudio', ('.wav',), (), True),
-        FileDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
-        FileDescriptor('manual_bars', ('_bars_manual.csv',), (), False)
+        InputDescriptor('score', ('.mscz',), (), True),
+        InputDescriptor('perfmidi', ('.mid',), ('_ref.mid', '_perf.mid'), True),
+        InputDescriptor('perfaudio', ('.wav',), (), True),
+        InputDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
+        InputDescriptor('manual_bars', ('_bars_manual.csv',), (), False)
     )
     if doit.get_initial_workdir() != os.getcwd():
         base_folder = os.getcwd()
@@ -72,7 +78,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
                      for folder in os.listdir(base_folder)
                      if os.path.isdir(os.path.join(base_folder, folder)) and folder != 'tmp']
 
-    FileSet = namedtuple('FileSet', (descriptor.filetype for descriptor in file_types))
+    FileSet = NamedTuple('FileSet', ((descriptor.filetype, str) for descriptor in file_types))
     grouped_files = [(folder, FileSet(*(find_ext(folder, file_descriptor) for file_descriptor in file_types)))
                      for folder in piece_folders]
     return grouped_files
