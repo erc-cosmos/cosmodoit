@@ -10,22 +10,19 @@ import lowess
 import matplotlib.pyplot as plt
 
 from . import ma_sone
-from typing import Iterable, List
-
-from .util import targets_factory
+from typing import Iterable, List, Optional
 
 
-def get_loudness(input_path, *, exportLoudness=True, export_dir=None, **kwargs):
+def get_loudness(input_path:str, *, exportLoudness:bool=True, export_dir:Optional[str]=None, **kwargs):
     """
     Compute Global Loudness of Audio Files.
 
     input_path    : string; folder path or wav audio file path
-    columns       : string; which column - 'all' (default), 'raw', 'norm', 'smooth', 'envelope'
     exportLoudness: boolean; export as csv (true by default)
     export_dir    : string; folder in which to save the export (default: same as input)
-    plotLoudness  : boolean; plot results (false by default)
     smoothSpan    : double; number of data points for calculating the smooth curve (0.03 by default)
     no_negative   : boolean; set L(i) < 0 = 0 (true by default)
+    columns       : string; which column - 'all' (default), 'raw', 'norm', 'smooth', 'envelope'
 
     returns       :  array; Time (:,1) Loudness (:,2), Scaled (:,3), Scaled-smoothed (:,4), Scaled-envelope (:,5)
     """
@@ -121,7 +118,6 @@ def rescale(data):
 
 def smooth(data, span):
     """Use lowess regression to smooth loudness."""
-    # NYI
     if 0 < span < 1:  # span is given as a ratio
         span = np.floor(len(data)*span)
         span += span % 2 - 1
