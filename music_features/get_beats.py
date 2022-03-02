@@ -21,26 +21,6 @@ class BeatParams(NamedTuple):
     offset: int  # Offset of the first beat
 
 
-def make_beat_reference(new_alignment, *, quarter_length: int = None, anacrusis_offset: int = None, guess: bool = False):
-    """
-    Generate a simple beat reference based on a constant beat length.
-
-    quarterLength --- the number of midi ticks during a beat in the reference
-    anacrusisOffset --- the offset of the first whole beat (not necessarily the first beat of the first bar)
-    guess --- flag for whether to guess or ask the beat parameters (overrides the previous parameters if True)
-    """
-    alignment = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in new_alignment.iterrows()]
-    max_tatum = alignment[-1].tatum
-
-    ticks, _ = remove_outliers_and_duplicates(new_alignment)
-    # Obtain the beat parameters if not provided already
-    if guess:
-        quarter_length, anacrusis_offset = guess_beat_params(ticks)
-    else:
-        quarter_length, anacrusis_offset = prompt_beat_params(alignment, quarter_length, anacrusis_offset)
-    return np.arange(anacrusis_offset, max_tatum, quarter_length)
-
-
 def get_beat_reference_pm(ref_filename):
     """Find the beats in the reference according to pretty-midi."""
     with warnings.catch_warnings():
@@ -132,24 +112,6 @@ def remove_outliers_and_duplicates(alignment: pd.DataFrame) -> Tuple[np.ndarray,
     return np.array(ticks), np.array(times)
 
 
-def guess_beat_params(ticks):
-    """Heuristically guess which note is the starting beat."""
-    best = 0
-    best_offset = 0
-    quarter_length = 500  # Assumed from score to midi generation
-
-    max_tatum = ticks[-1]
-    for offset in ticks[:10]:  # Assume one of the first 10 notes is on beat
-        interpol_target = np.arange(offset, max_tatum, quarter_length)
-        onbeat_count = len([t for t in ticks if t in interpol_target])
-        # The best candidate is the one with the most notes on the beat
-        if onbeat_count > best:
-            best_offset = offset
-            best = onbeat_count
-
-    return BeatParams(PPQ=quarter_length, offset=best_offset)
-
-
 def plot_beat_ratios(ticks, quarter_length, times, spline):
     """Plot the ratio of actual note duration to expected.
 
@@ -174,20 +136,6 @@ def plot_beats(beats):
     plt.show(block=True)
     plt.plot(60/np.diff([beat['time'] for beat in beats]))
     plt.show(block=True)
-
-
-def prompt_beat_params(alignment, quarter_length=None, anacrusis_offset=None, force=False):
-    """Prompt for missing information in beat detection.
-
-    Does nothing if all are already known, unless force is True
-    """
-    if force or quarter_length is None or anacrusis_offset is None:
-        [print(it) for it in alignment[:10]]  # Show first 10 lines to give context
-        if force or quarter_length is None:
-            quarter_length = int(input("Please enter the beat length (in ticks):"))
-        if force or anacrusis_offset is None:
-            anacrusis_offset = int(input("Please enter the beat offset (in ticks):"))
-    return BeatParams(quarter_length, anacrusis_offset)
 
 
 def find_outliers(beats, *, factor=4, verbose=True):

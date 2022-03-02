@@ -18,14 +18,6 @@ def test_sorted_beats(ref, perf):
 
 
 @pytest.mark.parametrize("ref, perf", helpers.test_files())
-def test_sorted_ref_beats_manual(ref, perf):
-    alignment = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False)
-    reference_beats = get_beats.make_beat_reference(alignment, guess=True)
-
-    sorted(reference_beats) == reference_beats
-
-
-@pytest.mark.parametrize("ref, perf", helpers.test_files())
 def test_sorted_ref_beats_prettymidi(ref, perf):
     cache_folder = 'tmp'
     _ = get_alignment.get_alignment(ref_path=ref, perf_path=perf, cleanup=False, working_folder=cache_folder)
