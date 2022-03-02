@@ -1,8 +1,8 @@
 """Module for wrapping Eita Nakamura's alignment software."""
 import collections
-import csv
 import os
 import shutil
+from numpy import float64
 import pandas as pd
 
 from typing import NamedTuple
@@ -47,7 +47,7 @@ def read_alignment_file(file_path: str) -> pd.DataFrame:
     # The superfluous column might be match status instead, in which case channel is wrong
     col_names = ["index", "note_on", "note_off", "pitch_name", "pitch_midi", "velocity", "channel",
                  "match_status", "score_time", "note_id", "error_index", "skip_index"]
-    df = pd.read_csv("tmp/Chopin_Nocturne-Op.37-No.2_Paderewski_match.txt", sep="\t", skiprows=4, index_col=0, names=col_names)
+    df = pd.read_csv(file_path, sep="\t", skiprows=4, index_col=0, names=col_names, dtype={'score_time':int, 'note_on':float64}, comment='/')
     # Select relevant data
     df = df.loc[(df['note_id'] != '*') & (df['score_time']>=0), ["score_time","note_on"]]
     return df

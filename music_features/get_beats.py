@@ -32,7 +32,7 @@ def make_beat_reference(new_alignment, *, quarter_length: int = None, anacrusis_
     alignment = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in new_alignment.iterrows()]
     max_tatum = alignment[-1].tatum
 
-    ticks, _ = remove_outliers_and_duplicates(alignment)
+    ticks, _ = remove_outliers_and_duplicates(new_alignment)
     # Obtain the beat parameters if not provided already
     if guess:
         quarter_length, anacrusis_offset = guess_beat_params(ticks)
@@ -65,7 +65,7 @@ def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5):
         if anomalies == []:
             return (beats, ignored)
         else:
-            alignment, new_ignored = attempt_correction(beats, alignment, reference_beats, anomalies)
+            alignment, new_ignored = attempt_correction(alignment, reference_beats, anomalies)
             ignored.extend(new_ignored)
             beats = interpolate_beats(alignment, reference_beats)
 
@@ -74,7 +74,7 @@ def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5):
     return (beats, ignored)
 
 
-def interpolate_beats(alignment, reference_beats: List[int]):
+def interpolate_beats(alignment: pd.DataFrame, reference_beats: List[int]):
     """Interpolate beats based on an alignment and a reference beat to ticks match.
 
     Args:
@@ -85,7 +85,7 @@ def interpolate_beats(alignment, reference_beats: List[int]):
         DataFrame: Two column dataframe with the interpolated beats' times and whether they were inferred or not.
     """
     # Temporary: convert to old format
-    alignment = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in alignment.iterrows()]
+    alignment_old = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in alignment.iterrows()]
     ticks, times = remove_outliers_and_duplicates(alignment)
 
     spline = scipy.interpolate.UnivariateSpline(ticks, times, s=0)  # s=0 for pure interpolation
@@ -97,7 +97,7 @@ def interpolate_beats(alignment, reference_beats: List[int]):
     return beats
 
 
-def attempt_correction(_beats, alignment: pd.DataFrame, reference_beats: List[int], anomalies: List[Tuple[int, int]], *, verbose=True):
+def attempt_correction(alignment: pd.DataFrame, reference_beats: List[int], anomalies: List[Tuple[int, int]], *, verbose=True):
     """Attempt to correct the beat extraction by removing the values causing outliers."""
     mask = alignment.score_time > 0
 
@@ -123,15 +123,13 @@ def attempt_correction(_beats, alignment: pd.DataFrame, reference_beats: List[in
     return alignment, filtered_old
 
 
-def remove_outliers_and_duplicates(alignment):
+def remove_outliers_and_duplicates(alignment: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """Find outliers and prefilter data."""
-    times, indices = np.unique(np.array([alignment_atom.time for alignment_atom in alignment]), return_index=True)
-    ticks = np.array([aligment_atom.tatum for aligment_atom in alignment])[indices]
-
     # TODO: determine better which note to use when notes share a tatum
-    ticks, indices = np.unique(np.array([alignment_atom.tatum for alignment_atom in alignment]), return_index=True)
-    times = np.array([aligmnent_atom.time for aligmnent_atom in alignment])[indices]
-    return ticks, times
+    alignment_filtered = alignment.drop_duplicates(subset=["score_time"]).sort_values("score_time")
+    (_,ticks), (_,times) = alignment_filtered.iteritems()
+
+    return np.array(ticks), np.array(times)
 
 
 def guess_beat_params(ticks):
