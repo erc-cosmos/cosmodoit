@@ -181,20 +181,23 @@ def gen_task_beats(piece_id: str, targets):
     ref_midi = targets("ref_midi")
     perf_match = targets("match")
     if targets("manual_beats") is not None:
+        def manual_caller(manual_beats, perf_beats):
+            beats = read_beats(manual_beats)
+            write_beats(beat_path=perf_beats, beats=beats)
         yield {
             'basename': "beats",
             'file_dep': [targets("manual_beats"), __file__],
             'name': piece_id,
             'doc': "Use authoritative beats annotation",
             'targets': [perf_beats],
-            'actions': [(shutil.copy, [targets("manual_beats"), perf_beats])]
+            'actions': [(manual_caller, [targets("manual_beats"), perf_beats])]
         }
     else:
         if(targets("score") is None or targets("perfmidi") is None):
             return
 
         def caller(perf_match, ref_midi, perf_beats):
-            alignment = get_alignment.read_alignment_file(perf_match)
+            alignment = get_alignment.read_alignment(perf_match)
             beat_reference = get_beat_reference_pm(ref_midi)
             beats, _ = get_beats(alignment, beat_reference)
             beats.to_csv(perf_beats, index_label="count")
@@ -216,17 +219,20 @@ def gen_task_bars(piece_id: str, targets):
     perf_match = targets("match")
 
     if targets("manual_bars") is not None:
+        def manual_caller_bar(manual_beats, perf_beats):
+            beats = read_beats(manual_beats)
+            write_beats(beat_path=perf_beats, beats=beats)
         yield {
             'basename': "bars",
             'file_dep': [targets("manual_bars"), __file__],
             'name': piece_id,
             'doc': "Use authoritative bars annotation",
             'targets': [perf_bars],
-            'actions': [(shutil.copy, [targets("manual_bars"), perf_bars])]
+            'actions': [(manual_caller_bar, [targets("manual_bars"), perf_bars])]
         }
     elif not (targets("score") is None or targets("perfmidi") is None):
         def caller_bar(perf_match, ref_midi, perf_bars):
-            alignment = get_alignment.read_alignment_file(perf_match)
+            alignment = get_alignment.read_alignment(perf_match)
             bar_reference = get_bar_reference_pm(ref_midi)
             bars, _ = get_beats(alignment, bar_reference)
             bars.to_csv(perf_bars, index_label="count")
