@@ -14,20 +14,6 @@ from music_features.util import targets_factory
 from typing import List, Tuple
 
 
-def get_beat_reference_pm(ref_filename: str):
-    """Find the beats in the reference according to pretty-midi."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
-        pretty = pm.PrettyMIDI(ref_filename)
-    return np.round(np.array(pretty.get_beats()) * 1000)  # seconds to milliseconds
-
-
-def get_bar_reference_pm(ref_filename: str):
-    """Find the bar lines in the reference according to pretty-midi."""
-    pretty = pm.PrettyMIDI(ref_filename)
-    return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
-
-
 def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Extract beats timing from an alignment of the notes."""
     ignored = pd.DataFrame()
@@ -55,6 +41,20 @@ def read_beats(beat_path: str) -> pd.DataFrame:
 def write_beats(beat_path: str, beats: pd.DataFrame) -> None:
     """Write beats to disk."""
     beats.to_csv(beat_path, index=False)
+
+
+def get_beat_reference_pm(ref_filename: str):
+    """Find the beats in the reference according to pretty-midi."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        pretty = pm.PrettyMIDI(ref_filename)
+    return np.round(np.array(pretty.get_beats()) * 1000)  # seconds to milliseconds
+
+
+def get_bar_reference_pm(ref_filename: str):
+    """Find the bar lines in the reference according to pretty-midi."""
+    pretty = pm.PrettyMIDI(ref_filename)
+    return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
 def interpolate_beats(alignment: pd.DataFrame, reference_beats: List[int]):
@@ -104,7 +104,7 @@ def attempt_correction(alignment: pd.DataFrame, reference_beats: List[int], anom
 
 
 def remove_outliers_and_duplicates(alignment: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-    """Find outliers and prefilter data."""
+    """Prefilter data by removing duplicates and resorting."""
     # TODO: determine better which note to use when notes share a tatum
     alignment_filtered = alignment.drop_duplicates(subset=["score_time"]).sort_values("score_time")
     (_, ticks), (_, times) = alignment_filtered.iteritems()
