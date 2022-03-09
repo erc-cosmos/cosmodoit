@@ -22,15 +22,15 @@ def get_beat_reference_pm(ref_filename: str):
     return np.round(np.array(pretty.get_beats()) * 1000)  # seconds to milliseconds
 
 
-def get_bar_reference_pm(ref_filename:str):
+def get_bar_reference_pm(ref_filename: str):
     """Find the bar lines in the reference according to pretty-midi."""
     pretty = pm.PrettyMIDI(ref_filename)
     return np.round(np.array(pretty.get_downbeats()) * 1000)  # seconds to milliseconds
 
 
-def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5):
+def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Extract beats timing from an alignment of the notes."""
-    ignored = []
+    ignored = pd.DataFrame()
     beats = interpolate_beats(alignment, reference_beats)
     for _ in range(max_tries):
         # Find outliers and prefilter data
@@ -39,7 +39,7 @@ def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5):
             return (beats, ignored)
         else:
             alignment, new_ignored = attempt_correction(alignment, reference_beats, anomalies)
-            ignored.extend(new_ignored)
+            ignored = pd.concat([ignored, new_ignored])
             beats = interpolate_beats(alignment, reference_beats)
 
     if find_outliers(beats) != []:
@@ -62,7 +62,7 @@ def interpolate_beats(alignment: pd.DataFrame, reference_beats: List[int]):
 
     Args:
         alignment (List[AlignmentAtom]): The aligment to interpolate
-        reference_beats (List[int]): Ticks position of the reference beats 
+        reference_beats (List[int]): Ticks position of the reference beats
 
     Returns:
         DataFrame: Two column dataframe with the interpolated beats' times and whether they were inferred or not.
@@ -78,7 +78,8 @@ def interpolate_beats(alignment: pd.DataFrame, reference_beats: List[int]):
     return beats
 
 
-def attempt_correction(alignment: pd.DataFrame, reference_beats: List[int], anomalies: List[Tuple[int, int]], *, verbose=True):
+def attempt_correction(alignment: pd.DataFrame, reference_beats: List[int], anomalies: List[Tuple[int, int]],
+                       *, verbose=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Attempt to correct the beat extraction by removing the values causing outliers."""
     mask = alignment.score_time > 0
 
@@ -93,22 +94,20 @@ def attempt_correction(alignment: pd.DataFrame, reference_beats: List[int], anom
     mask.iloc[0] = True
     mask.iloc[-1] = True
 
-    filtered = alignment[~mask]
+    filtered = alignment.loc[~mask]
     alignment = alignment.loc[mask]
 
     if verbose:
         [print(f"Removing {item} in correction attempt") for item in filtered.iterrows()]
 
-    # Temporary: convert to old format
-    filtered_old = [get_alignment.AlignmentAtom(tatum, time) for _, (tatum, time) in filtered.iterrows()]
-    return alignment, filtered_old
+    return alignment, filtered
 
 
 def remove_outliers_and_duplicates(alignment: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """Find outliers and prefilter data."""
     # TODO: determine better which note to use when notes share a tatum
     alignment_filtered = alignment.drop_duplicates(subset=["score_time"]).sort_values("score_time")
-    (_,ticks), (_,times) = alignment_filtered.iteritems()
+    (_, ticks), (_, times) = alignment_filtered.iteritems()
 
     return np.array(ticks), np.array(times)
 
