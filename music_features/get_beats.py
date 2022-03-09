@@ -11,17 +11,10 @@ import scipy.interpolate
 from music_features import get_alignment
 from music_features.util import targets_factory
 
-from typing import NamedTuple, List, Tuple
+from typing import List, Tuple
 
 
-class BeatParams(NamedTuple):
-    """Named tuple for beat reference parameters."""
-
-    PPQ: int  # Pulse per quarter note
-    offset: int  # Offset of the first beat
-
-
-def get_beat_reference_pm(ref_filename:str):
+def get_beat_reference_pm(ref_filename: str):
     """Find the beats in the reference according to pretty-midi."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
