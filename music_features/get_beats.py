@@ -112,32 +112,6 @@ def remove_outliers_and_duplicates(alignment: pd.DataFrame) -> Tuple[np.ndarray,
     return np.array(ticks), np.array(times)
 
 
-def plot_beat_ratios(ticks, quarter_length, times, spline):
-    """Plot the ratio of actual note duration to expected.
-
-    Expected note duration is based on neighbouring tempo
-    """
-    ratios = []
-    for (tick, time, tick_next, time_next) in zip(ticks, times, ticks[1:], times[1:]):
-        # TODO: Separate by line
-        if tick == tick_next:  # Ignore simultaneous notes
-            continue
-        expected_duration = spline(tick_next)-spline(tick)
-        actual_duration = time_next-time
-        ratios.append(actual_duration/expected_duration)
-    plt.plot(ticks[:-1]/quarter_length, ratios)
-    plt.plot(ticks[:-1]/quarter_length, np.diff(ticks)/quarter_length)
-    plt.hlines(1, xmin=ticks[0], xmax=ticks[-1]/quarter_length)
-    plt.show(block=True)
-
-
-def plot_beats(beats):
-    """Plot score time against real time and tempo against score time."""
-    plt.show(block=True)
-    plt.plot(60/np.diff([beat['time'] for beat in beats]))
-    plt.show(block=True)
-
-
 def find_outliers(beats, *, factor=4, verbose=True):
     """Perform an automated check for outliers."""
     beats = beats.time
