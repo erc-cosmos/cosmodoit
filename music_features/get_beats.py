@@ -54,6 +54,16 @@ def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5):
     return (beats, ignored)
 
 
+def read_beats(beat_path: str) -> pd.DataFrame:
+    """Read beats from disk."""
+    return pd.read_csv(beat_path, usecols=['time'])
+
+
+def write_beats(beat_path: str, beats: pd.DataFrame) -> None:
+    """Write beats to disk."""
+    beats.to_csv(beat_path, index=False)
+
+
 def interpolate_beats(alignment: pd.DataFrame, reference_beats: List[int]):
     """Interpolate beats based on an alignment and a reference beat to ticks match.
 
