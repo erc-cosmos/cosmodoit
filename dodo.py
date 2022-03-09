@@ -66,7 +66,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     This expects pieces to be in one folder each
     """
     file_types = (
-        InputDescriptor('score', ('.mscz',), (), True),
+        InputDescriptor('score', ('.mscz','.xml','.mxl'), (), True),
         InputDescriptor('perfmidi', ('.mid',), ('_ref.mid', '_perf.mid'), True),
         InputDescriptor('perfaudio', ('.wav',), (), True),
         InputDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
