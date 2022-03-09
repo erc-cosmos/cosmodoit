@@ -118,10 +118,12 @@ def gen_default_tasks(task_docs):
 default_naming_scheme = {
     # Structure: <type_id>: (<source>, <extension>)
     "beats": ("perfmidi", "_beats.csv"),
+    "manual_beats": ("perfmidi", "_beats_manual.csv"),
     "ref_midi": ("score", "_ref.mid"),
     "match": ("perfmidi", "_match.txt"),
     "bars": ("perfmidi", "_bars.csv"),
-    "loudness": ("perfmidi", "_loudness.csv"),
+    "loudness": ("perfmidi", "_loudness_all.csv"),
+    "loudness_simple": ("perfmidi", "_loudness.csv"),
     "loudness_resampled": ("perfmidi", "_loudness_resampled.csv"),
     "velocity": ("perfmidi", "_velocity.csv"),
     "sustain": ("perfmidi", "_sustain.csv"),

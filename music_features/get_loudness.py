@@ -73,8 +73,14 @@ def export_loudness(data, columns='all', export_dir=None, export_path=None, audi
     """Export loudness data to disk."""
     if export_path is None:
         export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
-    data.to_csv(export_path, index=False)
-    print(f"Exported {columns} to: {export_path}")
+    if columns != 'all':
+        column_map = { 'raw':'Loudness',
+                       'norm':'Loudness_norm',
+                       'smooth':'Loudness_smooth',
+                       'envelope':'Loudness_envelope'}
+        data.to_csv(export_path, columns=['Time', column_map[columns]], index=False)
+    else:
+        data.to_csv(export_path, index=False)
 
 
 def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_loudness, *, show=True):
@@ -164,18 +170,20 @@ def gen_tasks(piece_id, targets):
         return
     
     perf_loudness = targets("loudness")
+    perf_loudness_simple = targets("loudness_simple")
 
-    def caller(perf_path, perf_loudness, **kwargs):
+    def caller(perf_path, perf_loudness, perf_loudness_simple, **kwargs):
         loudness = compute_loudness(perf_path, **kwargs)
         export_loudness(loudness, export_path=perf_loudness)
+        export_loudness(loudness, export_path=perf_loudness_simple, columns="smooth")
         return True
     yield {
         'basename': "loudness",
         'file_dep': [targets("perfaudio"), __file__],
         'name': piece_id,
         'doc': task_docs["loudness"],
-        'targets': [perf_loudness],
-        'actions': [(caller, [targets("perfaudio"), perf_loudness])]
+        'targets': [perf_loudness, perf_loudness_simple],
+        'actions': [(caller, [targets("perfaudio"), perf_loudness, perf_loudness_simple])]
     }
 
     if targets("manual_beats") is None and (targets("score") is None or targets("perfmidi") is None):
