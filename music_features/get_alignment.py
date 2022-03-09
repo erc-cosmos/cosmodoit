@@ -32,7 +32,7 @@ def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cl
     # out_file = os.path.join(working_folder, os.path.basename(perf_path).replace('.mid', "_match.txt"))
     # outFile = perf_targets("_match.txt")
     out_file = targets("match")
-    alignment = read_alignment_file(out_file)
+    alignment = read_alignment(out_file)
 
     if cleanup:
         commands = ['clean']
@@ -40,7 +40,7 @@ def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cl
     return alignment
 
 
-def read_alignment_file(file_path: str) -> pd.DataFrame:
+def read_alignment(file_path: str) -> pd.DataFrame:
     """Read the output of Nakamura's software and extracts relevant information."""
     # From https://midialignment.github.io/MANUAL.pdf #4.4
     # This included 1 column too many so offset velocity was dropped. 
