@@ -52,7 +52,7 @@ def find_ext(path: str, file_descriptor: InputDescriptor):
              and not f.startswith('.')]
     if len(files) == 0:
         if required:
-            warnings.warn(f"Found no file of type {filetype} in {path} (expected extensions {patterns})")
+            warnings.warn(f"Found no file of type {filetype} in {path} (expected extensions {patterns}). Some tasks will be skipped.")
         return None
     elif len(files) > 1:
         warnings.warn(f"Found more than one file of type {filetype} in {path} (using {files[0]})")
