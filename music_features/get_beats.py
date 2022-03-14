@@ -1,15 +1,12 @@
 """Module to extract beat timings from a midi interpretation and corresponding score."""
-import shutil
 import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pretty_midi as pm
 import scipy.interpolate
 
 from music_features import get_alignment
-from music_features.util import targets_factory
 
 from typing import List, Tuple
 
@@ -121,7 +118,7 @@ def find_outliers(beats, *, factor=4, verbose=True):
     anomaly_indices = [(i, i+1) for (i, ibi) in enumerate(inter_beat_intervals)
                        if ibi * factor < mean_IBI or ibi <= 0]
     if verbose:
-        [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (max. {factor*mean_IBI}s)")
+        [print(f"Anomaly between beats {i} and {j} detected: {beats[j]-beats[i]}s (min. {factor*mean_IBI}s)")
          for i, j in anomaly_indices]
     return anomaly_indices
 
@@ -149,6 +146,8 @@ def gen_task_beats(piece_id: str, targets):
     if targets("manual_beats") is not None:
         def manual_caller(manual_beats, perf_beats):
             beats = read_beats(manual_beats)
+            if find_outliers(beats, factor=10, verbose=True) != []:
+                warnings.warn(f"Found anomalous beats in manually annotated {manual_beats}. Consider checking the annotation.")
             write_beats(beat_path=perf_beats, beats=beats)
         yield {
             'basename': "beats",
@@ -187,6 +186,8 @@ def gen_task_bars(piece_id: str, targets):
     if targets("manual_bars") is not None:
         def manual_caller_bar(manual_beats, perf_beats):
             beats = read_beats(manual_beats)
+            if find_outliers(beats, factor=10, verbose=True) != []:
+                warnings.warn(f"Found anomalous beats in manually annotated {manual_beats}. Consider checking the annotation.")
             write_beats(beat_path=perf_beats, beats=beats)
         yield {
             'basename': "bars",
