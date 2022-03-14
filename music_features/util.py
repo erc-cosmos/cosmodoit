@@ -142,5 +142,6 @@ default_naming_scheme = {
     # Tension related files
     "tension": ("perfmidi", "_tension.csv"),
     "tension_bar": ("perfmidi", "_tension_bar.csv"),
-    "tension_json": ("perfmidi", "_tension.json")
+    "tension_json": ("perfmidi", "_tension.json"),
+    "tension_bar_json": ("perfmidi", "_tension_bar.json")
 }
