@@ -2,7 +2,6 @@
 import pandas as pd
 
 from music_features.get_midi_events import get_midi_events
-from music_features.util import targets_factory
 
 
 def get_sustain(perf_path, *, binary=False):
@@ -20,12 +19,33 @@ def is_sustain_event(event):
     return event['Type'] == 'control_change' and event['Control'] == 64
 
 
+def read_sustain(filepath:str) -> pd.DataFrame:
+    """Read a sustain file from disk.
+
+    Args:
+        filepath (str): path to the file
+
+    Returns:
+        pd.DataFrame: DataFrame with the time and sustain values
+    """
+    return pd.read_csv(filepath, usecols=('Time', 'Sustain'))
+
+
+def write_sustain(filepath:str, data:pd.DataFrame) -> None:
+    """Write a sustain Dataframe to disk.
+
+    Args:
+        filepath (str): path to output file
+        data (pd.DataFrame): data to write
+    """
+    data.to_csv(filepath, index=False, columns=('Time', 'Sustain'))
+
 task_docs = {
     "sustain": "Extract sustain pedal information from a midi file."
 }
 
 
-def gen_tasks(piece_id, targets):
+def gen_tasks(piece_id:str, targets):
     """Generate sustain-related tasks."""
     if targets("perfmidi") is None:
         return
