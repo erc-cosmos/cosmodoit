@@ -355,16 +355,17 @@ def moving_average(tension, window=4):
     return np.array(outputs)
 
 
-def cal_tension(file_name, piano_roll, beat_data, args,
-                window_size=1, key_name='', generate_pickle=True, generate_plots=False):
+def cal_tension(file_name, piano_roll, beat_data,
+                window_size=1, key_name=None, generate_pickle=True, generate_plots=False, **kwargs):
 
     # try:
+    key_name = key_name or all_key_names
     # all the major key pos is C major pos, all the minor key pos is a minor pos
-    key_name, key_pos, note_shift = cal_key(piano_roll, key_name, end_ratio=args['end_ratio'])
+    key_name, key_pos, note_shift = cal_key(piano_roll, key_name, end_ratio=kwargs['end_ratio'])
     # bar_step = downbeat_indices[1] - downbeat_indices[0]
     centroids = cal_centroid(piano_roll, note_shift, -1, -1)
 
-    kc = windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, args)
+    kc = windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, kwargs)
 
     centroids = cal_centroid(piano_roll, note_shift, kc['key_change_beat'], kc['changed_note_shift'])
 
@@ -384,7 +385,7 @@ def cal_tension(file_name, piano_roll, beat_data, args,
     centroid_diff = np.linalg.norm(centroid_diff, axis=-1)
     centroid_diff = np.insert(centroid_diff, 0, 0)
 
-    new_output_folder = not(generate_pickle and generate_plots) or gen_new_output_folder(file_name, args)
+    new_output_folder = not(generate_pickle and generate_plots) or gen_new_output_folder(file_name, kwargs)
     if generate_pickle:
         export_tension(new_output_folder, file_name, total_tension, diameters, centroid_diff, window_time)
 
@@ -700,38 +701,33 @@ def get_beat_time(pm, beat_division=4):
 
 
 def extract_notes(file_name, track_num):
-    try:
-        pm = pretty_midi.PrettyMIDI(file_name)
-        pm = remove_drum_track(pm)
+    pm = pretty_midi.PrettyMIDI(file_name)
+    pm = remove_drum_track(pm)
 
-        # if len(pm.time_signature_changes) > 1:
-        #     logger.info(f'multiple time signature, skip {file_name}')
-        #     return None
-        # if not(pm.time_signature_changes[0].denominator == 4 and \
-        #         (pm.time_signature_changes[0].numerator == 4 or
-        #          pm.time_signature_changes[0].numerator == 2)):
-        #     logger.info(f'not supported time signature, skip {file_name}')
-        #     return None
+    # if len(pm.time_signature_changes) > 1:
+    #     logger.info(f'multiple time signature, skip {file_name}')
+    #     return None
+    # if not(pm.time_signature_changes[0].denominator == 4 and \
+    #         (pm.time_signature_changes[0].numerator == 4 or
+    #          pm.time_signature_changes[0].numerator == 2)):
+    #     logger.info(f'not supported time signature, skip {file_name}')
+    #     return None
 
-        if track_num != 0:
-            # if len(pm.instruments) < track_num:
-            #     logger.warning(f'the file {file_name} has {len(pm.instruments)} tracks,'
-            #                    f'less than the required track num {track_num}. Use all the tracks')
-            pm.instruments = pm.instruments[:track_num]
+    if track_num != 0:
+        # if len(pm.instruments) < track_num:
+        #     logger.warning(f'the file {file_name} has {len(pm.instruments)} tracks,'
+        #                    f'less than the required track num {track_num}. Use all the tracks')
+        pm.instruments = pm.instruments[:track_num]
 
-        sixteenth_time, beat_time, down_beat_time, beat_indices, down_beat_indices = get_beat_time(pm, beat_division=4)
+    sixteenth_time, beat_time, down_beat_time, beat_indices, down_beat_indices = get_beat_time(pm, beat_division=4)
 
-        piano_roll = get_piano_roll(pm, sixteenth_time)
-        beat_data = {'sixteenth_time': sixteenth_time,
-                     'beat_time': beat_time,
-                     'down_beat_time': down_beat_time,
-                     'beat_indices': beat_indices,
-                     'down_beat_indices': down_beat_indices
-                     }
-    except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError):
-        # exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
-        # logger.info(exception_str)
-        return None
+    piano_roll = get_piano_roll(pm, sixteenth_time)
+    beat_data = {'sixteenth_time': sixteenth_time,
+                    'beat_time': beat_time,
+                    'down_beat_time': down_beat_time,
+                    'beat_indices': beat_indices,
+                    'down_beat_indices': down_beat_indices
+                    }
 
     return [pm, piano_roll, beat_data]
 

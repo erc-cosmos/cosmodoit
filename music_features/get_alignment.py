@@ -22,15 +22,12 @@ def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cl
     paths = collections.namedtuple("Paths", ["score", "perfmidi"])(ref_path, perf_path)
     piece_id = os.path.basename(ref_path)
     targets = targets_factory_new(default_naming_scheme, piece_id, paths, working_folder)
-    # perf_targets = targets_factory(perf_path, working_folder=working_folder)
 
     def task_wrapper():
         yield from gen_tasks(os.path.basename(ref_path), targets)
     task_set = {'task_alignment': task_wrapper}
     run_doit(task_set)
 
-    # out_file = os.path.join(working_folder, os.path.basename(perf_path).replace('.mid', "_match.txt"))
-    # outFile = perf_targets("_match.txt")
     out_file = targets("match")
     alignment = read_alignment(out_file)
 

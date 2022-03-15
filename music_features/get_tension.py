@@ -1,5 +1,6 @@
 """Wrapping module for Midi-miner's spiral array tension functions."""
 import os
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -8,78 +9,63 @@ from . import tension_calculation as tc
 from .util import read_json, set_json_file, write_json
 
 
-def create_tension_json(tension_file: str) -> None:
+def read_tension(input_path) -> pd.DataFrame:
+    """Read a tension file from disk.
+
+    Args:
+        filepath (str): path to the file
+
+    Returns:
+        pd.DataFrame: DataFrame with the time and tension values
+    """
+    return pd.read_csv(input_path, usecols=["time","momentum","diameter","strain","d_diameter","d_strain"])
+
+
+def write_tension(output_path:str, tension:pd.DataFrame):
+    """Write a tension dataframe to disk.
+
+    Args:
+        output_path (str): path to output file
+        tension (pd.DataFrame): tension dataframe to write
+    """
+    tension.to_csv(output_path, columns=["time","momentum","diameter","strain","d_diameter","d_strain"], index=False)
+
+
+def write_tension_json(tension_file: str, json_file: str) -> None:
     """Create a metadata file for tension from a template.
 
     Args:
-        tension_file (Union[str, os.PathLike]): path to the main tension file
+        tension_file (str): path to the main tension file
+        json_file (str): path to the json tension file to create
     """
     source_dir = os.path.dirname(__file__)
-    jsonObject = read_json(os.path.join(source_dir, 'tension_template.json'))
-    exportName = tension_file.replace(".csv", ".json")
-    newObject = set_json_file(jsonObject, os.path.basename(tension_file))
-    write_json(newObject, exportName)
+    json_template = read_json(os.path.join(source_dir, 'tension_template.json'))
+    new_object = set_json_file(json_template, os.path.basename(tension_file))
+    write_json(new_object, json_file)
     return
 
 
-def createTensionDataFrame(time, momentum, diameter, strain):
-    """Create dataframe from results of midi-Miner."""
-    beat = np.linspace(1, len(time), len(time), dtype=int)
-    tensionDict = {'beat': beat, 'time': time, 'momentum': momentum, 'diameter': diameter, 'strain': strain}
-    df = pd.DataFrame.from_dict(tensionDict)
-    return df
-
-
-def computeTension(inputFile, args):
-    """Use midi-miner to compute Harmonic Tension data."""
-    _, piano_roll, beat_data = tc.extract_notes(inputFile, args['track_num'])
-    if args['key_name'] == '':
-        # key_name = get_key_name(inputFile)
-        # from tension_calculation import all_key_names
-        key_name = tc.all_key_names
-        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args,
-                                        args['window_size'], key_name, generate_pickle=False)
-    else:
-        tension_result = tc.cal_tension(inputFile, piano_roll, beat_data, args, args['window_size'], [
-                                        args['key_name']], generate_pickle=False)
-
-    # tension_time, total_tension, diameters, centroid_diff, _, _, _, _ = tension_result
-    (tension_time, total_tension, diameters, centroid_diff, key_name,
-     _key_change_time, _key_change_bar, _key_change_name, _new_output_folder) = tension_result
-
-    return tension_time, total_tension, diameters, centroid_diff
-
-
-def getTension(inputFile, args, columns):
+def get_tension(midi_path: str, track_num: int, **kwargs):
     """Compute Harmonic Tension using midi-miner.
 
-    Creates a pandas DataFrame and deletes additional files.
-    Parameters
-    ----------
-    inputFile : str
-        The file location of the .mid file
-    args : dict
-        The arguments for midi-miner (windowSize, verticalStep, keyChanged)
-    plotTension : bool, optional
-        A flag used to plot the resulting curves
-    exportTension : bool, optional
-        A flag used to export the resulting dataframe as a csv
-    columns : str, optional
-        Which columns to export with tension
-        ['all', 'time', 'beats'] default is 'all'
-    Returns
-    -------
-    dataframe
-        Pandas dataframe of the harmonic tension
-    """
-    time, strain, diameter, momentum = computeTension(inputFile, args)
-    df = createTensionDataFrame(time, momentum, diameter, strain)
+    Args:
+        midi_path (str): Path to the midi file
+        track_num (int): Maximum number of tracks to use
 
-    if columns.lower() == 'time':
-        df.drop(['beat'], axis=1, inplace=True)
-    if columns.lower() == 'beat' or columns.lower() == 'beats':
-        df.drop(['time'], axis=1, inplace=True)
-    return df
+    Returns:
+        pd.Dataframe: dataframe of the harmonic tension
+    """
+    _, piano_roll, beat_data = tc.extract_notes(midi_path, track_num)
+
+    (time, strain, diameter, momentum, _key_name, _key_change_time, _key_change_bar, _key_change_name,
+     _new_output_folder) = tc.cal_tension(midi_path, piano_roll, beat_data, generate_pickle=False, **kwargs)
+
+    tension = pd.DataFrame.from_dict({'time': time, 'momentum': momentum,
+                                     'diameter': diameter, 'strain': strain}).rename_axis('beat')
+
+    tension['d_diameter'] = [np.nan, *np.diff(tension['diameter'])]
+    tension['d_strain'] = [np.nan, *np.diff(tension['strain'])]
+    return tension
 
 
 task_docs = {
@@ -101,22 +87,20 @@ def gen_tasks(piece_id, targets):
     perf_tension_json = targets("tension_json")
     perf_tension_bar_json = targets("tension_bar_json")
 
-    def caller(perf_tension, ref_midi, perf_beats, measure_level=False, **kwargs):
-        args = {
+    def caller(perf_tension, perf_tension_json, ref_midi, perf_beats, measure_level=False, **kwargs):
+        kwargs = dict({
             'window_size': -1 if measure_level else 1,
             'key_name': '',
             'track_num': 3,
             'end_ratio': .5,
             'key_changed': False,
             'vertical_step': 0.4
-        }
-        tension = getTension(ref_midi, args=args, columns='time')
+        }, **kwargs)
+        tension = get_tension(ref_midi, columns='time', **kwargs)
         df_beats = pd.read_csv(perf_beats).tail(-1)  # Drop the first beat as tension is not computed there
         tension['time'] = df_beats['time']
-        tension['d_diameter'] = [np.nan, *np.diff(tension['diameter'])]
-        tension['d_strain'] = [np.nan, *np.diff(tension['strain'])]
         tension.to_csv(perf_tension, sep=',', index=False)
-        create_tension_json(perf_tension)
+        write_tension_json(perf_tension, json_file=perf_tension_json)
         return True
 
     if targets("manual_beats") is not None or targets("perfmidi") is not None:
@@ -126,7 +110,7 @@ def gen_tasks(piece_id, targets):
             'name': piece_id,
             'doc': task_docs["tension"],
             'targets': [perf_tension, perf_tension_json],
-            'actions': [(caller, [perf_tension, ref_midi, perf_beats])]
+            'actions': [(caller, [perf_tension, perf_tension_json, ref_midi, perf_beats])]
         }
     if targets("manual_bars") is not None or targets("perfmidi") is not None:
         yield {
@@ -135,5 +119,5 @@ def gen_tasks(piece_id, targets):
             'name': piece_id,
             'doc': task_docs["tension_bar"],
             'targets': [perf_tension_bar, perf_tension_bar_json],
-            'actions': [(caller, [perf_tension_bar, ref_midi, perf_bars, True])]
+            'actions': [(caller, [perf_tension_bar, perf_tension_bar_json, ref_midi, perf_bars, True])]
         }
