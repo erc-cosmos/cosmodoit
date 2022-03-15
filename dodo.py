@@ -72,7 +72,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
         InputDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
         InputDescriptor('manual_bars', ('_bars_manual.csv',), (), False)
     )
-    if doit.get_initial_workdir() != os.getcwd():
+    if doit.get_initial_workdir() != os.getcwd() and doit.get_initial_workdir():
         base_folder = os.getcwd()
     piece_folders = [os.path.join(base_folder, folder)
                      for folder in os.listdir(base_folder)
