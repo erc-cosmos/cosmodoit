@@ -115,6 +115,19 @@ def gen_default_tasks(task_docs):
         }
 
 
+def collect_kw_parameters(*funcs: Callable) -> List[Dict[str, Any]]:
+    """Collect keyword-only arguments from a list of functions and return them as doit task params.
+
+    Args:
+        funcs (Tuple[Callable]): functions whose keyword argument are to be bound to a task
+
+    Returns:
+        List[Dict[str, Any]]: doit-formatted list of parameters
+    """
+    return [{'name': param, 'default': default, 'long': param}
+            for func in funcs
+            for (param, default) in func.__kwdefaults__.items()]
+
 default_naming_scheme = {
     # Structure: <type_id>: (<source>, <extension>)
     "beats": ("perfmidi", "_beats.csv"),
