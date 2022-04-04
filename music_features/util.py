@@ -124,6 +124,7 @@ def collect_kw_parameters(*funcs: Callable) -> List[Dict[str, Any]]:
     Returns:
         List[Dict[str, Any]]: doit-formatted list of parameters
     """
+    # TODO: Collect type as well so it can be used in command line if not a string
     return [{'name': param, 'default': default, 'long': param}
             for func in funcs
             for (param, default) in func.__kwdefaults__.items()]

@@ -1,19 +1,19 @@
 """Main doit task definitions."""
+from doit import task_params
 import os
 
 import doit
-import argparse
+# import argparse
 import warnings
 from typing import Iterable, NamedTuple
 
 from music_features import get_alignment, get_beats, get_loudness, get_onset_velocity, get_sustain, get_tension
-from music_features.util import run_doit, gen_default_tasks, targets_factory_new, default_naming_scheme
+from music_features.util import gen_default_tasks, targets_factory_new, default_naming_scheme, collect_kw_parameters
 
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
 INPLACE_WRITE = True
 default_working_folder = 'tmp'
-
 
 
 def discover_files_by_type(base_folder="tests/test_data"):
@@ -52,7 +52,8 @@ def find_ext(path: str, file_descriptor: InputDescriptor):
              and not f.startswith('.')]
     if len(files) == 0:
         if required:
-            warnings.warn(f"Found no file of type {filetype} in {path} (expected extensions {patterns}). Some tasks will be skipped.")
+            warnings.warn(
+                f"Found no file of type {filetype} in {path} (expected extensions {patterns}). Some tasks will be skipped.")
         return None
     elif len(files) > 1:
         warnings.warn(f"Found more than one file of type {filetype} in {path} (using {files[0]})")
@@ -66,7 +67,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     This expects pieces to be in one folder each
     """
     file_types = (
-        InputDescriptor('score', ('.mscz','.xml','.mxl'), (), True),
+        InputDescriptor('score', ('.mscz', '.xml', '.mxl'), (), True),
         InputDescriptor('perfmidi', ('.mid',), ('_ref.mid', '_perf.mid'), True),
         InputDescriptor('perfaudio', ('.wav',), (), True),
         InputDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
@@ -89,12 +90,15 @@ discover_files = discover_files_by_piece
 # discover_files= discover_files_by_type
 
 
-def task_generator():
-    """Generate tasks for all files."""
-    filesets = discover_files()
-    submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
-                  get_beats, get_alignment)
-    for module in submodules:
+def gen_tasks_template(module):
+    try:
+        param_sources = module.param_sources
+    except AttributeError:
+        param_sources = []
+
+    @task_params(collect_kw_parameters(*param_sources))
+    def generator(**kwargs):
+        filesets = discover_files()
         try:
             docs = module.task_docs
         except AttributeError:
@@ -115,18 +119,13 @@ def task_generator():
                     working_folder = default_working_folder
                     os.makedirs(working_folder, exist_ok=True)
                 target_factory = targets_factory_new(default_naming_scheme, piece_id, paths, working_folder)
-                yield from task_gen(piece_id, target_factory)
+                yield from task_gen(piece_id, target_factory, **kwargs)
+    return generator
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ref', required=False)
-    parser.add_argument('--perf', required=False)
-    parser.add_argument('--wav', required=False)
-
-    args = parser.parse_args()
-
-    if args.ref and args.perf:
-        # TODO: find another way, this doesn't work
-        globals['discover_files'] = lambda: [(args.ref, args.perf, args.wav)]
-    run_doit(globals)
+# Register the generators in the module namespace
+submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
+              get_beats, get_alignment)
+for module in submodules:
+    name = module.__name__[4:]  # Assumes get_X convention is respected
+    globals()[f"task_{name}"] = gen_tasks_template(module)

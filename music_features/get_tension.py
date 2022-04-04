@@ -7,7 +7,7 @@ import pandas as pd
 
 from . import tension_calculation as tc
 from .util import collect_kw_parameters, read_json, set_json_file, write_json
-
+from doit.tools import config_changed
 
 def read_tension(input_path) -> pd.DataFrame:
     """Read a tension file from disk.
@@ -74,8 +74,9 @@ task_docs = {
     "tension_bar": "Compute the tension parameters at the bar level"
 }
 
+param_sources = (get_tension, tc.cal_tension)
 
-def gen_tasks(piece_id, targets):
+def gen_tasks(piece_id, targets, **kwargs):
     """Generate tension-related tasks."""
     if targets("score") is None:
         return
@@ -88,18 +89,18 @@ def gen_tasks(piece_id, targets):
     perf_tension_json = targets("tension_json")
     perf_tension_bar_json = targets("tension_bar_json")
 
-    def caller(perf_tension, perf_tension_json, ref_midi, perf_beats, measure_level=False, **kwargs):
+    def caller(perf_tension, perf_tension_json, ref_midi, perf_beats, kwargs_inner, measure_level=False):
         import sys
-        print(kwargs, file=sys.stderr)
-        kwargs = dict({
+        print(kwargs_inner, file=sys.stderr)
+        kwargs_inner = dict({
             'window_size': -1 if measure_level else 1,
             'key_name': '',
             'track_num': 3,
             'end_ratio': .5,
             'key_changed': False,
             'vertical_step': 0.4
-        }, **kwargs)
-        tension = get_tension(ref_midi, columns='time', **kwargs)
+        }, **kwargs_inner)
+        tension = get_tension(ref_midi, columns='time', **kwargs_inner)
         df_beats = pd.read_csv(perf_beats).tail(-1)  # Drop the first beat as tension is not computed there
         tension['time'] = df_beats['time']
         tension.to_csv(perf_tension, sep=',', index=False)
@@ -109,11 +110,12 @@ def gen_tasks(piece_id, targets):
     if targets("manual_beats") is not None or targets("perfmidi") is not None:
         yield {
             'basename': "tension",
-            'file_dep': [ref_midi, perf_beats, __file__],
+            'file_dep': [ref_midi, perf_beats, __file__, tc.__file__],
             'name': piece_id,
             'doc': task_docs["tension"],
             'targets': [perf_tension, perf_tension_json],
-            'actions': [(caller, [perf_tension, perf_tension_json, ref_midi, perf_beats])],
+            'uptodate': [config_changed(kwargs)],
+            'actions': [(caller, [perf_tension, perf_tension_json, ref_midi, perf_beats, kwargs])],
         }
     if targets("manual_bars") is not None or targets("perfmidi") is not None:
         yield {
@@ -122,5 +124,5 @@ def gen_tasks(piece_id, targets):
             'name': piece_id,
             'doc': task_docs["tension_bar"],
             'targets': [perf_tension_bar, perf_tension_bar_json],
-            'actions': [(caller, [perf_tension_bar, perf_tension_bar_json, ref_midi, perf_bars, True])]
+            'actions': [(caller, [perf_tension_bar, perf_tension_bar_json, ref_midi, perf_bars, kwargs, True])]
         }
