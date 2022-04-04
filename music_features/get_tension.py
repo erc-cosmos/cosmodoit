@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from . import tension_calculation as tc
-from .util import read_json, set_json_file, write_json
+from .util import collect_kw_parameters, read_json, set_json_file, write_json
 
 
 def read_tension(input_path) -> pd.DataFrame:
@@ -18,17 +18,18 @@ def read_tension(input_path) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the time and tension values
     """
-    return pd.read_csv(input_path, usecols=["time","momentum","diameter","strain","d_diameter","d_strain"])
+    return pd.read_csv(input_path, usecols=["time", "momentum", "diameter", "strain", "d_diameter", "d_strain"])
 
 
-def write_tension(output_path:str, tension:pd.DataFrame):
+def write_tension(output_path: str, tension: pd.DataFrame):
     """Write a tension dataframe to disk.
 
     Args:
         output_path (str): path to output file
         tension (pd.DataFrame): tension dataframe to write
     """
-    tension.to_csv(output_path, columns=["time","momentum","diameter","strain","d_diameter","d_strain"], index=False)
+    tension.to_csv(output_path, columns=["time", "momentum", "diameter",
+                   "strain", "d_diameter", "d_strain"], index=False)
 
 
 def write_tension_json(tension_file: str, json_file: str) -> None:
@@ -45,7 +46,7 @@ def write_tension_json(tension_file: str, json_file: str) -> None:
     return
 
 
-def get_tension(midi_path: str, track_num: int, **kwargs):
+def get_tension(midi_path: str, *, track_num: int = 3, **kwargs):
     """Compute Harmonic Tension using midi-miner.
 
     Args:
@@ -55,10 +56,10 @@ def get_tension(midi_path: str, track_num: int, **kwargs):
     Returns:
         pd.Dataframe: dataframe of the harmonic tension
     """
-    _, piano_roll, beat_data = tc.extract_notes(midi_path, track_num)
+    _, piano_roll, beat_data = tc.extract_notes(midi_path, track_num=track_num)
 
     (time, strain, diameter, momentum, _key_name, _key_change_time, _key_change_bar, _key_change_name,
-     _new_output_folder) = tc.cal_tension(midi_path, piano_roll, beat_data, generate_pickle=False, **kwargs)
+     _new_output_folder) = tc.cal_tension(midi_path, piano_roll, beat_data, **kwargs)
 
     tension = pd.DataFrame.from_dict({'time': time, 'momentum': momentum,
                                      'diameter': diameter, 'strain': strain}).rename_axis('beat')
@@ -88,6 +89,8 @@ def gen_tasks(piece_id, targets):
     perf_tension_bar_json = targets("tension_bar_json")
 
     def caller(perf_tension, perf_tension_json, ref_midi, perf_beats, measure_level=False, **kwargs):
+        import sys
+        print(kwargs, file=sys.stderr)
         kwargs = dict({
             'window_size': -1 if measure_level else 1,
             'key_name': '',
@@ -110,7 +113,7 @@ def gen_tasks(piece_id, targets):
             'name': piece_id,
             'doc': task_docs["tension"],
             'targets': [perf_tension, perf_tension_json],
-            'actions': [(caller, [perf_tension, perf_tension_json, ref_midi, perf_beats])]
+            'actions': [(caller, [perf_tension, perf_tension_json, ref_midi, perf_beats])],
         }
     if targets("manual_bars") is not None or targets("perfmidi") is not None:
         yield {

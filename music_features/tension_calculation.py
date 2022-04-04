@@ -355,8 +355,8 @@ def moving_average(tension, window=4):
     return np.array(outputs)
 
 
-def cal_tension(file_name, piano_roll, beat_data,
-                window_size=1, key_name=None, generate_pickle=True, generate_plots=False, **kwargs):
+def cal_tension(file_name, piano_roll, beat_data, window_size=1, *,
+                key_name=None, generate_pickle=False, generate_plots=False, **kwargs):
 
     # try:
     key_name = key_name or all_key_names

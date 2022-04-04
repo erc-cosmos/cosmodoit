@@ -6,8 +6,6 @@ import warnings
 import pandas as pd
 
 from music_features.get_midi_events import get_midi_events
-from music_features.util import targets_factory
-
 
 def get_onset_velocity(perfFilename):
     """Extract onset velocities from a midi file."""
