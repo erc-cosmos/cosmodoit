@@ -88,10 +88,8 @@ def gen_tasks(piece_id, targets, **kwargs):
     perf_tension_bar = targets("tension_bar")
     perf_tension_json = targets("tension_json")
     perf_tension_bar_json = targets("tension_bar_json")
-
+    
     def caller(perf_tension, perf_tension_json, ref_midi, perf_beats, kwargs_inner, measure_level=False):
-        import sys
-        print(kwargs_inner, file=sys.stderr)
         kwargs_inner = dict({
             'window_size': -1 if measure_level else 1,
             'key_name': '',

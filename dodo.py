@@ -73,8 +73,10 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
         InputDescriptor('manual_beats', ('_beats_manual.csv',), (), False),
         InputDescriptor('manual_bars', ('_bars_manual.csv',), (), False)
     )
-    if doit.get_initial_workdir() != os.getcwd() and doit.get_initial_workdir():
+    # Overwrite default folder if a folder was given
+    if os.getcwd() != os.path.dirname(__file__):
         base_folder = os.getcwd()
+    
     piece_folders = [os.path.join(base_folder, folder)
                      for folder in os.listdir(base_folder)
                      if os.path.isdir(os.path.join(base_folder, folder)) and folder != 'tmp']
@@ -127,5 +129,5 @@ def gen_tasks_template(module):
 submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
               get_beats, get_alignment)
 for module in submodules:
-    name = module.__name__[4:]  # Assumes get_X convention is respected
+    name = module.__name__[19:]  # Assumes get_X convention is respected
     globals()[f"task_{name}"] = gen_tasks_template(module)
