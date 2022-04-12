@@ -5,69 +5,55 @@ Created by Elias Pampalk, ported by Daniel Bedoya 2020-06-28
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 
 
-def maSone(wav, *,
-           fs=44100,
-           fftSize=1024,
-           hopSize=512,
-           outerear='terhardt',
-           bark_type='table',
-           dB_max=96,
-           doSpread=True,
-           doSone=True,
-           plotLoudness=False):
+def ma_sone(wav, *,
+            fs=44100, fft_size=1024, hop_size=512,
+            outer_ear='terhardt', bark_type='table', db_max=96,
+            do_spread=True, do_sone=True):
     """Compute the loudness of an audio file."""
     # frequency of fft bins
-    fft_freq = np.arange(0, (fftSize/2)+1)/fftSize*2*fs/2
+    fft_freq = np.arange(0, (fft_size/2)+1)/fft_size*2*fs/2
 
     # critical band rate scale (Bark-scale)
-    cb, bark_upper, bark_center = computeBarkScale(bark_type, fs)
+    cb, bark_upper, _bark_center = compute_bark_scale(bark_type, fs)
 
     # spreading function & outer ear model
-    spread, w_Adb = computeSpreading(cb, outerear, fft_freq)
+    spread, w_adb = compute_spreading(cb, outer_ear, fft_freq)
 
     # fft frames
-    frames = getFrames(wav, fftSize, hopSize)
+    frames = get_frames(wav, fft_size, hop_size)
 
     # Rescale to dB max (default is 96dB = 2^16)
-    wav_dB = wav * (10**(dB_max/20))
+    wav_db = wav * (10**(db_max/20))
 
     # compute power spectrum
-    dlinearOuterEar, dlinear = getPowerspectrum(wav_dB, fftSize, frames, hopSize, w_Adb)
+    d_linear_outer_ear, _d_linear = get_power_spectrum(wav_db, fft_size, frames, hop_size, w_adb)
 
     # create sone
-    sone = computeSone(cb, frames, fft_freq, bark_upper, dlinearOuterEar)
-    soneNoSpread_dB = array2dB(sone)
-    if doSpread:  # apply spectral masking
+    sone = compute_sone(cb, frames, fft_freq, bark_upper, d_linear_outer_ear)
+    if do_spread:  # apply spectral masking
         sone = np.matmul(spread, sone)
-    soneMasking_dB = array2dB(sone)  # TODO: find a way to still plot if doSpread is False
-    sone_dB = array2dB(sone)  # to dB
+    sone_db = array2db(sone)  # to dB
 
-    if doSone:  # convert units from phones to sones
-        sone_dB = phon2Sone(sone_dB)
+    if do_sone:  # convert units from phones to sones
+        sone_db = phon2sone(sone_db)
 
     # compute total loudness vector
-    totLoudness = computeTotalLoudness(sone_dB, frames, hopSize, fs)
+    tot_loudness = compute_total_loudness(sone_db, frames, hop_size, fs)
 
-    if plotLoudness:
-        plotFigure(wav, cb, bark_center, fft_freq, w_Adb, dlinear, dlinearOuterEar,
-                   soneNoSpread_dB, soneMasking_dB, sone_dB, totLoudness)
-
-    return sone_dB, totLoudness
+    return sone_db, tot_loudness
 
 
-def array2dB(vector):
+def array2db(vector):
     """Replace with 1 values < 1 and convert array to dB."""
-    linearVector = np.copy(vector)
-    linearVector[linearVector < 1] = 1  # avoid negative values
-    dB = 10*np.log10(linearVector)
-    return dB
+    linear_vector = np.copy(vector)
+    linear_vector[linear_vector < 1] = 1  # avoid negative values
+    db = 10*np.log10(linear_vector)
+    return db
 
 
-def isNumeric(x):
+def is_numeric(x):
     """Verify if an input is numeric, raise an error otherwise."""
     try:
         float(x)
@@ -76,7 +62,7 @@ def isNumeric(x):
         return False
 
 
-def computeBarkScale(bark_type, fs):
+def compute_bark_scale(bark_type, fs):
     """
     Generate bark scale according to model.
 
@@ -93,7 +79,7 @@ def computeBarkScale(bark_type, fs):
         bark_center = bark_center[:cb+1]
     else:
         cb = bark_type[2]
-        if not(isNumeric(cb)) or np.ceil(cb) != cb or cb < 2:
+        if not(is_numeric(cb)) or np.ceil(cb) != cb or cb < 2:
             print("bark_type should be the str 'table' or list [freq start, freq end, number (2:50)]")
         f = np.arange(bark_type[0], min(bark_type[1], fs/2)+1)
         bark = 13*np.arctan(0.76*f/1000) + 3.5*np.arctan((f/7500)**2)
@@ -111,7 +97,7 @@ def computeBarkScale(bark_type, fs):
     return cb, bark_upper, bark_center
 
 
-def computeSpreading(cb, outerear, fft_freq):
+def compute_spreading(cb, outerear, fft_freq):
     """
     Compute spreading function.
 
@@ -119,157 +105,91 @@ def computeSpreading(cb, outerear, fft_freq):
     Optimizing digital speech coders by exploiting masking properties of the human ear.
     """
     spread = np.zeros((cb, cb))
-    cbV = np.linspace(1, cb, cb, dtype=int)
+    cb_v = np.linspace(1, cb, cb, dtype=int)
     for i in range(1, cb+1):
-        spread[i-1, :] = 10**((15.81+7.5*((i-cbV)+0.474)-17.5*np.sqrt(1+((i-cbV)+0.474)**2))/10)
+        spread[i-1, :] = 10**((15.81+7.5*((i-cb_v)+0.474)-17.5*np.sqrt(1+((i-cb_v)+0.474)**2))/10)
 
-    w_Adb = outerEarCases(outerear, fft_freq)
-    return spread, w_Adb
+    w_adb = outer_ear_cases(outerear, fft_freq)
+    return spread, w_adb
 
 
-def outerEarCases(outerear, fft_freq):
+def outer_ear_cases(outer_ear, fft_freq):
     """Compute model according to case."""
-    N = len(fft_freq)
-    w_Adb = np.ones((1, len(fft_freq)), dtype=float)
-    if outerear == 'terhardt':  # terhardt 1979 (calculating virtual pitch, hearing research #1, pp 155-182)
-        w_Adb[0, 0] = 0
-        w_Adb[0, range(1, len(fft_freq))] = 10**((-3.64*(fft_freq[1:N]/1000)**-0.8
-                                                 + 6.5 * np.exp(-0.6 * (fft_freq[1:N]/1000 - 3.3)**2)
-                                                 - 0.001*(fft_freq[1:N]/1000)**4)/20)
-        w_Adb = w_Adb**2
-        return w_Adb
-    if outerear == 'modified_terhardt':  # less emph around 4Hz, more emphasis on low freqs
-        w_Adb[0] = 0
-        w_Adb[0, range(1, len(fft_freq))] = 10**((.6*-3.64*(fft_freq[1:N]/1000)**-0.8
-                                                 + 0.5 * np.exp(-0.6 * (fft_freq[1:N]/1000 - 3.3)**2)
-                                                 - 0.001*(fft_freq[1:N]/1000)**4)/20)
-        w_Adb = w_Adb**2
-        return w_Adb
-    if outerear == 'none':  # all weighted equally
-        return w_Adb
+    length = len(fft_freq)
+    w_adb = np.ones((1, len(fft_freq)), dtype=float)
+    if outer_ear == 'terhardt':  # terhardt 1979 (calculating virtual pitch, hearing research #1, pp 155-182)
+        w_adb[0, 0] = 0
+        w_adb[0, range(1, len(fft_freq))] = 10**((-3.64*(fft_freq[1:length]/1000)**-0.8
+                                                 + 6.5 * np.exp(-0.6 * (fft_freq[1:length]/1000 - 3.3)**2)
+                                                 - 0.001*(fft_freq[1:length]/1000)**4)/20)
+        w_adb = w_adb**2
+        return w_adb
+    if outer_ear == 'modified_terhardt':  # less emph around 4Hz, more emphasis on low freqs
+        w_adb[0] = 0
+        w_adb[0, range(1, len(fft_freq))] = 10**((.6*-3.64*(fft_freq[1:length]/1000)**-0.8
+                                                 + 0.5 * np.exp(-0.6 * (fft_freq[1:length]/1000 - 3.3)**2)
+                                                 - 0.001*(fft_freq[1:length]/1000)**4)/20)
+        w_adb = w_adb**2
+        return w_adb
+    if outer_ear == 'none':  # all weighted equally
+        return w_adb
     else:
-        raise ValueError('Unknown outer ear model: outerear = {}'.format(outerear))
+        raise ValueError('Unknown outer ear model: outerear = {}'.format(outer_ear))
 
 
-def getFrames(wav, fftSize, hopSize):
+def get_frames(wav, fft_size, hop_size):
     """Figure out number of fft frames."""
-    frames = (len(wav) - fftSize) // hopSize + 1
+    frames = (len(wav) - fft_size) // hop_size + 1
     return frames
 
 
-def getPowerspectrum(wav, fftSize, frames, hopSize, w_Adb):
+def get_power_spectrum(wav, fft_size, frames, hop_size, w_adb):
     """Compute normalized powerspectrum."""
-    half_window_size = fftSize//2+1
+    half_window_size = fft_size//2+1
     dlinear = np.zeros((half_window_size, frames))  # data from fft (linear freq scale)
-    w = np.hanning(fftSize)
+    w = np.hanning(fft_size)
     scaling = np.sum(w)/2
     for i in range(frames):  # fft
-        X = np.fft.fft(wav[hopSize*i:hopSize*i+fftSize]*w, n=fftSize)
-        dlinear[:, i] = abs(X[0:half_window_size]/scaling)**2  # normalized powerspectrum
-    dlinearOuterEar = np.multiply(np.tile(np.transpose(w_Adb), (1, dlinear.shape[1])), dlinear)  # outer ear
-    return dlinearOuterEar, dlinear
+        x = np.fft.fft(wav[hop_size*i:hop_size*i+fft_size]*w, n=fft_size)
+        dlinear[:, i] = abs(x[0:half_window_size]/scaling)**2  # normalized powerspectrum
+    d_linear_outer_ear = np.multiply(np.tile(np.transpose(w_adb), (1, dlinear.shape[1])), dlinear)  # outer ear
+    return d_linear_outer_ear, dlinear
 
 
-def computeSone(cb, frames, fft_freq, bark_upper, dlinear):
+def compute_sone(cb, frames, fft_freq, bark_upper, d_linear):
     """Compute sone matrix from critical band scale and powerspectrum."""
     sone = np.zeros((cb, frames))
     k = 0
     for i in range(0, cb):  # group into bark bands
         idx = np.nonzero(fft_freq[k:len(fft_freq)] <= bark_upper[i])[0]
         idx = idx + k
-        sone[i, :] = np.sum(dlinear[idx, :], axis=0)
+        sone[i, :] = np.sum(d_linear[idx, :], axis=0)
         k = np.max(idx)+1
     return sone
 
 
-def phon2Sone(sone_dB):
+def phon2sone(sone_db):
     """
     Convert from phons to sones.
 
     Bladon and Lindblom, 1981, JASA, modelling the judment of vowel quality differences
     """
-    idx = sone_dB >= 40
-    sone_dB[idx] = 2**((sone_dB[idx]-40)/10)
-    sone_dB[~idx] = (sone_dB[~idx]/40)**2.642
-    return sone_dB
+    idx = sone_db >= 40
+    sone_db[idx] = 2**((sone_db[idx]-40)/10)
+    sone_db[~idx] = (sone_db[~idx]/40)**2.642
+    return sone_db
 
 
-def computeTotalLoudness(sone_dB, frames, hopSize, fs):
+def compute_total_loudness(sone_db, frames, hop_size, fs):
     """
     Compute total loudness as a vector with timestamps.
 
     Stevens' method, see 'Signal sound and sensation' p73, Hartmann
     """
-    totLoudness = np.zeros((sone_dB.shape[1], 2))
-    F = 0.15  # Masking factor
-    totLoudness[:, 1] = (1-F) * np.max(sone_dB, 0) + F * np.sum(sone_dB, 0)
+    tot_loudness = np.zeros((sone_db.shape[1], 2))
+    factor = 0.15  # Masking factor
+    tot_loudness[:, 1] = (1-factor) * np.max(sone_db, 0) + factor * np.sum(sone_db, 0)
 
     for frame in range(frames):
-        totLoudness[frame, 0] = frame * (hopSize/fs)  # time vector in sec
-    return totLoudness
-
-
-def plotFigure(wav, cb, bark_center, fft_freq, w_Adb, dlinear, dlinearOuterEar,
-               soneNoSpread_dB, soneMasking_dB, sone_dB, totLoudness):
-    """Plot all visualizations."""
-    L = len(fft_freq)
-    wAdbT = np.zeros((L, 1))
-    wAdbT[1:L, 0] = 10**((-3.64*(fft_freq[1:L]/1000)**-0.8 + 6.5 * np.exp(-0.6 *
-                         (fft_freq[1:L]/1000 - 3.3)**2) - 0.001*(fft_freq[1:L]/1000)**4)/20)
-    wAdbT = wAdbT**2
-
-    fig = plt.figure(tight_layout=True, figsize=[12, 7])  # psychoacoustic model
-    gs = gridspec.GridSpec(2, 2)
-
-    ax0 = fig.add_subplot(gs[0, :])  # outer ear weighting function and width of bark bands
-    ax0.semilogx(fft_freq[1:len(fft_freq)], 10*np.log10(wAdbT[1:len(wAdbT)]), color='r')  # avoid log10(0)
-    ax0.plot(cb, w_Adb, color='k', linestyle='', marker='.')
-    ax0.set(xlabel='Frequency [Hz]', ylabel='Response [dB]')
-    ax0.set_title('Outer Ear', fontweight='bold')
-    ax0.legend(['Terhardt'], loc='upper left', fontsize=12)
-    ax0.set(xlim=[30, 16e3], ylim=[-50, 10])
-#     ax0.set_xticks([50,100,200,400,800,1600,3200,6400,12800], minor=False)
-
-    for bc in bark_center:
-        ax0.axvline(bc, color='k', linestyle=':')
-    # set(gca,'xtick',[50,100,200,400,800,1600,3200,6400,12800],'XMinorTick','off')
-
-    ax1 = fig.add_subplot(gs[1, 0])  # bark-scale
-    z = 13*np.arctan(0.76*fft_freq/1000)+3.5*np.arctan(fft_freq/7.5/1000)**2
-    cbz = 13*np.arctan(0.76*(bark_center[0:cb+1])/1000)+3.5*np.arctan((bark_center[0:cb+1])/7.5/1000)**2
-    ax1.plot(fft_freq, z)
-    ax1.plot(bark_center[0:cb+1], cbz, '.r')
-    ax1.set(xlabel='Frequency [Hz]', ylabel='Bark')
-    ax1.set_title('Bark Scale', fontweight='bold')
-
-    ax2 = fig.add_subplot(gs[1, 1])  # spreading function
-    k = 10
-    cbV = np.linspace(start=1, stop=cb, num=cb)
-    ax2.plot(((15.81+7.5*((k-cbV)+0.474)-17.5*(1+((k-cbV)+0.474)**2)**0.5)))
-    ax2.set(xlabel='Bark', ylabel='dB')
-    ax2.set_title('Spreading function for 10th band', fontweight='bold')
-    ax2.set(xlim=[0, 24], ylim=[-80, 5])  # TODO:check lim
-
-    dlinear_dB = array2dB(dlinear)
-    dlinearOE_dB = array2dB(dlinearOuterEar)
-
-    fig2, ax = plt.subplots(nrows=6, ncols=1, sharex=False, sharey=False, figsize=(12, 7))
-    ax[0].plot(wav, color='gray')
-    ax[1].imshow(dlinear_dB, aspect='auto', origin='lower')
-    ax[2].imshow(dlinearOE_dB, aspect='auto', origin='lower')
-    ax[3].imshow(soneNoSpread_dB, aspect='auto', origin='lower')
-    ax[4].imshow(soneMasking_dB, aspect='auto', origin='lower')
-    ax[5].imshow(sone_dB, aspect='auto', origin='lower')
-
-    ax[0].set(ylabel='PCM', xlim=[0, len(wav)], xticklabels='')
-    ax[1].set(ylabel='FFT', xticklabels='')
-    ax[2].set(ylabel='Outer Ear', xticklabels='')
-    ax[3].set(ylabel='Bark Scale', xticklabels='')
-    ax[4].set(ylabel='Masking', xticklabels='')
-    ax[5].set_ylabel('Sone')
-
-    fig3, ax = plt.subplots(nrows=1, ncols=1, figsize=(12, 7))
-    ax.plot(totLoudness[:, 0], totLoudness[:, 1])
-    ax.set(xlabel='Time [s]', ylabel='Loudness [sones]', title='Ntot')
-    plt.show()
-    return
+        tot_loudness[frame, 0] = frame * (hop_size/fs)  # time vector in sec
+    return tot_loudness

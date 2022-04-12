@@ -1,13 +1,15 @@
 """Wrapping module for Midi-miner's spiral array tension functions."""
 import os
-from typing import Any, Dict
 
+from doit.tools import config_changed
 import numpy as np
 import pandas as pd
 
 from . import tension_calculation as tc
-from .util import collect_kw_parameters, read_json, set_json_file, write_json
-from doit.tools import config_changed
+from .util import read_json
+from .util import set_json_file
+from .util import write_json
+
 
 def read_tension(input_path) -> pd.DataFrame:
     """Read a tension file from disk.
@@ -76,6 +78,7 @@ task_docs = {
 
 param_sources = (get_tension, tc.cal_tension)
 
+
 def gen_tasks(piece_id, targets, **kwargs):
     """Generate tension-related tasks."""
     if targets("score") is None:
@@ -88,7 +91,7 @@ def gen_tasks(piece_id, targets, **kwargs):
     perf_tension_bar = targets("tension_bar")
     perf_tension_json = targets("tension_json")
     perf_tension_bar_json = targets("tension_bar_json")
-    
+
     def caller(perf_tension, perf_tension_json, ref_midi, perf_beats, kwargs_inner, measure_level=False):
         kwargs_inner = dict({
             'window_size': -1 if measure_level else 1,

@@ -1,19 +1,20 @@
 """Module wrapping a port of MA toolbox's loudness computation."""
 import os
-import numpy as np
-import scipy
-import soundfile as sf
-import scipy.signal
-import scipy.interpolate
-import pandas as pd
-import lowess
-import matplotlib.pyplot as plt
-
-from . import ma_sone
 from typing import Iterable, List, Optional
 
+import lowess
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import scipy
+import scipy.interpolate
+import scipy.signal
+import soundfile as sf
 
-def get_loudness(input_path:str, *, exportLoudness:bool=True, export_dir:Optional[str]=None, **kwargs):
+from . import ma_sone
+
+
+def get_loudness(input_path: str, *, export_loudness: bool = True, export_dir: Optional[str] = None, **kwargs):
     """
     Compute Global Loudness of Audio Files.
 
@@ -35,31 +36,30 @@ def get_loudness(input_path:str, *, exportLoudness:bool=True, export_dir:Optiona
         raise ValueError(f"Invalid path: {input_path}")
 
     loudness_all = [compute_loudness(audio_file, export_dir=export_dir, **kwargs) for audio_file in files_list]
-    if exportLoudness:
-        if export_dir is None:
-            export_dir = os.path.dirname(input_path)
+    if export_loudness:
+        export_dir = export_dir or os.path.dirname(input_path)
         for loud, infile in zip(loudness_all, files_list):
-            export_loudness(loud, audio_path=infile, export_dir=export_dir, **kwargs)
+            write_loudness(loud, audio_path=infile, export_dir=export_dir, **kwargs)
     return loudness_all
 
 
-def clipNegative(x_array: Iterable[float]) -> List[float]:
+def clip_negative(x_array: Iterable[float]) -> List[float]:
     """Set negative values to zero."""
     return [0 if x < 0 else x for x in x_array]
 
 
-def compute_loudness(audio_path, smoothSpan=0.03, no_negative=True, **_kwargs):
+def compute_loudness(audio_path, smooth_span=0.03, no_negative=True, **_kwargs):
     """Compute the raw loudness and its post-processed versions."""
     time, raw_loudness = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
-    smooth_loudness = smooth(norm_loudness, smoothSpan)
+    smooth_loudness = smooth(norm_loudness, smooth_span)
     min_separation = len(time) // time[-1]
     envelope_loudness = peak_envelope(norm_loudness, min_separation)
 
     # Remove values below zero
     if no_negative:
-        smooth_loudness = clipNegative(smooth_loudness)
-        envelope_loudness = clipNegative(envelope_loudness)
+        smooth_loudness = clip_negative(smooth_loudness)
+        envelope_loudness = clip_negative(envelope_loudness)
 
     df = pd.DataFrame({'Time': time,
                        'Loudness': raw_loudness,
@@ -69,15 +69,15 @@ def compute_loudness(audio_path, smoothSpan=0.03, no_negative=True, **_kwargs):
     return df
 
 
-def export_loudness(data, columns='all', export_dir=None, export_path=None, audio_path=None, **_kwargs):
+def write_loudness(data, columns='all', export_dir=None, export_path=None, audio_path=None, **_kwargs):
     """Export loudness data to disk."""
     if export_path is None:
         export_path = os.path.join(export_dir, os.path.basename(audio_path).replace(".wav", "_loudness.csv"))
     if columns != 'all':
-        column_map = { 'raw':'Loudness',
-                       'norm':'Loudness_norm',
-                       'smooth':'Loudness_smooth',
-                       'envelope':'Loudness_envelope'}
+        column_map = {'raw': 'Loudness',
+                      'norm': 'Loudness_norm',
+                      'smooth': 'Loudness_smooth',
+                      'envelope': 'Loudness_envelope'}
         data.to_csv(export_path, columns=['Time', column_map[columns]], index=False)
     else:
         data.to_csv(export_path, index=False)
@@ -112,7 +112,7 @@ def compute_raw_loudness(audio_path):
     if audio.ndim == 2:
         audio = np.mean(audio, 1)
 
-    _, tmp = ma_sone.maSone(audio, fs=fs)
+    _, tmp = ma_sone.ma_sone(audio, fs=fs)
     time, raw_loudness = tmp.T  # Unpack by column
     return time, raw_loudness
 
@@ -168,14 +168,14 @@ def gen_tasks(piece_id, targets):
     """Generate loudness-based tasks."""
     if targets("perfaudio") is None:
         return
-    
+
     perf_loudness = targets("loudness")
     perf_loudness_simple = targets("loudness_simple")
 
     def caller(perf_path, perf_loudness, perf_loudness_simple, **kwargs):
         loudness = compute_loudness(perf_path, **kwargs)
-        export_loudness(loudness, export_path=perf_loudness)
-        export_loudness(loudness, export_path=perf_loudness_simple, columns="smooth")
+        write_loudness(loudness, export_path=perf_loudness)
+        write_loudness(loudness, export_path=perf_loudness_simple, columns="smooth")
         return True
     yield {
         'basename': "loudness",

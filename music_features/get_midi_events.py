@@ -5,13 +5,13 @@ import warnings
 import mido
 
 
-def get_midi_events(perfFilename, verbose=False):
+def get_midi_events(perf_filename, verbose=False):
     """Get a list of midi events from the file.
 
     Only note on and off events and control events are listed
     Meta events are read and optionally logged, but not returned
     """
-    midi = mido.MidiFile(perfFilename)
+    midi = mido.MidiFile(perf_filename)
 
     # Default value for tempo; might be set by a value for set_tempo later
     tempo = 500000
