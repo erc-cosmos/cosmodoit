@@ -69,3 +69,4 @@ __pycache__/
 music_features/__pycache__/
 .vscode/launch.json
 tests/test_data/piece_directory_structure/*
+.build
