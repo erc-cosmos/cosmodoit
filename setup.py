@@ -25,32 +25,4 @@ def build_alignment(build_dir="build",
 build_alignment()
 
 
-setup(
-    name='COSMOS_Analysis',
-    version='0.1.0',
-    description='Tools suite for music perfomance analysis',
-    # url='https://github.com/shuds13/pyexample',
-    author='Corentin Guichaoua',
-    author_email='corentin.guichaoau@ircam.fr',
-    license='GNU GPLv3',
-    packages=['music_features'],
-    install_requires=[
-        "doit>=0.35.0",
-        "lowess>=1.0.3",
-        "numpy>=1.22.3",
-        "pandas>=1.4.2",
-        "pretty_midi",
-        "scipy",
-        "matplotlib",
-        "soundfile",
-        "coloredlogs",
-    ],
-    entry_points={
-        'console_scripts': ['cosmodoit = music_features.dodo:main']
-    },
-    package_data={'': ['*.json', 'bin/*']},
-    include_package_data=True,
-    classifiers=[
-        'Programming Language :: Python :: 3.9',
-    ],
-)
+setup()

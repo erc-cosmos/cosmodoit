@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cosmodoit"
+version = "0.0.1"
+description = "Tools suite for music perfomance analysis"
+readme = "README.md"
+authors = [
+    { name = "Corentin Guichaoua", email = "corentin.guichaoua@ircam.fr" },
+    { name = "Daniel Bedoya", email = "daniel.bedoya@ircam.fr" }
+]
+license = { text = "GNU GPLv3" }
+requires-python = ">=3.9"
+dependencies = [
+    "doit>=0.35.0",
+    "lowess>=1.0.3",
+    "numpy>=1.22.3",
+    "pandas>=1.4.2",
+    "pretty_midi",
+    "scipy",
+    "matplotlib",
+    "soundfile",
+    "coloredlogs",
+    "toml"
+]
+
+[project.scripts]
+cosmodoit = "music_features.dodo:main"
+
+[tool.setuptools]
+packages = ["music_features"]
+package-data = { music_features = ['templates/*', 'bin/*'] }

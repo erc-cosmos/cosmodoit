@@ -72,5 +72,5 @@ tests/test_data/piece_directory_structure/*
 .build
 .test_install
 music_features/bin_old
-COSMOS_Analysis.egg-info
 build
+cosmodoit.egg-info
