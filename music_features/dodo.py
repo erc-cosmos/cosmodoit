@@ -120,10 +120,10 @@ for module in submodules:
     globals()[f"task_{name}"] = gen_tasks_template(module)
 
 
-def main(*args):
+def main():
     from doit.doit_cmd import DoitMain
-    DoitMain().run(["-f", __file__, "--dir", os.getcwd(), *args])
+    DoitMain().run(["-f", __file__, "--dir", os.getcwd(), *sys.argv[1:]])
 
 
 if __name__ == '__main__':
-    sys.exit(main(*sys.argv[1:]))
+    sys.exit(main())
