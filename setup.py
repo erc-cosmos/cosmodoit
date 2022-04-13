@@ -10,6 +10,7 @@ def build_alignment(build_dir="build",
                     bin_dir="build/lib/music_features/bin",
                     src_dir="redist/AlignmentTool/Code"):
 
+    # TODO: Handle missing cmake gracefully
     os.makedirs(build_dir, exist_ok=True)
     subprocess.run(["cmake", "-S", src_dir, "-B", build_dir])
     subprocess.run(["cmake", "--build", build_dir])
