@@ -1,4 +1,5 @@
 """Wrapping module for Midi-miner's spiral array tension functions."""
+from importlib import resources
 import os
 
 from doit.tools import config_changed
@@ -41,8 +42,9 @@ def write_tension_json(tension_file: str, json_file: str) -> None:
         tension_file (str): path to the main tension file
         json_file (str): path to the json tension file to create
     """
-    source_dir = os.path.dirname(__file__)
-    json_template = read_json(os.path.join(source_dir, 'tension_template.json'))
+    # source_dir = os.path.dirname(__file__)
+    template_file = resources.files(__package__) / 'tension_template.json'
+    json_template = read_json(template_file)
     new_object = set_json_file(json_template, os.path.basename(tension_file))
     write_json(new_object, json_file)
     return

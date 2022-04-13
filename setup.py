@@ -48,7 +48,7 @@ setup(
     entry_points={
         'console_scripts': ['cosmodoit = music_features.dodo:main']
     },
-    package_data={'': ['*.json']},
+    package_data={'': ['*.json', 'bin/*']},
     include_package_data=True,
     classifiers=[
         'Programming Language :: Python :: 3.9',

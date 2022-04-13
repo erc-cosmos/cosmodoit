@@ -1,13 +1,17 @@
 """Module for wrapping Eita Nakamura's alignment software."""
 import collections
+from importlib import resources
 import os
 import shutil
+from typing import NamedTuple
+
 from numpy import float64
 import pandas as pd
 
-from typing import NamedTuple
-
-from .util import run_doit, string_escape_concat, default_naming_scheme, targets_factory_new
+from .util import default_naming_scheme
+from .util import run_doit
+from .util import string_escape_concat
+from .util import targets_factory_new
 
 
 class AlignmentAtom(NamedTuple):
@@ -98,8 +102,6 @@ def locate_musescore() -> str:
 
 def gen_subtasks_Nakamura(piece_id: str, targets):
     """Generate doit tasks for the alignment."""
-    program_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
-
     ref_path = targets("score")
     ref_copy_noext = targets("ref_copy_noext")
     ref_midi = targets("ref_midi")
@@ -114,12 +116,13 @@ def gen_subtasks_Nakamura(piece_id: str, targets):
     perf_errmatch = targets("perf_errmatch")
     perf_realigned = targets("perf_realigned")
 
-    exe_pianoroll = os.path.join(program_folder, "midi2pianoroll")
-    exe_fmt3x = os.path.join(program_folder, "SprToFmt3x")
-    exe_hmm = os.path.join(program_folder, "Fmt3xToHmm")
-    exe_prealignment = os.path.join(program_folder, "ScorePerfmMatcher")
-    exe_errmatch = os.path.join(program_folder, "ErrorDetection")
-    exe_realignment = os.path.join(program_folder, "RealignmentMOHMM")
+    resource_bins = resources.files(__package__) / 'bin'
+    exe_pianoroll = resource_bins / "midi2pianoroll"
+    exe_fmt3x = resource_bins / "SprToFmt3x"
+    exe_hmm = resource_bins / "Fmt3xToHmm"
+    exe_prealignment = resource_bins / "ScorePerfmMatcher"
+    exe_errmatch = resource_bins / "ErrorDetection"
+    exe_realignment = resource_bins / "RealignmentMOHMM"
 
     yield {
         'basename': '_pianoroll_conversion_ref',
