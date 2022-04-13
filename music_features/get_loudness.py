@@ -2,6 +2,7 @@
 import os
 from typing import Iterable, List, Optional
 
+from doit.tools import config_changed
 import lowess
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,7 +49,7 @@ def clip_negative(x_array: Iterable[float]) -> List[float]:
     return [0 if x < 0 else x for x in x_array]
 
 
-def compute_loudness(audio_path, smooth_span=0.03, no_negative=True, **_kwargs):
+def compute_loudness(audio_path, *, smooth_span=0.03, no_negative=True, **_kwargs):
     """Compute the raw loudness and its post-processed versions."""
     time, raw_loudness = compute_raw_loudness(audio_path)
     norm_loudness = rescale(raw_loudness)
@@ -163,8 +164,10 @@ task_docs = {
     "loudness_resample": "Resample loudness at the time of the beats"
 }
 
+param_sources = (compute_loudness,)
 
-def gen_tasks(piece_id, targets):
+
+def gen_tasks(piece_id, targets, **kwargs):
     """Generate loudness-based tasks."""
     if targets("perfaudio") is None:
         return
@@ -183,6 +186,7 @@ def gen_tasks(piece_id, targets):
         'name': piece_id,
         'doc': task_docs["loudness"],
         'targets': [perf_loudness, perf_loudness_simple],
+        'uptodate': [config_changed(kwargs)],
         'actions': [(caller, [targets("perfaudio"), perf_loudness, perf_loudness_simple])]
     }
 
@@ -198,5 +202,6 @@ def gen_tasks(piece_id, targets):
         'name': piece_id,
         'doc': task_docs["loudness_resample"],
         'targets': [perf_resampled_loudness],
+        'uptodate': [config_changed(kwargs)],
         'actions': [(resample, [perf_loudness, perf_beats, perf_resampled_loudness])]
     }
