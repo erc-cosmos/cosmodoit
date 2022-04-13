@@ -19,7 +19,7 @@ def is_sustain_event(event):
     return event['Type'] == 'control_change' and event['Control'] == 64
 
 
-def read_sustain(filepath:str) -> pd.DataFrame:
+def read_sustain(filepath: str) -> pd.DataFrame:
     """Read a sustain file from disk.
 
     Args:
@@ -31,7 +31,7 @@ def read_sustain(filepath:str) -> pd.DataFrame:
     return pd.read_csv(filepath, usecols=('Time', 'Sustain'))
 
 
-def write_sustain(filepath:str, data:pd.DataFrame) -> None:
+def write_sustain(filepath: str, data: pd.DataFrame) -> None:
     """Write a sustain Dataframe to disk.
 
     Args:
@@ -40,12 +40,13 @@ def write_sustain(filepath:str, data:pd.DataFrame) -> None:
     """
     data.to_csv(filepath, index=False, columns=('Time', 'Sustain'))
 
+
 task_docs = {
     "sustain": "Extract sustain pedal information from a midi file."
 }
 
 
-def gen_tasks(piece_id:str, targets):
+def gen_tasks(piece_id: str, targets, **kwargs):
     """Generate sustain-related tasks."""
     if targets("perfmidi") is None:
         return

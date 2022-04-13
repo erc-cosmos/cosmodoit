@@ -1,37 +1,24 @@
 """Main doit task definitions."""
-from doit import task_params
 import os
-
-import doit
-# import argparse
-import warnings
+import sys
 from typing import Iterable, NamedTuple
+import warnings
 
-from music_features import get_alignment, get_beats, get_loudness, get_onset_velocity, get_sustain, get_tension
-from music_features.util import gen_default_tasks, targets_factory_new, default_naming_scheme, collect_kw_parameters
-
+from doit import task_params
+from music_features import get_alignment
+from music_features import get_beats
+from music_features import get_loudness
+from music_features import get_onset_velocity
+from music_features import get_sustain
+from music_features import get_tension
+from music_features.util import collect_kw_parameters
+from music_features.util import default_naming_scheme
+from music_features.util import gen_default_tasks
+from music_features.util import targets_factory_new
 
 DOIT_CONFIG = {'action_string_formatting': 'both'}
 INPLACE_WRITE = True
 default_working_folder = 'tmp'
-
-
-def discover_files_by_type(base_folder="tests/test_data"):
-    """Find targets in a feature-type first directory structure."""
-    # Outdated output format
-    scores = [os.path.join(base_folder, "scores", f)
-              for f in sorted(os.listdir(os.path.join(base_folder, "scores")))
-              if f.endswith('.mscz')]
-    perfs = [os.path.join(base_folder, "perfs", f)
-             for f in sorted(os.listdir(os.path.join(base_folder, "perfs")))
-             if f.endswith('.mid')]
-    wavs = [os.path.join(base_folder, "perfs", f)
-            for f in sorted(os.listdir(os.path.join(base_folder, "perfs")))
-            if f.endswith('.wav')]
-    assert len(scores) == len(perfs)
-    assert len(scores) == len(wavs)
-    piece_ids = (os.path.splitext(perf)[0] for perf in perfs)
-    return tuple(zip(piece_ids, scores, perfs, wavs))
 
 
 class InputDescriptor(NamedTuple):
@@ -53,7 +40,8 @@ def find_ext(path: str, file_descriptor: InputDescriptor):
     if len(files) == 0:
         if required:
             warnings.warn(
-                f"Found no file of type {filetype} in {path} (expected extensions {patterns}). Some tasks will be skipped.")
+                f"Found no file of type {filetype} in {path} (expected extensions {patterns}). "
+                "Some tasks will be skipped.")
         return None
     elif len(files) > 1:
         warnings.warn(f"Found more than one file of type {filetype} in {path} (using {files[0]})")
@@ -76,7 +64,7 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
     # Overwrite default folder if a folder was given
     if os.getcwd() != os.path.dirname(__file__):
         base_folder = os.getcwd()
-    
+
     piece_folders = [os.path.join(base_folder, folder)
                      for folder in os.listdir(base_folder)
                      if os.path.isdir(os.path.join(base_folder, folder)) and folder != 'tmp']
@@ -89,7 +77,6 @@ def discover_files_by_piece(base_folder='tests/test_data/piece_directory_structu
 
 # Switch between discovery modes
 discover_files = discover_files_by_piece
-# discover_files= discover_files_by_type
 
 
 def gen_tasks_template(module):
@@ -131,3 +118,12 @@ submodules = (get_loudness, get_onset_velocity, get_sustain, get_tension,
 for module in submodules:
     name = module.__name__[19:]  # Assumes get_X convention is respected
     globals()[f"task_{name}"] = gen_tasks_template(module)
+
+
+def main(*args):
+    from doit.doit_cmd import DoitMain
+    DoitMain().run(["-f", __file__, "--dir", os.getcwd(), *args])
+
+
+if __name__ == '__main__':
+    sys.exit(main(*sys.argv[1:]))
