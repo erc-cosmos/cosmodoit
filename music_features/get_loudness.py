@@ -49,9 +49,9 @@ def clip_negative(x_array: Iterable[float]) -> List[float]:
     return [0 if x < 0 else x for x in x_array]
 
 
-def compute_loudness(audio_path, *, smooth_span=0.03, no_negative=True, **_kwargs):
+def compute_loudness(audio_path, *, smooth_span=0.03, no_negative=True, **kwargs):
     """Compute the raw loudness and its post-processed versions."""
-    time, raw_loudness = compute_raw_loudness(audio_path)
+    time, raw_loudness = compute_raw_loudness(audio_path, **kwargs)
     norm_loudness = rescale(raw_loudness)
     smooth_loudness = smooth(norm_loudness, smooth_span)
     min_separation = len(time) // time[-1]
@@ -107,13 +107,13 @@ def plot_loudness(time, raw_loudness, norm_loudness, smooth_loudness, envelope_l
         plt.show()
 
 
-def compute_raw_loudness(audio_path):
+def compute_raw_loudness(audio_path, **kwargs):
     """Compute the raw loudness using the python port of the MA toolbox."""
     audio, fs = sf.read(audio_path)
     if audio.ndim == 2:
         audio = np.mean(audio, 1)
 
-    _, tmp = ma_sone.ma_sone(audio, fs=fs)
+    _, tmp = ma_sone.ma_sone(audio, fs=fs, **kwargs)
     time, raw_loudness = tmp.T  # Unpack by column
     return time, raw_loudness
 
@@ -164,7 +164,7 @@ task_docs = {
     "loudness_resample": "Resample loudness at the time of the beats"
 }
 
-param_sources = (compute_loudness,)
+param_sources = (compute_loudness, ma_sone.ma_sone)
 
 
 def gen_tasks(piece_id, targets, **kwargs):

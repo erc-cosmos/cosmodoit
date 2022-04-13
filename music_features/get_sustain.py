@@ -1,7 +1,7 @@
 """Module for extracting sustain out of a midi file."""
 import pandas as pd
 
-from music_features.get_midi_events import get_midi_events
+from .get_midi_events import get_midi_events
 
 
 def get_sustain(perf_path, *, binary=False):

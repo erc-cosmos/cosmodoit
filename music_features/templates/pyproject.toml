@@ -1,0 +1,21 @@
+# [tool.doit.tasks.tension]
+#   track_num=ARG
+#   key_name=ARG
+#   generate_pickle=ARG
+#   generate_plots=ARG
+
+# [tool.doit.tasks.loudness]
+#   smooth_span=ARG
+#   no_negative=ARG
+#   fft_size=ARG
+#   hop_size=ARG
+#   outer_ear=ARG
+#   bark_type=ARG
+#   db_max=ARG
+#   do_spread=ARG
+#   do_sone=ARG
+
+# [tool.doit.tasks.beats]
+#   max_tries=ARG
+#   factor=ARG
+#   verbose=ARG

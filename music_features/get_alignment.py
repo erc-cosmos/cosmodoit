@@ -44,13 +44,14 @@ def get_alignment(ref_path: str, perf_path: str, working_folder: str = 'tmp', cl
 def read_alignment(file_path: str) -> pd.DataFrame:
     """Read the output of Nakamura's software and extracts relevant information."""
     # From https://midialignment.github.io/MANUAL.pdf #4.4
-    # This included 1 column too many so offset velocity was dropped. 
+    # This included 1 column too many so offset velocity was dropped.
     # The superfluous column might be match status instead, in which case channel is wrong
     col_names = ["index", "note_on", "note_off", "pitch_name", "pitch_midi", "velocity", "channel",
                  "match_status", "score_time", "note_id", "error_index", "skip_index"]
-    df = pd.read_csv(file_path, sep="\t", skiprows=4, index_col=0, names=col_names, dtype={'score_time':int, 'note_on':float64}, comment='/')
+    df = pd.read_csv(file_path, sep="\t", skiprows=4, index_col=0, names=col_names,
+                     dtype={'score_time': int, 'note_on': float64}, comment='/')
     # Select relevant data
-    df = df.loc[(df['note_id'] != '*') & (df['score_time']>=0), ["score_time","note_on"]]
+    df = df.loc[(df['note_id'] != '*') & (df['score_time'] >= 0), ["score_time", "note_on"]]
     return df
 
 

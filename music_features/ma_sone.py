@@ -7,8 +7,8 @@ Created by Elias Pampalk, ported by Daniel Bedoya 2020-06-28
 import numpy as np
 
 
-def ma_sone(wav, *,
-            fs=44100, fft_size=1024, hop_size=512,
+def ma_sone(wav, fs=44100, *,
+            fft_size=1024, hop_size=512,
             outer_ear='terhardt', bark_type='table', db_max=96,
             do_spread=True, do_sone=True):
     """Compute the loudness of an audio file."""

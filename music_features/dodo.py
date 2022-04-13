@@ -121,6 +121,7 @@ for module in submodules:
 
 
 def main():
+    """Entry point."""
     from doit.doit_cmd import DoitMain
     DoitMain().run(["-f", __file__, "--dir", os.getcwd(), *sys.argv[1:]])
 

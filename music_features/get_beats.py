@@ -1,4 +1,5 @@
 """Module to extract beat timings from a midi interpretation and corresponding score."""
+from typing import List, Tuple
 import warnings
 
 import numpy as np
@@ -8,16 +9,15 @@ import scipy.interpolate
 
 from music_features import get_alignment
 
-from typing import List, Tuple
 
-
-def get_beats(alignment: pd.DataFrame, reference_beats, *, max_tries: int = 5) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def get_beats(alignment: pd.DataFrame, reference_beats, *,
+              max_tries: int = 5, **kwargs) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Extract beats timing from an alignment of the notes."""
     ignored = pd.DataFrame()
     beats = interpolate_beats(alignment, reference_beats)
     for _ in range(max_tries):
         # Find outliers and prefilter data
-        anomalies = find_outliers(beats)
+        anomalies = find_outliers(beats, **kwargs)
         if anomalies == []:
             return (beats, ignored)
         else:
@@ -129,15 +129,17 @@ task_docs = {
     "tempo": "Derive tempo from manual or inferred beats"
 }
 
+param_sources = (get_beats, find_outliers)
 
-def gen_tasks(piece_id: str, targets):
+
+def gen_tasks(piece_id: str, targets, **kwargs):
     """Generate beat-related tasks."""
-    yield from gen_task_beats(piece_id, targets)
-    yield from gen_task_bars(piece_id, targets)
+    yield from gen_task_beats(piece_id, targets, **kwargs)
+    yield from gen_task_bars(piece_id, targets, **kwargs)
     yield from gen_task_tempo(piece_id, targets)
 
 
-def gen_task_beats(piece_id: str, targets):
+def gen_task_beats(piece_id: str, targets, **kwargs):
     """Generate tasks for bars."""
     # Attempt using manual annotations
     perf_beats = targets("beats")
@@ -147,7 +149,8 @@ def gen_task_beats(piece_id: str, targets):
         def manual_caller(manual_beats, perf_beats):
             beats = read_beats(manual_beats)
             if find_outliers(beats, factor=10, verbose=True) != []:
-                warnings.warn(f"Found anomalous beats in manually annotated {manual_beats}. Consider checking the annotation.")
+                warnings.warn(
+                    f"Found anomalous beats in manually annotated {manual_beats}. Consider checking the annotation.")
             write_beats(beat_path=perf_beats, beats=beats)
         yield {
             'basename': "beats",
@@ -177,7 +180,7 @@ def gen_task_beats(piece_id: str, targets):
         }
 
 
-def gen_task_bars(piece_id: str, targets):
+def gen_task_bars(piece_id: str, targets, **kwargs):
     """Generate tasks for bars."""
     perf_bars = targets("bars")
     ref_midi = targets("ref_midi")
@@ -187,7 +190,8 @@ def gen_task_bars(piece_id: str, targets):
         def manual_caller_bar(manual_beats, perf_beats):
             beats = read_beats(manual_beats)
             if find_outliers(beats, factor=10, verbose=True) != []:
-                warnings.warn(f"Found anomalous beats in manually annotated {manual_beats}. Consider checking the annotation.")
+                warnings.warn(
+                    f"Found anomalous beats in manually annotated {manual_beats}. Consider checking the annotation.")
             write_beats(beat_path=perf_beats, beats=beats)
         yield {
             'basename': "bars",
