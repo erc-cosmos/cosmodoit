@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "cmake", "cmake_build_extension"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "cosmodoit"
-version = "0.0.1"
+version = "0.1.0"
 description = "Tools suite for music perfomance analysis"
 readme = "README.md"
 authors = [
