@@ -1,12 +1,9 @@
 """Installation script for music_features/COSMOS_Analysis."""
-import cmake_build_extension
 import os
 import shutil
-import subprocess
 
+import cmake_build_extension
 from setuptools import setup
-
-
 
 ext_module = cmake_build_extension.CMakeExtension(
     name="alignment",
