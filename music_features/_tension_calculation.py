@@ -723,11 +723,11 @@ def extract_notes(file_name, track_num):
 
     piano_roll = get_piano_roll(pm, sixteenth_time)
     beat_data = {'sixteenth_time': sixteenth_time,
-                    'beat_time': beat_time,
-                    'down_beat_time': down_beat_time,
-                    'beat_indices': beat_indices,
-                    'down_beat_indices': down_beat_indices
-                    }
+                 'beat_time': beat_time,
+                 'down_beat_time': down_beat_time,
+                 'beat_indices': beat_indices,
+                 'down_beat_indices': down_beat_indices
+                 }
 
     return [pm, piano_roll, beat_data]
 

@@ -12,7 +12,7 @@ import scipy.interpolate
 import scipy.signal
 import soundfile as sf
 
-from . import ma_sone
+from . import _ma_sone
 
 
 def get_loudness(input_path: str, *, export_loudness: bool = True, export_dir: Optional[str] = None, **kwargs):
@@ -113,7 +113,7 @@ def compute_raw_loudness(audio_path, **kwargs):
     if audio.ndim == 2:
         audio = np.mean(audio, 1)
 
-    _, tmp = ma_sone.ma_sone(audio, fs=fs, **kwargs)
+    _, tmp = _ma_sone.ma_sone(audio, fs=fs, **kwargs)
     time, raw_loudness = tmp.T  # Unpack by column
     return time, raw_loudness
 
@@ -164,7 +164,7 @@ task_docs = {
     "loudness_resample": "Resample loudness at the time of the beats"
 }
 
-param_sources = (compute_loudness, ma_sone.ma_sone)
+param_sources = (compute_loudness, _ma_sone.ma_sone)
 
 
 def gen_tasks(piece_id, targets, **kwargs):

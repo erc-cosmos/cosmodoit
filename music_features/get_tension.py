@@ -6,7 +6,7 @@ from doit.tools import config_changed
 import numpy as np
 import pandas as pd
 
-from . import tension_calculation as tc
+from . import _tension_calculation as tc
 from .util import read_json
 from .util import set_json_file
 from .util import write_json
@@ -123,7 +123,7 @@ def gen_tasks(piece_id, targets, **kwargs):
     if targets("manual_bars") is not None or targets("perfmidi") is not None:
         yield {
             'basename': "tension_bar",
-            'file_dep': [ref_midi, perf_bars, __file__],
+            'file_dep': [ref_midi, perf_bars, __file__, tc.__file__],
             'name': piece_id,
             'doc': task_docs["tension_bar"],
             'targets': [perf_tension_bar, perf_tension_bar_json],
