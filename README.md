@@ -27,7 +27,7 @@ There are 2 main ways to use this toolbox:
 
 <!-- NB: If the `doit` command is not on the `PATH`, the `python -m doit` command is equivalent. -->
 
-By default, the pipeline will look for pieces under the current folder; in the close future, the `--dir <target_dir>` option will be available to override that behavior. 
+By default, the pipeline will look for pieces under the current folder; use the `--dir <target_dir>` option to override that behavior. 
 Each piece should be in its own folder, and requires :
 * a performance in `.mid` format;
 * a score in `.mscz` format (Musescore);

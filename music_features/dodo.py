@@ -122,8 +122,12 @@ for module in submodules:
 
 def main():
     """Entry point."""
+    import argparse
     from doit.doit_cmd import DoitMain
-    DoitMain().run(["-f", __file__, "--dir", os.getcwd(), *sys.argv[1:]])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', default=os.getcwd())
+    args, unknownargs = parser.parse_known_args()
+    DoitMain().run(["-f", __file__, "--dir", args.dir, *unknownargs])
 
 
 if __name__ == '__main__':
