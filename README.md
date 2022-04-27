@@ -33,6 +33,7 @@ Each piece should be in its own folder, and requires :
 * a score in `.mscz` format (Musescore);
 * a recording in `.wav` format.
 * [Optional] a manual beats annotation, ending in `_beats_manual.csv` (will override the automatic beats extraction if present)
+
 If one or more filetypes are missing, some features will not be computed, but those which can be derived from the existing data will still be computed. The files are not required to share the same base name, but it is recommended for tidyness. In case more than one file matches a type, a warning will be issued and an arbitrary one will be used for the computations.
 
 Computed files will be outputted to the corrsponding directory. An option to specify a target directory might be available in the future.
@@ -63,6 +64,7 @@ The toolbox is meant to be easily extendable. To add a new feature, add a new su
 * [required] a `gen_tasks(piece_id, targets, **kwargs)` function to generate `doit` tasks (see the [documentation](https://pydoit.org/tasks.html)). See existing functions for the usage of the parameters;
 * [recommended] a `task_docs` dictionary, which maps the (sub)tasks' names to description strings;
 * [optional] a `param_sources` iterable, which lists the functions that provide keyword-only parameters that should be exposed through the config file.
+
 If a new input type is required, it can be added as an `InputDescriptor` in the `discover_files_by_piece` function of the `dodo.py` module, which describes the patterns (positive and negative) to match when scanning for the file.
 
 It is recommended, but not strictly required, to provide the functions of the API convention if you add a new feature.

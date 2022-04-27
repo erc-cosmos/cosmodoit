@@ -8,7 +8,7 @@ from setuptools import setup
 ext_module = cmake_build_extension.CMakeExtension(
     name="alignment",
     source_dir=os.path.join(os.path.dirname(__file__), "redist", "AlignmentTool", "Code"),
-    cmake_configure_options=[f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}"])  # Avoids cache issues with temp build env
+    cmake_configure_options=[f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}"])  # Avoids cache issues with tmp build env
 # name="Pybind11Bindings",
 # # Name of the resulting package name (import mymath_pybind11)
 # install_prefix="mymath_pybind11",
