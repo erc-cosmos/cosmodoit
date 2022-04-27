@@ -4,23 +4,13 @@ Compute tension using the spiral array model.
 Original code by R. Guo. Modified by D. Bedoya and C. Guichaoua.
 """
 
-import _pickle as pickle
-
-import os
-import math
-import pretty_midi
-import sys
 import copy
-import numpy as np
-import matplotlib.pyplot as plt
 import itertools
+import os
 
-import json
-import logging
-import coloredlogs
-
-import argparse
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pretty_midi
 
 octave = 12
 
@@ -93,8 +83,8 @@ def largest_distance(pitches):
         return 0
     diameter = 0
     pitch_pairs = itertools.combinations(pitches, 2)
-    for pitch_pair in pitch_pairs:
-        distance = np.linalg.norm(pitch_index_to_position(pitch_pair[0]) - pitch_index_to_position(pitch_pair[1]))
+    for pitch1, pitch2 in pitch_pairs:
+        distance = np.linalg.norm(pitch_index_to_position(pitch1) - pitch_index_to_position(pitch2))
         if distance > diameter:
             diameter = distance
     return diameter
@@ -247,32 +237,20 @@ def cal_key(piano_roll, key_names, end_ratio=0.5):
     key_indices = []
     key_shifts = []
     for name in key_names:
-        key = name.split()[0]
-        mode = name.split()[1]
+        key, mode = name.split()[1]
 
-        if mode == 'minor':
-            if key not in valid_minor:
+        def check_key(key, valid_for_mode):
+            if key not in valid_for_mode:
                 if key in enharmonic_dict:
                     key = enharmonic_dict[key]
                 elif key in enharmonic_reverse_dict:
                     key = enharmonic_reverse_dict[key]
-                else:
-                    logger.info('no such key')
             if key not in valid_minor:
-                logger.info('no such key')
-                return None
+                raise KeyError('no such key')
+            return key
 
-        else:
-            if key not in valid_major:
-                if key in enharmonic_dict:
-                    key = enharmonic_dict[key]
-                elif key in enharmonic_reverse_dict:
-                    key = enharmonic_reverse_dict[key]
-                else:
-                    logger.info('no such key')
-            if key not in valid_major:
-                logger.info('no such key')
-                return None
+        key = check_key(key, valid_minor if mode == 'minor' else valid_major)
+
         key_index = pitch_name_to_pitch_index[key]
 
         if mode == 'minor':
@@ -355,17 +333,16 @@ def moving_average(tension, window=4):
     return np.array(outputs)
 
 
-def cal_tension(file_name, piano_roll, beat_data, window_size=1, *,
-                key_name=None, generate_pickle=False, generate_plots=False, **kwargs):
-
+def cal_tension(pm, piano_roll, beat_data, window_size=1, *,
+                key_name=None, key_changed=False, end_ratio=0.5, **kwargs):
     # try:
     key_name = key_name or all_key_names
     # all the major key pos is C major pos, all the minor key pos is a minor pos
-    key_name, key_pos, note_shift = cal_key(piano_roll, key_name, end_ratio=kwargs['end_ratio'])
+    key_name, key_pos, note_shift = cal_key(piano_roll, key_name, end_ratio)
     # bar_step = downbeat_indices[1] - downbeat_indices[0]
     centroids = cal_centroid(piano_roll, note_shift, -1, -1)
 
-    kc = windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, kwargs)
+    kc = windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, end_ratio, pm, key_name, key_changed)
 
     centroids = cal_centroid(piano_roll, note_shift, kc['key_change_beat'], kc['changed_note_shift'])
 
@@ -385,31 +362,11 @@ def cal_tension(file_name, piano_roll, beat_data, window_size=1, *,
     centroid_diff = np.linalg.norm(centroid_diff, axis=-1)
     centroid_diff = np.insert(centroid_diff, 0, 0)
 
-    new_output_folder = not(generate_pickle and generate_plots) or gen_new_output_folder(file_name, kwargs)
-    if generate_pickle:
-        export_tension(new_output_folder, file_name, total_tension, diameters, centroid_diff, window_time)
-
-    if generate_plots:
-        export_plots(new_output_folder, file_name, total_tension, diameters, centroid_diff)
-
-    return [tension_time, total_tension, diameters, centroid_diff, key_name,
-            kc['change_time'], kc['key_change_bar'], kc['changed_key_name'], new_output_folder]
+    return (tension_time, total_tension, diameters, centroid_diff, key_name, kc)
 
     # except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
     #     exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
     #     logger.info(exception_str)
-
-
-def gen_new_output_folder(file_name, args):
-
-    if args['input_folder'][-1] != '/':
-        args['input_folder'] += '/'
-    name_with_sub_folder = file_name.replace(args['input_folder'], "")
-
-    output_name = os.path.join(args.output_folder, name_with_sub_folder)
-
-    new_output_folder = os.path.dirname(output_name)
-    return new_output_folder
 
 
 def cal_key_diff(beat_data, window_size, merged_centroids, key_pos, kc):
@@ -436,15 +393,14 @@ def cal_key_diff(beat_data, window_size, merged_centroids, key_pos, kc):
     return window_time, key_diff
 
 
-def windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, args):
-
+def windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, end_ratio, pm, key_name, key_changed):
     beat_indices = beat_data['beat_indices']
     down_beat_indices = beat_data['down_beat_indices']
     beat_time = beat_data['beat_time']
     down_beat_time = beat_data['down_beat_time']
     sixteenth_time = beat_data['sixteenth_time']
 
-    if args['key_changed']:
+    if key_changed:
         # use a bar window to detect key change
         merged_centroids = merge_tension(centroids, beat_indices, down_beat_indices, window_size=-1)
 
@@ -459,20 +415,13 @@ def windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, args)
         diameters = cal_diameter(piano_roll, note_shift, -1, -1)
         diameters = merge_tension(diameters, beat_indices, down_beat_indices, window_size=-1)
 
-        key_change_bar = detect_key_change(key_diff, diameters, start_ratio=args.end_ratio)
+        key_change_bar = detect_key_change(key_diff, diameters, start_ratio=end_ratio)
         if key_change_bar != -1:
             key_change_beat = np.argwhere(beat_time == down_beat_time[key_change_bar])[0][0]
             change_time = down_beat_time[key_change_bar]
             changed_key_name, changed_key_pos, changed_note_shift = get_key_index_change(
                 pm, change_time, sixteenth_time)
-            if changed_key_name != key_name:
-                m = int(change_time // 60)
-                s = int(change_time % 60)
-
-                logger.info(f'key changed, change time is {m} minutes, {s} second')
-
-                logger.info(f'new note shift is {changed_note_shift}')
-            else:
+            if changed_key_name == key_name:
                 changed_note_shift = -1
                 changed_key_name = ''
                 key_change_beat = -1
@@ -500,28 +449,6 @@ def windowDetectKey(beat_data, centroids, key_pos, piano_roll, note_shift, args)
                          'change_time': change_time,
                          'key_change_bar': key_change_bar}
     return key_change_params
-
-
-def export_tension(new_output_folder, file_name, total_tension, diameters, centroid_diff, window_time):
-    if not os.path.exists(new_output_folder):
-        os.makedirs(new_output_folder)
-    base_name = os.path.basename(file_name)
-    name_split = base_name.split('.')
-    pickle.dump(total_tension, open(os.path.join(new_output_folder,
-                                                 name_split[0] + '.tensile'),
-                                    'wb'))
-
-    pickle.dump(diameters, open(os.path.join(new_output_folder,
-                                             name_split[0] + '.diameter'),
-                                'wb'))
-    pickle.dump(centroid_diff, open(os.path.join(new_output_folder,
-                                                 name_split[0] + '.centroid_diff'),
-                                    'wb'))
-
-    pickle.dump(window_time[:len(total_tension)], open(os.path.join(new_output_folder,
-                                                                    name_split[0] + '.time'),
-                                                       'wb'))
-    print('Exported tension to: ' + new_output_folder)
 
 
 def export_plots(new_output_folder, file_name, total_tension, diameters, centroid_diff):
@@ -732,48 +659,6 @@ def extract_notes(file_name, track_num):
     return [pm, piano_roll, beat_data]
 
 
-def walk(folder_name):
-    files = []
-    for p, d, f in os.walk(folder_name):
-        for file_name in f:
-            endname = file_name.split('.')[-1].lower()
-            if endname == 'mid' or endname == 'midi':
-                files.append(os.path.join(p, file_name))
-    return files
-
-
-def get_args(default='.'):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input_folder', default=default, type=str,
-                        help="MIDI file input folder")
-    parser.add_argument('-f', '--file_name', default='', type=str,
-                        help="input MIDI file name")
-    parser.add_argument('-o', '--output_folder', default=default, type=str,
-                        help="MIDI file output folder")
-    parser.add_argument('-w', '--window_size', default=-1, type=int,
-                        help="Tension calculation window size, 1 for a beat, 2 for 2 beat etc., -1 for a downbeat")
-
-    parser.add_argument('-n', '--key_name', default='', type=str,
-                        help="key name of the song, e.g. B- major, C# minor")
-    parser.add_argument('-t', '--track_num', default=0, type=int,
-                        help="number of tracks used to calculate tension, e.g. 3 means use first 3 tracks, "
-                             "default 0 means use all")
-
-    parser.add_argument('-r', '--end_ratio', default=0.5, type=float,
-                        help="the place to find the first key "
-                             "of the song, 0.5 means the first key "
-                             "is calculate by the first half the song")
-
-    parser.add_argument('-k', '--key_changed', default=False, type=bool,
-                        help="try to find key change, default false")
-
-    parser.add_argument('-v', '--vertical_step', default=0.4, type=float,
-                        help="the vertical step parameter in the spiral array,"
-                             "which should be set between sqrt(2/15) and sqrt(0.2)")
-
-    return parser.parse_args()
-
-
 def note_to_key_pos(note_indices, key_pos):
     note_positions = []
     for note_index in note_indices:
@@ -811,159 +696,3 @@ def key_to_key_pos(key_indices, key_pos):
 
     diffs = np.linalg.norm(np.array(key_positions)-key_pos, axis=1)
     return diffs
-
-
-#
-# def process_file(file_name,result_dict):
-#     base_name = os.path.basename(file_name)
-#
-#     # logger.info(f'working on {file_name}')
-#     result = extract_notes(file_name, args.track_num)
-#
-#     if result is None:
-#         return
-#     else:
-#         pm, piano_roll, beat_time, down_beat_time, beat_indices, down_beat_indices = result
-#
-#     try:
-#         if args.key_name == '':
-#             # key_name = get_key_name(file_name)
-#             key_name = all_key_names
-#
-#             result = cal_tension(
-#                 file_name, piano_roll, beat_time, beat_indices, down_beat_time, down_beat_indices, args.output_folder,
-#                 args.window_size, key_name)
-#
-#         else:
-#             result = cal_tension(
-#                 file_name, piano_roll, beat_time, beat_indices, down_beat_time, down_beat_indices, args.output_folder,
-#                 args.window_size, [args.key_name])
-#
-#         (total_tension, diameters, centroid_diff, key_name,
-#          key_change_time, key_change_bar, key_change_name, new_output_foler) = result
-#
-#         if np.count_nonzero(total_tension) == 0:
-#             logger.info(f"tensile 0 skip {file_name}")
-#
-#             return
-#
-#         if np.count_nonzero(diameters) == 0:
-#             logger.info(f"diameters 0, skip {file_name}")
-#
-#             return
-#
-#     except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
-#         exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
-#         logger.info(exception_str)
-#
-#     if key_name is not None:
-#         result_dict[new_output_foler + '/' + base_name] = []
-#         result_dict[new_output_foler + '/' + base_name].append(key_name)
-#         result_dict[new_output_foler + '/' + base_name].append(int(key_change_time))
-#         result_dict[new_output_foler + '/' + base_name].append(int(key_change_bar))
-#         result_dict[new_output_foler + '/' + base_name].append(key_change_name)
-#
-#     else:
-#         logger.info(f'cannot find the key of song {file_name}, skip this file')
-
-
-if __name__ == "__main__":
-    args = get_args()
-
-    args.output_folder = os.path.abspath(args.output_folder)
-
-    if not os.path.exists(args.output_folder):
-        os.makedirs(args.output_folder, exist_ok=True)
-
-    logger = logging.getLogger(__name__)
-
-    logger.handlers = []
-    logfile = args.output_folder + '/tension_calculate.log'
-    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO,
-                        datefmt='%Y-%m-%d %H:%M:%S', filename=logfile)
-
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(asctime)s : %(levelname)s : %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    coloredlogs.install(level='INFO', logger=logger, isatty=True)
-
-    if math.sqrt(2/15) <= args.vertical_step <= math.sqrt(0.2):
-        verticalStep = args.vertical_step
-    else:
-        logger.info('invalid vertical step, use 0.4 instead')
-        verticalStep = 0.4
-
-    output_json_name = os.path.join(args.output_folder, "files_result.json")
-
-    files_result = {}
-
-    # test purpose
-    # note_to_note_diff = note_to_note_pos([0,1,2,3,4,5,6,7,8,9,10,11],
-    #                                      pitch_index_to_position(note_index_to_pitch_index[0]))
-    # note_to_key_diff = note_to_key_pos([0,1,2,3,4,5,6,7,8,9,10,11],major_key_position(0))
-    # chord_to_key_diff = chord_to_key_pos([0,1,2,3,4,5,6,7,8,9,10,11],major_key_position(0))
-    # key_to_key_diff = key_to_key_pos([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], major_key_position(0))
-
-    if len(args.file_name) > 0:
-        all_names = [args.file_name]
-        args.input_folder = os.path.dirname(args.file_name)
-    else:
-        all_names = walk(args.input_folder)
-
-    for file_name in all_names:
-
-        base_name = os.path.basename(file_name)
-
-        # logger.info(f'working on {file_name}')
-        pm, piano_roll, beat_data = extract_notes(file_name, args.track_num)
-
-        # if result is None:
-        #     continue
-        # else:
-        # pm,piano_roll,sixteenth_time,beat_time,down_beat_time,beat_indices,down_beat_indices = result
-
-        try:
-
-            if args.key_name == '':
-                # key_name = get_key_name(file_name)
-                key_name = all_key_names
-                tension_result = cal_tension(file_name, piano_roll, beat_data, args, args.window_size, key_name)
-
-            else:
-                tension_result = cal_tension(file_name, piano_roll, beat_data, args, args.window_size, [args.key_name])
-
-            (window_time, total_tension, diameters, centroid_diff,
-             key_name, key_change_time, key_change_bar, key_change_name, new_output_folder) = tension_result
-
-            if np.count_nonzero(total_tension) == 0:
-                logger.info(f"tensile 0 skip {file_name}")
-
-                continue
-
-            if np.count_nonzero(diameters) == 0:
-                logger.info(f"diameters 0, skip {file_name}")
-
-                continue
-
-        except (ValueError, EOFError, IndexError, OSError, KeyError, ZeroDivisionError) as e:
-            exception_str = 'Unexpected error in ' + file_name + ':\n', e, sys.exc_info()[0]
-            logger.info(exception_str)
-
-        if key_name is not None:
-            files_result[new_output_folder + '/' + base_name] = []
-            files_result[new_output_folder + '/' + base_name].append(key_name)
-            files_result[new_output_folder + '/' + base_name].append(int(key_change_time))
-            files_result[new_output_folder + '/' + base_name].append(int(key_change_bar))
-            files_result[new_output_folder + '/' + base_name].append(key_change_name)
-
-        else:
-            logger.info(f'cannot find the key of song {file_name}, skip this file')
-
-    logger.info(len(files_result))
-    with open(os.path.join(args.output_folder, 'files_result.json'), 'w') as fp:
-        json.dump(files_result, fp)

@@ -1,8 +1,6 @@
 # [tool.doit.tasks.tension]
 #   track_num=ARG
 #   key_name=ARG
-#   generate_pickle=ARG
-#   generate_plots=ARG
 
 # [tool.doit.tasks.loudness]
 #   smooth_span=ARG

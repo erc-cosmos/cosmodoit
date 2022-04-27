@@ -60,10 +60,10 @@ def get_tension(midi_path: str, *, track_num: int = 3, **kwargs):
     Returns:
         pd.Dataframe: dataframe of the harmonic tension
     """
-    _, piano_roll, beat_data = tc.extract_notes(midi_path, track_num=track_num)
+    pm, piano_roll, beat_data = tc.extract_notes(midi_path, track_num=track_num)
 
-    (time, strain, diameter, momentum, _key_name, _key_change_time, _key_change_bar, _key_change_name,
-     _new_output_folder) = tc.cal_tension(midi_path, piano_roll, beat_data, **kwargs)
+    (time, strain, diameter, momentum, _key_name,
+     _key_change_info) = tc.cal_tension(pm, piano_roll, beat_data, **kwargs)
 
     tension = pd.DataFrame.from_dict({'time': time, 'momentum': momentum,
                                      'diameter': diameter, 'strain': strain}).rename_axis('beat')
