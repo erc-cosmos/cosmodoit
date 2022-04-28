@@ -27,7 +27,7 @@ There are 2 main ways to use this toolbox:
 
 <!-- NB: If the `doit` command is not on the `PATH`, the `python -m doit` command is equivalent. -->
 
-By default, the pipeline will look for pieces under the current folder; use the `--dir <target_dir>` option to override that behavior. 
+By default, the pipeline will look for pieces *under* the current folder; use the `--dir <target_dir>` option to override that behavior (e.g., `cosmodoit --dir example_data`). 
 Each piece should be in its own folder, and requires :
 * a performance in `.mid` format;
 * a score in `.mscz` format (Musescore);
@@ -42,13 +42,14 @@ It is possible to run only a given feature and/or a given piece by using `cosmod
 
 Type `cosmodoit list` to list all valid feature tasks, or `cosmodoit list --all` to list all subtasks — one per feature/piece pair.
 
-To force a task to be recomputed, type `cosmodoit forget <task>` and it will be run on the next execution.
+To force a task to be recomputed, type `cosmodoit forget <task>` and it will be run on the next execution (`--all` to forget all tasks).
 
 Running `cosmodoit clean` will remove the intermediary files, keeping only the final features.
 
 If processing is long, using `cosmodoit -n <N> -P thread` will run tasks on N threads.
 
 Some tasks can be configured, for example to set the window length for loudness. Parameters can be listed using `cosmodoit help <task>`, and are set through a `pyproject.toml` configuraion file (see `music_features/templates/pyproject.toml` for a sample of the format). Changes to the parameters will be picked up by the `doit` system and corresponding features (including dependent features) will be recomputed on the next run.
+At the moment, parameters can only be supplied at the collection level: to apply parameters to a single piece, it must be put in a separate collection.
 
 
 # Toolbox API convention

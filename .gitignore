@@ -35,6 +35,7 @@
 *.mscz
 *.mp4
 *.xml
+*.json
 
 # OS generated files #
 ######################
@@ -56,6 +57,11 @@ objectdb
 *_hmm.txt
 *_match.txt
 *_spr.txt
+
+# Example data should be included #
+!example_data/Mazurka 17-4/Mazurka 17-4, Friedberg DA.wav
+!example_data/Mazurka 17-4/Mazurka 17-4, Friedberg DA.mscz
+!example_data/Mazurka 17-4/Mazurka 17-4, Friedberg DA.mid
 
 music_features/test_midi/MorpheuS Für Elise/.mscbackup/.eliseB.xml_output34-edited.mscz,
 music_features/Chopin_Ballade_No._2_Piano_solo_fmt3x.txt
