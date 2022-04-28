@@ -237,7 +237,7 @@ def cal_key(piano_roll, key_names, end_ratio=0.5):
     key_indices = []
     key_shifts = []
     for name in key_names:
-        key, mode = name.split()[1]
+        key, mode = name.split()
 
         def check_key(key, valid_for_mode):
             if key not in valid_for_mode:
@@ -245,8 +245,8 @@ def cal_key(piano_roll, key_names, end_ratio=0.5):
                     key = enharmonic_dict[key]
                 elif key in enharmonic_reverse_dict:
                     key = enharmonic_reverse_dict[key]
-            if key not in valid_minor:
-                raise KeyError('no such key')
+            if key not in valid_for_mode:
+                raise KeyError(f'no such key: {name}')
             return key
 
         key = check_key(key, valid_minor if mode == 'minor' else valid_major)
