@@ -27,7 +27,7 @@ There are 2 main ways to use this toolbox:
 
 <!-- NB: If the `doit` command is not on the `PATH`, the `python -m doit` command is equivalent. -->
 
-By default, the pipeline will look for pieces *under* the current folder; use the `--dir <target_dir>` option to override that behavior (e.g., `cosmodoit --dir example_data`). 
+By default, the pipeline will look for pieces under the current folder, each in its own subfolder; use the `--dir <target_dir>` option to override that behavior (e.g., `cosmodoit --dir example_data`, where `example_data` contains piece subfolders). 
 Each piece should be in its own folder, and requires :
 * a performance in `.mid` format;
 * a score in `.mscz` format (Musescore);
@@ -36,9 +36,9 @@ Each piece should be in its own folder, and requires :
 
 If one or more filetypes are missing, some features will not be computed, but those which can be derived from the existing data will still be computed. The files are not required to share the same base name, but it is recommended for tidyness. In case more than one file matches a type, a warning will be issued and an arbitrary one will be used for the computations.
 
-Computed files will be outputted to the corrsponding directory. An option to specify a target directory might be available in the future.
+Computed files will be outputted to the corresponding directory. An option to specify a target directory might be available in the future.
 
-It is possible to run only a given feature and/or a given piece by using `cosmodoit <feature>[:<piece>]` (intermediate features will still get computed if needed). Either can accept wildcards `*`, e.g. `cosmodoit loudness` or `cosmodoit loudness:*` to compute loudness for all detected pieces or `cosmodoit *:*Mazurka\ 17-4` to compute all features on Mazurka 17-4.
+It is possible to run only a given feature and/or a given piece by using `cosmodoit <feature>[:<piece>]` (intermediate features will still get computed if needed). Either can accept wildcards `*`, e.g. `cosmodoit loudness` or `cosmodoit loudness:*` to compute loudness for all detected pieces or `cosmodoit *:Mazurka\ 17-4` to compute all features on Mazurka 17-4.
 
 Type `cosmodoit list` to list all valid feature tasks, or `cosmodoit list --all` to list all subtasks — one per feature/piece pair.
 
