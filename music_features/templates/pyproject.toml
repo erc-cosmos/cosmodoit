@@ -1,19 +1,24 @@
 # [tool.doit.tasks.tension]
-#   track_num=ARG
-#   key_name=ARG
+#   track_num=3        # Maximum number of tracks to use
+#   key_name=None      # Manually set the key (e.g. "A minor", "G- major", "C# minor")
+#   key_changed=False, # [boolean] Whether or not to look for a key change
+#   end_ratio=0.5      # Mystery key change parameter
 
 # [tool.doit.tasks.loudness]
-#   smooth_span=ARG
-#   no_negative=ARG
-#   fft_size=ARG
-#   hop_size=ARG
-#   outer_ear=ARG
-#   bark_type=ARG
-#   db_max=ARG
-#   do_spread=ARG
-#   do_sone=ARG
+#   smooth_span=ARG # number of data points for calculating the smooth curve (0.03 by default). 
+#                   # Interpreted as a fraction of total length if < 1 or as a number of samples if integer >= 1
+#   no_negative=ARG # boolean: clip interpolated values above 0
+#   fft_size=ARG    # window size (unit: samples) 256 are ~23ms @ 11kHz 
+#   hop_size=ARG    # fft window hopsize (unit: samples)
+#   outer_ear=ARG   # outer ear model {'terhardt' | 'none'}
+#   bark_type=ARG   # type of bark scale to use (either:
+#                   # 'table' lookup (=default) with max 24 bands 
+#                   # (for 44kHz), or vector [min_freq max_freq num_bands]
+#   db_max=ARG      # max dB of input wav (for 16 bit input 96dB is SPL)
+#   do_spread=ARG   # [boolean] compute sone (otherwise dB)
+#   do_sone=ARG     # [boolean] apply spectral masking
 
 # [tool.doit.tasks.beats]
-#   max_tries=ARG
-#   factor=ARG
-#   verbose=ARG
+#   max_tries=ARG # Maximum number of attempts to remove outliers
+#   factor=ARG    # Outlier detection threshold (high => fewer outliers)
+#   verbose=ARG   # [boolean] Verbose outlier removal

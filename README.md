@@ -57,7 +57,9 @@ Each feature is handled by a different submodule, named `get_<feature>`. Submodu
 
 Each submodule contains at least 3 functions for external use:
 * a `get_<feature>` function which handles the computation of the feature. The exact signature differs for each (see individual documentation).
-* a `write_<feature>` and a `read_<feature>` fucntion to handle input and output.
+* a `write_<feature>` and a `read_<feature>` function to handle input and output.
+
+To use them just import them into your code: `from cosmodoit.get_<feature> import get_<feature> write_<feature>` (or any other valid import statement)
 
 
 # Extending the toolbox
