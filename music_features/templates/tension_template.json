@@ -2,7 +2,7 @@
   {
     "type": "tension",
     "name": "Cloud Momentum",
-    "color": "#fe9929",
+    "color": "#795C34",
     "width": "2px",
     "style": "solid",
     "file": "",
@@ -12,7 +12,7 @@
   {
     "type": "tension",
     "name": "Cloud Diameter",
-    "color": "#d95f0e",
+    "color": "#993404",
     "width": "2px",
     "style": "solid",
     "file": "",
@@ -34,7 +34,7 @@
   {
     "type": "tension",
     "name": "Tensile Strain",
-    "color": "#993404",
+    "color": "#FEC44F",
     "width": "2px",
     "style": "solid",
     "file": "",
