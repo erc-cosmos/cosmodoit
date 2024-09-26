@@ -4,12 +4,12 @@ Toolbox for analysing music performance.
 
 There are 2 main ways to use this toolbox:
 * As a one-stop pipeline which computes all features, recomputing only what has changed
-* As an importable package, accessible from any python code
+* As an importable package, accessible from any Python code
 
 
 # Setting up
 1. Ensure [Python 3](https://www.python.org/downloads/) and [Musescore](https://musescore.org/fr/download) are installed.
-2. Install the package through pip : `pip install cosmodoit` (or `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cosmodoit` until the package is on the main PyPI server). Depending on the python installation, replacing `pip` by `pip3`, `python -m pip` or `python3 -m pip` might be required.
+2. Install the package through pip: `pip install cosmodoit` (or `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cosmodoit` until the package is on the main PyPI server). Depending on the Python installation, replacing `pip` by `pip3`, `python -m pip` or `python3 -m pip` might be required.
 
 <!-- (outdated)
 # Setting up the analysis pipeline
@@ -34,7 +34,7 @@ Each piece should be in its own folder, and requires :
 * a recording in `.wav` format.
 * [Optional] a manual beats annotation, ending in `_beats_manual.csv` (will override the automatic beats extraction if present)
 
-If one or more filetypes are missing, some features will not be computed, but those which can be derived from the existing data will still be computed. The files are not required to share the same base name, but it is recommended for tidyness. In case more than one file matches a type, a warning will be issued and an arbitrary one will be used for the computations.
+If one or more filetypes are missing, some features will not be computed, but those which can be derived from the existing data will still be computed. The files are not required to share the same base name, but it is recommended for tidiness. In case more than one file matches a type, a warning will be issued and an arbitrary one will be used for the computations.
 
 Computed files will be outputted to the corresponding directory. An option to specify a target directory might be available in the future.
 
@@ -48,7 +48,7 @@ Running `cosmodoit clean` will remove the intermediary files, keeping only the f
 
 If processing is long, using `cosmodoit -n <N> -P thread` will run tasks on N threads.
 
-Some tasks can be configured, for example to set the window length for loudness. Parameters can be listed using `cosmodoit help <task>`, and are set through a `pyproject.toml` configuraion file (see `music_features/templates/pyproject.toml` for a sample of the format). Changes to the parameters will be picked up by the `doit` system and corresponding features (including dependent features) will be recomputed on the next run.
+Some tasks can be configured, for example to set the window length for loudness. Parameters can be listed using `cosmodoit help <task>`, and are set through a `pyproject.toml` configuration file (see `music_features/templates/pyproject.toml` for a sample of the format). Changes to the parameters will be picked up by the `doit` system and corresponding features (including dependent features) will be recomputed on the next run.
 At the moment, parameters can only be supplied at the collection level: to apply parameters to a single piece, it must be put in a separate collection.
 
 
@@ -63,7 +63,7 @@ To use them just import them into your code: `from cosmodoit.get_<feature> impor
 
 
 # Extending the toolbox
-The toolbox is meant to be easily extendable. To add a new feature, add a new submodule named `get_<feature>`. To be picked up by the pipeline, it must be added to the `submodules` variable in `dodo.py` and include in the module's namespace:
+The toolbox is meant to be easily extendable. To add a new feature, add a new submodule named `get_<feature>`. To be picked up by the pipeline, it must be added to the `submodules` variable in `dodo.py` and included in the module's namespace:
 * [required] a `gen_tasks(piece_id, targets, **kwargs)` function to generate `doit` tasks (see the [documentation](https://pydoit.org/tasks.html)). See existing functions for the usage of the parameters;
 * [recommended] a `task_docs` dictionary, which maps the (sub)tasks' names to description strings;
 * [optional] a `param_sources` iterable, which lists the functions that provide keyword-only parameters that should be exposed through the config file.
