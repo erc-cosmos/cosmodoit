@@ -2,6 +2,7 @@
 import csv
 import functools
 import os
+import platform
 import json
 from typing import Any, Callable, Dict, List
 
@@ -67,6 +68,14 @@ def generate_target_path(original_path: str, working_folder: str, extension: str
     """Generate a target path."""
     path_noext, _ = os.path.splitext(os.path.basename(original_path))
     return os.path.join(working_folder, path_noext + extension)
+
+
+def to_exec_name(basename: str):
+    """Turns a base name into the appropriate executable name based on platform"""
+    if platform.system() == "Windows":
+        return basename + ".exe"
+    else:
+        return basename
 
 
 class NameSchemeError(LookupError):

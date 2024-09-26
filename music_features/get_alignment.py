@@ -12,6 +12,7 @@ from .util import default_naming_scheme
 from .util import run_doit
 from .util import string_escape_concat
 from .util import targets_factory_new
+from .util import to_exec_name
 
 
 class AlignmentAtom(NamedTuple):
@@ -118,12 +119,12 @@ def gen_subtasks_Nakamura(piece_id: str, targets):
     perf_realigned = targets("perf_realigned")
 
     resource_bins = resources.files(__package__) / 'bin'
-    exe_pianoroll = resource_bins / "midi2pianoroll"
-    exe_fmt3x = resource_bins / "SprToFmt3x"
-    exe_hmm = resource_bins / "Fmt3xToHmm"
-    exe_prealignment = resource_bins / "ScorePerfmMatcher"
-    exe_errmatch = resource_bins / "ErrorDetection"
-    exe_realignment = resource_bins / "RealignmentMOHMM"
+    exe_pianoroll = resource_bins / to_exec_name("midi2pianoroll")
+    exe_fmt3x = resource_bins / to_exec_name("SprToFmt3x")
+    exe_hmm = resource_bins / to_exec_name("Fmt3xToHmm")
+    exe_prealignment = resource_bins / to_exec_name("ScorePerfmMatcher")
+    exe_errmatch = resource_bins / to_exec_name("ErrorDetection")
+    exe_realignment = resource_bins / to_exec_name("RealignmentMOHMM")
 
     yield {
         'basename': '_pianoroll_conversion_ref',
