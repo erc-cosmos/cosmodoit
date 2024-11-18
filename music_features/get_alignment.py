@@ -1,6 +1,7 @@
 """Module for wrapping Eita Nakamura's alignment software."""
 import collections
 from importlib import resources
+import warnings
 import os
 import shutil
 from typing import NamedTuple
@@ -12,6 +13,7 @@ from .util import default_naming_scheme
 from .util import run_doit
 from .util import string_escape_concat
 from .util import targets_factory_new
+from .util import to_exec_name
 
 
 class AlignmentAtom(NamedTuple):
@@ -71,7 +73,11 @@ def gen_subtasks_midi(piece_id: str, targets):
 
     ref_mid = targets("ref_midi")
 
-    musescore_exec = locate_musescore()
+    try:
+        musescore_exec = locate_musescore()
+    except FileNotFoundError:
+        warnings.warn("Could not locate MuseScore. Unable to convert to MIDI.")
+        return
 
     yield {
         'basename': 'MIDI_Conversion',
@@ -88,17 +94,33 @@ def gen_subtasks_midi(piece_id: str, targets):
 def locate_musescore() -> str:
     """Locate the executable for Musescore.
 
+    Raises:
+        FileNotFoundError: if unable to find a path
     Returns:
         str: Best guess of the path to Musescore's executable
     """
-    # TODO: Find a deployable way to search the mscore executable
-    # Music21 does it for Lilypond with an 'environment' setting or a set of known possible paths
-    for musescore_exec in ["/Applications/MuseScore 3.app/Contents/MacOS/mscore"]:
+    # Option 1: the executable is on the path
+    known_exec_names = [to_exec_name(name) for name in [
+        "mscore",
+        "MuseScore3",
+        "MuseScore4"
+    ]
+    ]
+    for exec_candidate in known_exec_names:
+        exec_path = shutil.which(exec_candidate)
+        if exec_path is not None:
+            return exec_path
+
+    # Option 2: fall back to known possible paths
+    known_paths = [
+        "/Applications/MuseScore 3.app/Contents/MacOS/mscore",
+        "C:\\Program Files\\MuseScore 3\\bin\\Musescore3.exe",
+        ]
+    for musescore_exec in known_paths:
         if os.path.exists(musescore_exec):
             return musescore_exec
     else:  # Not found
-        return 'mscore'  # Hope it is on the PATH
-        # TODO test before returning
+        raise FileNotFoundError("MuseScore is required")
 
 
 def gen_subtasks_Nakamura(piece_id: str, targets):
@@ -118,12 +140,12 @@ def gen_subtasks_Nakamura(piece_id: str, targets):
     perf_realigned = targets("perf_realigned")
 
     resource_bins = resources.files(__package__) / 'bin'
-    exe_pianoroll = resource_bins / "midi2pianoroll"
-    exe_fmt3x = resource_bins / "SprToFmt3x"
-    exe_hmm = resource_bins / "Fmt3xToHmm"
-    exe_prealignment = resource_bins / "ScorePerfmMatcher"
-    exe_errmatch = resource_bins / "ErrorDetection"
-    exe_realignment = resource_bins / "RealignmentMOHMM"
+    exe_pianoroll = resource_bins / to_exec_name("midi2pianoroll")
+    exe_fmt3x = resource_bins / to_exec_name("SprToFmt3x")
+    exe_hmm = resource_bins / to_exec_name("Fmt3xToHmm")
+    exe_prealignment = resource_bins / to_exec_name("ScorePerfmMatcher")
+    exe_errmatch = resource_bins / to_exec_name("ErrorDetection")
+    exe_realignment = resource_bins / to_exec_name("RealignmentMOHMM")
 
     yield {
         'basename': '_pianoroll_conversion_ref',

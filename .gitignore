@@ -50,6 +50,7 @@ Thumbs.db
 .vscode/.ropeproject/config.py
 .gitignore
 objectdb
+*.bak
 
 # Alignment generated files #
 ######################
@@ -81,3 +82,9 @@ music_features/bin_old
 build
 cosmodoit.egg-info
 dist
+redist/AlignmentTool/Code/CMakeFiles/cmake.check_cache
+redist/AlignmentTool/Code/CMakeFiles/CMakeConfigureLog.yaml
+redist/AlignmentTool/Code/CMakeFiles/3.30.3/CMakeSystem.cmake
+example_data/.doit.db.bak
+example_data/.doit.db.dat
+example_data/.doit.db.dir

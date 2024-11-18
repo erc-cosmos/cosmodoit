@@ -104,7 +104,7 @@ def remove_outliers_and_duplicates(alignment: pd.DataFrame) -> Tuple[np.ndarray,
     """Prefilter data by removing duplicates and resorting."""
     # TODO: determine better which note to use when notes share a tatum
     alignment_filtered = alignment.drop_duplicates(subset=["score_time"]).sort_values("score_time")
-    (_, ticks), (_, times) = alignment_filtered.iteritems()
+    (_, ticks), (_, times) = alignment_filtered.items()
 
     return np.array(ticks), np.array(times)
 
