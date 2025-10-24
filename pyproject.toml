@@ -26,6 +26,12 @@ dependencies = [
     "toml"
 ]
 
+[project.optional-dependencies]
+tests = [
+    "pytest",
+    "pytest-xdist"
+]
+
 [project.scripts]
 cosmodoit = "music_features.dodo:main"
 
